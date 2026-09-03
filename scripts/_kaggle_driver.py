@@ -767,9 +767,13 @@ def _x3_kbench(device):
 def _x3_geo_bench(device):
     """Sweep rows-per-program and warps for the tiled split/LayerNorm kernels
     on the graded row widths, and run the thorough self-check on this GPU."""
+    import sys
     import torch
     import torch.nn.functional as F
-    import kernels.fp16x3 as KX
+    try:
+        import kernels.fp16x3 as KX          # package layout
+    except ImportError:
+        KX = sys.modules[__name__]           # single-file Kaggle build: same module
     print(f"x3_available: {x3_available(device)} | selfcheck(thorough): {x3_selfcheck(device, True)}", flush=True)
     _gpu_fingerprint("x3geo-start")
     geoms = [(8192, 128), (65536, 128), (1280000, 128), (2048, 128), (128, 128),
@@ -857,12 +861,17 @@ def _x3_bench(device):
                     split = lambda: x3_act_split(x, True)
                     ref = F.gelu(x[:n_err].double(), approximate="none") @ w.double().t() + bias.double()
                 w3, _, inv = prep
-                x3 = lambda: x3_linear(split(), w3, None, inv, False)   # the model's call: scaled output
+                if site == "qkv":
+                    x3 = lambda: x3_linear(split(), w3, None, inv, False)   # bias in the K tail
+                    ex3 = ((x3()[:n_err].double() * inv) - ref).abs().max().item()
+                else:
+                    w3n, bn, invn = x3_prepare(w, bias, fold_bias=False)
+                    x3 = lambda: x3_linear(split()[:, :3 * K], w3n, None, invn, False)  # consumer adds bias
+                    ex3 = ((x3()[:n_err].double() * invn + bn.double()) - ref).abs().max().item()
                 e32 = (base()[:n_err].double() - ref).abs().max().item()
-                ex3 = ((x3()[:n_err].double() * inv) - ref).abs().max().item()
                 t_base = _med(base); t_x3 = _med(x3); t_split = _med(split)
                 a3 = split()
-                t_gemm = _med(lambda: x3_linear(a3, w3, None, inv, False))
+                t_gemm = _med(x3) - t_split if False else _med(lambda: x3_linear(a3 if site == "qkv" else a3[:, :3 * K], w3 if site == "qkv" else w3n, None, inv, False))
                 gbps = M * K * (4 + 6) / t_split / 1e6
                 print(f"site {idx:>2} {site:7s} M={M:<8d} K={K:<5d} N={N:<5d} fp32 {t_base:8.3f} ms | "
                       f"x3 {t_x3:8.3f} ms (split {t_split:.3f} @{gbps:4.0f} GB/s + GEMM {t_gemm:.3f}) | "

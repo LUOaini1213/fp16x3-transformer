@@ -1,0 +1,45 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+fingerprint[start]: 300 MHz, 1590 MHz, 405 MHz, 42, 9.34 W, 0x0000000000000001 / 300 MHz, 1590 MHz, 405 MHz, 33, 9.34 W, 0x0000000000000001 | sgemm 4096^2 31.97 ms = 4.3 TFLOPS
+x3_available: True
+fingerprint[gemm-start]: 585 MHz, 1590 MHz, 5000 MHz, 43, 26.57 W, 0x0000000000000000 / 300 MHz, 1590 MHz, 405 MHz, 33, 8.94 W, 0x0000000000000001 | sgemm 4096^2 32.03 ms = 4.3 TFLOPS
+/usr/local/lib/python3.12/dist-packages/torch/profiler/profiler.py:217: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+tail M=8192     K3=3072  (tail 0 ) N=3072      6.880 ms   22.5 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=3080  (tail 8 ) N=3072      5.769 ms   26.9 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=3088  (tail 16) N=3072      7.243 ms   21.5 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=3104  (tail 32) N=3072      7.445 ms   21.0 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=3136  (tail 64) N=3072      7.190 ms   22.0 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=3072  (tail 0 ) N=1024      1.836 ms   28.1 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=3080  (tail 8 ) N=1024      1.842 ms   28.1 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=3088  (tail 16) N=1024      1.775 ms   29.2 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=3104  (tail 32) N=1024      1.919 ms   27.1 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=3136  (tail 64) N=1024      2.018 ms   26.1 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=1280000  K3=384   (tail 0 ) N=128       8.548 ms   14.7 TFLOPS  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+tail M=1280000  K3=392   (tail 8 ) N=128       9.979 ms   12.9 TFLOPS  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+tail M=1280000  K3=400   (tail 16) N=128       9.870 ms   13.3 TFLOPS  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+tail M=1280000  K3=416   (tail 32) N=128       9.583 ms   14.2 TFLOPS  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+tail M=1280000  K3=448   (tail 64) N=128       9.627 ms   15.2 TFLOPS  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+tail M=65536    K3=384   (tail 0 ) N=384       0.856 ms   22.6 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=65536    K3=392   (tail 8 ) N=384       1.124 ms   17.6 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=65536    K3=400   (tail 16) N=384       1.172 ms   17.2 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=65536    K3=416   (tail 32) N=384       1.200 ms   17.5 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=65536    K3=448   (tail 64) N=384       0.996 ms   22.6 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=384   (tail 0 ) N=384       0.162 ms   14.9 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=392   (tail 8 ) N=384       0.173 ms   14.2 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=400   (tail 16) N=384       0.209 ms   12.0 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=416   (tail 32) N=384       0.218 ms   12.0 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=448   (tail 64) N=384       0.179 ms   15.8 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_tn
+tail M=8192     K3=96    (tail 0 ) N=96        0.157 ms    1.0 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+tail M=8192     K3=104   (tail 8 ) N=96        0.131 ms    1.2 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+tail M=8192     K3=112   (tail 16) N=96        0.168 ms    1.1 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+tail M=8192     K3=128   (tail 32) N=96        0.062 ms    3.2 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+tail M=8192     K3=160   (tail 64) N=96        0.074 ms    3.4 TFLOPS  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+fingerprint[gemm-end]: 1575 MHz, 1590 MHz, 5000 MHz, 46, 34.10 W, 0x0000000000000004 / 300 MHz, 1590 MHz, 405 MHz, 33, 11.81 W, 0x0000000000000001 | sgemm 4096^2 32.37 ms = 4.2 TFLOPS
+fingerprint[end]: 1320 MHz, 1590 MHz, 5000 MHz, 46, 31.27 W, 0x0000000000000004 / 300 MHz, 1590 MHz, 405 MHz, 33, 10.62 W, 0x0000000000000001 | sgemm 4096^2 32.59 ms = 4.2 TFLOPS
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 1080857 bytes to __results__.html

@@ -84,8 +84,20 @@ _X3_ORDER = os.environ.get("T3_X3_ORDER", "lhh").strip().lower()
 if _X3_ORDER not in ("hhl", "lhh"):
     _X3_ORDER = "lhh"
 _X3_LO_FIRST = _X3_ORDER == "lhh"
-_X3_TAIL = 8                 # padding columns of the tripled K that carry the bias
 _X3_MAX_SCALED_B = 30000.0   # |s * b| must stay inside fp16 range
+
+
+def _x3_tail(k: int) -> int:
+    """Padding columns after the tripled K: rounds 3K up to a multiple of 32
+    (cuBLAS's fast Turing kernels tile K by 32) with at least two columns for
+    the bias pair. 32 for every graded width."""
+    t = 32 - (3 * k) % 32
+    return t if t >= 2 else t + 32
+
+
+def x3_tail(k: int) -> int:
+    return _x3_tail(k)
+
 # Split the tripled K into this many cuBLAS calls whose partials are combined
 # by the fp32 epilogue (round-to-nearest) instead of inside the tensor core.
 try:
@@ -100,20 +112,25 @@ if HAVE_TRITON:
 
     @triton.jit
     def _x3_ln_split_fwd(
-        X, R, SUM, OUT, W, B,
+        X, R, RB, SUM, OUT, W, B,
         M, stride_x, stride_out, eps, r_scale,
         N: tl.constexpr,
         HAS_RESIDUAL: tl.constexpr,
+        HAS_RBIAS: tl.constexpr,
+        WRITE_SUM: tl.constexpr,
         LO_FIRST: tl.constexpr,
         WRITE_SPLIT: tl.constexpr,
+        TAIL: tl.constexpr,
         ROWS: tl.constexpr,
         BLOCK: tl.constexpr,
     ):
-        """LayerNorm(x [+ r_scale * r]) for a [ROWS, N] tile.
+        """LayerNorm(x [+ r_scale * r [+ rb]]) for a [ROWS, N] tile.
 
         WRITE_SPLIT: rows go out as [lo | hi | hi | 1 1 0..] (or hi-first) fp16
-        -- the fp16x3 GEMM operand; otherwise as plain fp32 (the final norm).
-        With HAS_RESIDUAL the sum x + r_scale * r is stored as well.
+        -- the fp16x3 GEMM operand, TAIL constant columns wide; otherwise as
+        plain fp32. With HAS_RESIDUAL the residual is a GEMM output carrying
+        the weight scale (undone by r_scale) and, with HAS_RBIAS, its bias is
+        added here; WRITE_SUM stores the new residual stream.
         """
         pid = tl.program_id(0)
         rows = pid * ROWS + tl.arange(0, ROWS)
@@ -125,7 +142,10 @@ if HAVE_TRITON:
         s = tl.load(X + offs, mask=mask, other=0.0).to(tl.float32)
         if HAS_RESIDUAL:
             s += tl.load(R + offs, mask=mask, other=0.0).to(tl.float32) * r_scale
-            tl.store(SUM + offs, s, mask=mask)
+            if HAS_RBIAS:
+                s += tl.load(RB + cols, mask=cmask, other=0.0).to(tl.float32)[None, :]
+            if WRITE_SUM:
+                tl.store(SUM + offs, s, mask=mask)
         mean = tl.sum(s, axis=1) / N
         d = tl.where(mask, s - mean[:, None], 0.0)
         var = tl.sum(d * d, axis=1) / N
@@ -146,22 +166,24 @@ if HAVE_TRITON:
                 tl.store(obase + N + cols[None, :], hi, mask=mask)
                 tl.store(obase + 2 * N + cols[None, :], lo, mask=mask)
             # the constant tail that pairs with the weight's bias columns
-            t8 = tl.arange(0, 8)
-            tail = tl.broadcast_to((t8 < 2).to(tl.float16)[None, :], [ROWS, 8])
-            tl.store(obase + 3 * N + t8[None, :], tail, mask=rmask[:, None] & (t8 < 8)[None, :])
+            t32 = tl.arange(0, 32)
+            tail = tl.broadcast_to((t32 < 2).to(tl.float16)[None, :], [ROWS, 32])
+            tl.store(obase + 3 * N + t32[None, :], tail, mask=rmask[:, None] & (t32 < TAIL)[None, :])
         else:
             tl.store(obase + cols[None, :], y, mask=mask)
 
     @triton.jit
     def _x3_act_split_fwd(
-        X, OUT, M, stride_x, stride_out, scale,
+        X, XB, OUT, M, stride_x, stride_out, scale,
         N: tl.constexpr,
+        HAS_BIAS: tl.constexpr,
         GELU: tl.constexpr,
         LO_FIRST: tl.constexpr,
+        TAIL: tl.constexpr,
         ROWS: tl.constexpr,
         BLOCK: tl.constexpr,
     ):
-        """[gelu](scale * x) -> [lo | hi | hi | 1 1 0..] (or hi-first) fp16 tile."""
+        """[gelu](scale * x [+ xb]) -> [lo | hi | hi | 1 1 0..] (or hi-first) fp16 tile."""
         pid = tl.program_id(0)
         rows = pid * ROWS + tl.arange(0, ROWS)
         cols = tl.arange(0, BLOCK)
@@ -169,6 +191,8 @@ if HAVE_TRITON:
         cmask = cols < N
         mask = rmask[:, None] & cmask[None, :]
         y = tl.load(X + rows[:, None] * stride_x + cols[None, :], mask=mask, other=0.0).to(tl.float32) * scale
+        if HAS_BIAS:
+            y += tl.load(XB + cols, mask=cmask, other=0.0).to(tl.float32)[None, :]
         if GELU:
             # exact (erf) GELU, the reference's approximate="none"
             y = 0.5 * y * (1.0 + tl.erf(y * 0.7071067811865476))
@@ -183,21 +207,23 @@ if HAVE_TRITON:
             tl.store(obase + cols[None, :], hi, mask=mask)
             tl.store(obase + N + cols[None, :], hi, mask=mask)
             tl.store(obase + 2 * N + cols[None, :], lo, mask=mask)
-        t8 = tl.arange(0, 8)
-        tail = tl.broadcast_to((t8 < 2).to(tl.float16)[None, :], [ROWS, 8])
-        tl.store(obase + 3 * N + t8[None, :], tail, mask=rmask[:, None] & (t8 < 8)[None, :])
+        t32 = tl.arange(0, 32)
+        tail = tl.broadcast_to((t32 < 2).to(tl.float16)[None, :], [ROWS, 32])
+        tl.store(obase + 3 * N + t32[None, :], tail, mask=rmask[:, None] & (t32 < TAIL)[None, :])
 
 
 def _x3_next_pow2(n: int) -> int:
     return 1 << (n - 1).bit_length()
 
 
-# Rows per program and warps by row width. One row per program (the first
-# version) kept only ~320 rows in flight on a T4 and reached half the card's
-# bandwidth; a [ROWS, N] tile keeps sixteen elements per thread whatever the
-# width. Static rather than triton.autotune: autotuning synchronises on its
-# first call, which is fatal inside a CUDA-graph capture and makes verdicts
-# irreproducible. The bench overrides let T3_ONLY=x3geo sweep the table.
+# Rows per program and warps by row width, from a sweep on the T4
+# (results/kaggle_t4_b2geo2_run.log): a few rows per program with eight warps
+# is what pays -- the LayerNorm-split at N=128 went from 156 GB/s one row per
+# program to 206 GB/s, and the plain fp32 LayerNorm to 245 GB/s, 2.3x
+# PyTorch's own -- while tall tiles (16-32 rows) bought nothing. Static rather
+# than triton.autotune: autotuning synchronises on its first call, which is
+# fatal inside a CUDA-graph capture and makes verdicts irreproducible. The
+# bench overrides let T3_ONLY=x3geo sweep the table.
 _X3_ROWS_OVERRIDE = None
 _X3_WARPS_OVERRIDE = None
 
@@ -205,15 +231,11 @@ _X3_WARPS_OVERRIDE = None
 def _x3_geometry(n: int, m: int):
     block = _x3_next_pow2(n)
     if block <= 64:
-        rows, warps = 32, 4
-    elif block <= 128:
-        rows, warps = 16, 4
-    elif block <= 256:
         rows, warps = 8, 4
-    elif block <= 512:
-        rows, warps = 4, 4
-    else:
+    elif block <= 256:
         rows, warps = 4, 8
+    else:
+        rows, warps = 2, 8
     if _X3_ROWS_OVERRIDE is not None:
         rows = _X3_ROWS_OVERRIDE
     if _X3_WARPS_OVERRIDE is not None:
@@ -223,26 +245,28 @@ def _x3_geometry(n: int, m: int):
     return block, rows, warps
 
 
-def _x3_launch_ln(flat, r, total, out, weight, bias, n, eps, has_res, r_scale,
-                  write_split, kernel):
+def _x3_launch_ln(flat, r, rb, total, out, weight, bias, n, eps, has_res, r_scale,
+                  write_sum, write_split, kernel):
     m = flat.shape[0]
     block, rows, warps = _x3_geometry(n, m)
     grid = (-(-m // rows),)
     kernel[grid](
-        flat, r, total, out, weight, bias,
+        flat, r, rb if rb is not None else weight, total, out, weight, bias,
         m, flat.stride(0), out.stride(0), eps, r_scale,
-        N=n, HAS_RESIDUAL=has_res, LO_FIRST=_X3_LO_FIRST, WRITE_SPLIT=write_split,
+        N=n, HAS_RESIDUAL=has_res, HAS_RBIAS=rb is not None, WRITE_SUM=write_sum,
+        LO_FIRST=_X3_LO_FIRST, WRITE_SPLIT=write_split, TAIL=_x3_tail(n),
         ROWS=rows, BLOCK=block, num_warps=warps,
     )
 
 
-def _x3_launch_act(flat, out, n, gelu, scale, kernel):
+def _x3_launch_act(flat, xb, out, n, gelu, scale, kernel):
     m = flat.shape[0]
     block, rows, warps = _x3_geometry(n, m)
     grid = (-(-m // rows),)
     kernel[grid](
-        flat, out, m, flat.stride(0), out.stride(0), scale,
-        N=n, GELU=gelu, LO_FIRST=_X3_LO_FIRST, ROWS=rows, BLOCK=block, num_warps=warps,
+        flat, xb if xb is not None else flat, out, m, flat.stride(0), out.stride(0), scale,
+        N=n, HAS_BIAS=xb is not None, GELU=gelu, LO_FIRST=_X3_LO_FIRST, TAIL=_x3_tail(n),
+        ROWS=rows, BLOCK=block, num_warps=warps,
     )
 
 
@@ -252,7 +276,7 @@ def _x3_launch_act(flat, out, n, gelu, scale, kernel):
 def _x3_split_ref(y: torch.Tensor) -> torch.Tensor:
     hi = y.to(torch.float16)
     lo = (y - hi.to(torch.float32)).to(torch.float16)
-    tail = torch.zeros(y.shape[:-1] + (_X3_TAIL,), dtype=torch.float16, device=y.device)
+    tail = torch.zeros(y.shape[:-1] + (_x3_tail(y.shape[-1]),), dtype=torch.float16, device=y.device)
     tail[..., :2] = 1.0
     if _X3_LO_FIRST:
         return torch.cat([lo, hi, hi, tail], dim=-1)
@@ -267,13 +291,24 @@ def _x3_ln_ref(x, weight, bias, eps):
     return F.layer_norm(x, (x.shape[-1],), weight, bias, eps)
 
 
-def _x3_add_ln_split_ref(x, r, weight, bias, eps, r_scale=1.0):
+def _x3_residual_ref(x, r, r_scale=1.0, rbias=None):
     s = x + r * r_scale if r_scale != 1.0 else x + r
+    return s if rbias is None else s + rbias
+
+
+def _x3_add_ln_split_ref(x, r, weight, bias, eps, r_scale=1.0, rbias=None):
+    s = _x3_residual_ref(x, r, r_scale, rbias)
     return s, _x3_ln_split_ref(s, weight, bias, eps)
 
 
-def _x3_act_split_ref(x, gelu, scale=1.0):
+def _x3_add_ln_ref(x, r, weight, bias, eps, r_scale=1.0, rbias=None):
+    return _x3_ln_ref(_x3_residual_ref(x, r, r_scale, rbias), weight, bias, eps)
+
+
+def _x3_act_split_ref(x, gelu, scale=1.0, xbias=None):
     y = x * scale if scale != 1.0 else x
+    if xbias is not None:
+        y = y + xbias
     return _x3_split_ref(F.gelu(y, approximate="none") if gelu else y)
 
 
@@ -359,9 +394,9 @@ if HAVE_TRITON:
                             eps: float) -> torch.Tensor:
             n = x.shape[-1]
             flat = x.contiguous().view(-1, n)
-            out = torch.empty((flat.shape[0], 3 * n + _X3_TAIL), dtype=torch.float16, device=x.device)
-            _x3_launch_ln(flat, flat, flat, out, weight.contiguous(), bias.contiguous(),
-                          n, eps, False, 1.0, True, wrap_triton(_x3_ln_split_fwd))
+            out = torch.empty((flat.shape[0], 3 * n + _x3_tail(n)), dtype=torch.float16, device=x.device)
+            _x3_launch_ln(flat, flat, None, flat, out, weight.contiguous(), bias.contiguous(),
+                          n, eps, False, 1.0, False, True, wrap_triton(_x3_ln_split_fwd))
             return out
 
         @triton_op("exactswap::x3_ln", mutates_args={})
@@ -370,29 +405,45 @@ if HAVE_TRITON:
             n = x.shape[-1]
             flat = x.contiguous().view(-1, n)
             out = torch.empty_like(flat)
-            _x3_launch_ln(flat, flat, flat, out, weight.contiguous(), bias.contiguous(),
-                          n, eps, False, 1.0, False, wrap_triton(_x3_ln_split_fwd))
+            _x3_launch_ln(flat, flat, None, flat, out, weight.contiguous(), bias.contiguous(),
+                          n, eps, False, 1.0, False, False, wrap_triton(_x3_ln_split_fwd))
+            return out.view(x.shape)
+
+        @triton_op("exactswap::x3_add_ln", mutates_args={})
+        def _x3_add_ln_op(x: torch.Tensor, r: torch.Tensor, weight: torch.Tensor,
+                          bias: torch.Tensor, eps: float, r_scale: float,
+                          rbias: Optional[torch.Tensor]) -> torch.Tensor:
+            n = x.shape[-1]
+            flat = x.contiguous().view(-1, n)
+            rc = r.contiguous().view(-1, n)
+            out = torch.empty_like(flat)
+            _x3_launch_ln(flat, rc, None if rbias is None else rbias.contiguous(), flat, out,
+                          weight.contiguous(), bias.contiguous(),
+                          n, eps, True, r_scale, False, False, wrap_triton(_x3_ln_split_fwd))
             return out.view(x.shape)
 
         @triton_op("exactswap::x3_add_ln_split", mutates_args={})
         def _x3_add_ln_split_op(x: torch.Tensor, r: torch.Tensor, weight: torch.Tensor,
-                                bias: torch.Tensor, eps: float,
-                                r_scale: float) -> tuple[torch.Tensor, torch.Tensor]:
+                                bias: torch.Tensor, eps: float, r_scale: float,
+                                rbias: Optional[torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:
             n = x.shape[-1]
             flat = x.contiguous().view(-1, n)
             rc = r.contiguous().view(-1, n)
             total = torch.empty_like(flat)
-            out = torch.empty((flat.shape[0], 3 * n + _X3_TAIL), dtype=torch.float16, device=x.device)
-            _x3_launch_ln(flat, rc, total, out, weight.contiguous(), bias.contiguous(),
-                          n, eps, True, r_scale, True, wrap_triton(_x3_ln_split_fwd))
+            out = torch.empty((flat.shape[0], 3 * n + _x3_tail(n)), dtype=torch.float16, device=x.device)
+            _x3_launch_ln(flat, rc, None if rbias is None else rbias.contiguous(), total, out,
+                          weight.contiguous(), bias.contiguous(),
+                          n, eps, True, r_scale, True, True, wrap_triton(_x3_ln_split_fwd))
             return total.view(x.shape), out
 
         @triton_op("exactswap::x3_act_split", mutates_args={})
-        def _x3_act_split_op(x: torch.Tensor, gelu: bool, scale: float) -> torch.Tensor:
+        def _x3_act_split_op(x: torch.Tensor, gelu: bool, scale: float,
+                             xbias: Optional[torch.Tensor]) -> torch.Tensor:
             n = x.shape[-1]
             flat = x.contiguous().view(-1, n)
-            out = torch.empty((flat.shape[0], 3 * n + _X3_TAIL), dtype=torch.float16, device=x.device)
-            _x3_launch_act(flat, out, n, gelu, scale, wrap_triton(_x3_act_split_fwd))
+            out = torch.empty((flat.shape[0], 3 * n + _x3_tail(n)), dtype=torch.float16, device=x.device)
+            _x3_launch_act(flat, None if xbias is None else xbias.contiguous(), out, n, gelu, scale,
+                           wrap_triton(_x3_act_split_fwd))
             return out
 
         HAVE_X3_TRITON_OP = True
@@ -429,10 +480,10 @@ def x3_can_use(x: torch.Tensor) -> bool:
 
 
 def x3_ln_split(x, weight, bias, eps=1e-5):
-    """``split(LayerNorm(x))`` as ``[M, 3N + 8]`` fp16 (lo, hi, hi blocks + tail)."""
+    """``split(LayerNorm(x))`` as ``[M, 3N + tail]`` fp16 (lo, hi, hi blocks + tail)."""
     if x3_can_use(x):
         return _x3_ln_split_op(x, weight, bias, float(eps))
-    return _x3_ln_split_ref(x, weight, bias, eps).view(-1, 3 * x.shape[-1] + _X3_TAIL)
+    return _x3_ln_split_ref(x, weight, bias, eps).view(-1, 3 * x.shape[-1] + _x3_tail(x.shape[-1]))
 
 
 def x3_ln(x, weight, bias, eps=1e-5):
@@ -442,23 +493,32 @@ def x3_ln(x, weight, bias, eps=1e-5):
     return _x3_ln_ref(x, weight, bias, eps)
 
 
-def x3_add_ln_split(x, r, weight, bias, eps=1e-5, r_scale=1.0):
-    """``(x + r_scale * r, split(LayerNorm(...)))`` in one pass over the activation.
+def x3_add_ln(x, r, weight, bias, eps=1e-5, r_scale=1.0, rbias=None):
+    """``LayerNorm(x + r_scale * r + rbias)`` -- the final norm with the last
+    residual add and the last GEMM's bias folded in."""
+    if x3_can_use(x):
+        return _x3_add_ln_op(x, r, weight, bias, float(eps), float(r_scale), rbias)
+    return _x3_add_ln_ref(x, r, weight, bias, eps, r_scale, rbias)
+
+
+def x3_add_ln_split(x, r, weight, bias, eps=1e-5, r_scale=1.0, rbias=None):
+    """``(x + r_scale * r + rbias, split(LayerNorm(...)))`` in one pass.
 
     ``r_scale`` undoes the power-of-two weight scale of the GEMM that produced
-    ``r`` (see ``x3_prepare``), so it costs nothing.
+    ``r`` and ``rbias`` is that GEMM's bias (see ``x3_prepare``); both cost
+    nothing here.
     """
     if x3_can_use(x):
-        return _x3_add_ln_split_op(x, r, weight, bias, float(eps), float(r_scale))
-    s, a3 = _x3_add_ln_split_ref(x, r, weight, bias, eps, r_scale)
-    return s, a3.view(-1, 3 * x.shape[-1] + _X3_TAIL)
+        return _x3_add_ln_split_op(x, r, weight, bias, float(eps), float(r_scale), rbias)
+    s, a3 = _x3_add_ln_split_ref(x, r, weight, bias, eps, r_scale, rbias)
+    return s, a3.view(-1, 3 * x.shape[-1] + _x3_tail(x.shape[-1]))
 
 
-def x3_act_split(x, gelu: bool, scale=1.0):
-    """``split(gelu(scale * x))`` (or ``split(scale * x)``) as ``[M, 3N + 8]`` fp16."""
+def x3_act_split(x, gelu: bool, scale=1.0, xbias=None):
+    """``split(gelu(scale * x + xbias))`` (or without gelu) as ``[M, 3N + tail]`` fp16."""
     if x3_can_use(x):
-        return _x3_act_split_op(x, bool(gelu), float(scale))
-    return _x3_act_split_ref(x, gelu, scale).view(-1, 3 * x.shape[-1] + _X3_TAIL)
+        return _x3_act_split_op(x, bool(gelu), float(scale), xbias)
+    return _x3_act_split_ref(x, gelu, scale, xbias).view(-1, 3 * x.shape[-1] + _x3_tail(x.shape[-1]))
 
 
 def x3_linear(a3, w3, bias=None, inv: float = 1.0, apply_scale: bool = True):
@@ -476,22 +536,24 @@ def x3_linear(a3, w3, bias=None, inv: float = 1.0, apply_scale: bool = True):
 
 
 @torch.no_grad()
-def x3_prepare(weight: torch.Tensor, bias: Optional[torch.Tensor]):
-    """Split an ``nn.Linear`` weight once: ``(w3, None, 1/s)``.
+def x3_prepare(weight: torch.Tensor, bias: Optional[torch.Tensor], fold_bias: bool = True):
+    """Split an ``nn.Linear`` weight once: ``(w3, bias_or_None, 1/s)``.
 
-    ``w3 = [w_hi | w_lo | w_hi | (s b)_hi (s b)_lo 0 0 0 0 0 0]`` is
-    ``[N, 3K + 8]`` fp16, from the weight scaled by the power of two ``s`` that
-    puts its largest entry near 2^10, so the lo parts are normal fp16 numbers;
-    the scaled bias rides in two of the eight padding columns and pairs with
-    the constant ``[1, 1, 0, ...]`` tail the split kernels write. Paired with
-    the activation's ``[a_lo | a_hi | a_hi]`` (or hi-first) it yields
-    ``s * (a . w + b)`` in one GEMM; ``1/s`` is exact and is the consumer's to
-    apply. ``s`` is lowered if the scaled bias would leave fp16 range.
+    The weight is scaled by the power of two ``s`` that puts its largest entry
+    near 2^10, so the lo parts are normal fp16 numbers, then split:
+    ``w3 = [w_hi | w_lo | w_hi | tail]`` fp16. With ``fold_bias`` the tail is
+    ``x3_tail(K)`` columns (3K rounded up to a multiple of 32) carrying the
+    scaled bias as an fp16 pair, which pairs with the constant ``[1, 1, 0..]``
+    tail the split kernels write, and the GEMM yields ``s * (a . w + b)``;
+    without it ``w3`` is ``[N, 3K]``, the (unscaled) bias comes back for the
+    consumer kernel to add, and the caller feeds the GEMM the first 3K
+    columns of the operand. ``1/s`` is exact and is the consumer's to apply;
+    ``s`` is lowered if the scaled bias would leave fp16 range.
     """
     w = weight.detach().to(torch.float32)
     amax = float(w.abs().max().item())
-    b = None if bias is None else bias.detach().to(torch.float32)
-    bmax = 0.0 if b is None else float(b.abs().max().item())
+    b = None if bias is None else bias.detach().to(torch.float32).contiguous()
+    bmax = 0.0 if (b is None or not fold_bias) else float(b.abs().max().item())
     # A zero, inf or NaN weight gets no scaling: the split then reproduces
     # whatever the reference would compute (zeros, or NaN) instead of raising.
     if amax > 0 and math.isfinite(amax) and math.isfinite(bmax):
@@ -505,8 +567,10 @@ def x3_prepare(weight: torch.Tensor, bias: Optional[torch.Tensor]):
     ws = w * s
     hi = ws.to(torch.float16)
     lo = (ws - hi.to(torch.float32)).to(torch.float16)
-    n = w.shape[0]
-    tail = torch.zeros((n, _X3_TAIL), dtype=torch.float32, device=w.device)
+    if not fold_bias:
+        return torch.cat([hi, lo, hi], dim=1).contiguous(), b, 1.0 / s
+    n, k = w.shape
+    tail = torch.zeros((n, _x3_tail(k)), dtype=torch.float32, device=w.device)
     if b is not None:
         bs = b * s
         bh = bs.to(torch.float16).to(torch.float32)
@@ -540,15 +604,20 @@ def x3_selfcheck(device, thorough: bool = False) -> bool:
             b = torch.randn(n, device=dev)
             a = _x3_ln_split_op(x, w, b, 1e-5)
             a_ref = _x3_ln_split_ref(x, w, b, 1e-5)
-            s, a2 = _x3_add_ln_split_op(x, r, w, b, 1e-5, 0.25)
-            s_ref, a2_ref = _x3_add_ln_split_ref(x, r, w, b, 1e-5, 0.25)
-            g = _x3_act_split_op(x, True, 1.0)
-            g_ref = _x3_act_split_ref(x, True, 1.0)
-            p = _x3_act_split_op(x, False, 0.5)
-            p_ref = _x3_act_split_ref(x, False, 0.5)
+            rb = torch.randn(n, device=dev) * 0.1
+            s, a2 = _x3_add_ln_split_op(x, r, w, b, 1e-5, 0.25, rb)
+            s_ref, a2_ref = _x3_add_ln_split_ref(x, r, w, b, 1e-5, 0.25, rb)
+            g = _x3_act_split_op(x, True, 1.0, rb)
+            g_ref = _x3_act_split_ref(x, True, 1.0, rb)
+            p = _x3_act_split_op(x, False, 0.5, None)
+            p_ref = _x3_act_split_ref(x, False, 0.5, None)
             ln = _x3_ln_op(x, w, b, 1e-5)
             ln_ref = _x3_ln_ref(x, w, b, 1e-5)
             if not (ln - ln_ref).abs().max().item() < 1e-4:
+                return False
+            aln = _x3_add_ln_op(x, r, w, b, 1e-5, 0.25, rb)
+            aln_ref = _x3_add_ln_ref(x, r, w, b, 1e-5, 0.25, rb)
+            if not (aln - aln_ref).abs().max().item() < 1e-4:
                 return False
             for got, ref in ((a, a_ref), (a2, a2_ref), (g, g_ref), (p, p_ref)):
                 if got.shape != ref.shape:

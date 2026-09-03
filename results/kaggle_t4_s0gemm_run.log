@@ -1,0 +1,110 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+fingerprint[start]: 300 MHz, 1590 MHz, 405 MHz, 44, 9.96 W, 0x0000000000000001 / 300 MHz, 1590 MHz, 405 MHz, 33, 9.37 W, 0x0000000000000001 | sgemm 4096^2 32.04 ms = 4.3 TFLOPS
+x3_available: True
+fingerprint[gemm-start]: 585 MHz, 1590 MHz, 5000 MHz, 46, 27.05 W, 0x0000000000000000 / 300 MHz, 1590 MHz, 405 MHz, 33, 9.76 W, 0x0000000000000001 | sgemm 4096^2 32.27 ms = 4.3 TFLOPS
+/usr/local/lib/python3.12/dist-packages/torch/profiler/profiler.py:217: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+gemm M=1280000  K3=384   N=128   a: mm out_dtype=fp32             8.543 ms   14.7 TFLOPS    192 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=128   b: mm fp16 out (bound)           6.537 ms   19.2 TFLOPS    251 GB/s  turing_fp16_s1688gemm_fp16_128x256_ldg8_f2f_stages_32x1_tn
+[W903 08:52:14.768184699 Context.cpp:534] Warning: torch.backends.cuda.preferred_blas_library is an experimental feature. If you see any error or unexpected behavior when this flag is set please file an issue on GitHub. (function operator())
+gemm M=1280000  K3=384   N=128   c: NN layout out_dtype           8.335 ms   15.1 TFLOPS    197 GB/s  turing_s1688gemm_fp16_128x128_ldg8_nn
+gemm M=1280000  K3=384   N=128   d: preferred=cublaslt            8.478 ms   14.8 TFLOPS    193 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=1280000  K3=384   N=128   d: preferred=cublas              8.946 ms   14.1 TFLOPS    183 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=128   e: reduced-prec reduction ON     8.623 ms   14.6 TFLOPS    190 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=128   f: M chunked x4                  7.684 ms   16.4 TFLOPS    213 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=1280000  K3=384   N=128   g: bmm [8,M/8,K3]                7.984 ms   15.8 TFLOPS    205 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=128   h: fp32 SGEMM (K=K3/3)          13.539 ms    3.1 TFLOPS     97 GB/s  volta_sgemm_128x64_tn
+gemm M=1280000  K3=384   N=128   i: addmm bias1d alpha           12.874 ms    9.8 TFLOPS    127 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=1280000  K3=384   N=128   i: addmm residual2d beta=1      16.058 ms    7.8 TFLOPS    143 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=384   a: mm out_dtype=fp32            22.351 ms   16.9 TFLOPS    132 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=384   b: mm fp16 out (bound)          19.613 ms   19.2 TFLOPS    150 GB/s  turing_fp16_s1688gemm_fp16_128x256_ldg8_f2f_stages_32x1_tn
+gemm M=1280000  K3=384   N=384   c: NN layout out_dtype          21.767 ms   17.3 TFLOPS    135 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_nn
+gemm M=1280000  K3=384   N=384   d: preferred=cublaslt           22.123 ms   17.1 TFLOPS    133 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=384   d: preferred=cublas             22.177 ms   17.0 TFLOPS    133 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=384   e: reduced-prec reduction ON    22.223 ms   17.0 TFLOPS    133 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=384   f: M chunked x4                 22.207 ms   17.0 TFLOPS    133 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=384   g: bmm [8,M/8,K3]               23.791 ms   15.9 TFLOPS    124 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=384   h: fp32 SGEMM (K=K3/3)          33.031 ms    3.8 TFLOPS     79 GB/s  volta_sgemm_128x128_tn
+gemm M=1280000  K3=384   N=384   i: addmm bias1d alpha           35.827 ms   10.5 TFLOPS     82 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+gemm M=1280000  K3=384   N=384   i: addmm residual2d beta=1      42.591 ms    8.9 TFLOPS    115 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+gemm M=65536    K3=384   N=384   a: mm out_dtype=fp32             0.856 ms   22.6 TFLOPS    177 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=65536    K3=384   N=384   b: mm fp16 out (bound)           0.655 ms   29.5 TFLOPS    231 GB/s  turing_fp16_s1688gemm_fp16_128x128_ldg8_f2f_tn
+gemm M=65536    K3=384   N=384   c: NN layout out_dtype           0.866 ms   22.3 TFLOPS    175 GB/s  turing_s1688gemm_fp16_128x128_ldg8_nn
+gemm M=65536    K3=384   N=384   d: preferred=cublaslt            0.900 ms   21.5 TFLOPS    168 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=65536    K3=384   N=384   d: preferred=cublas              0.897 ms   21.6 TFLOPS    169 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=65536    K3=384   N=384   e: reduced-prec reduction ON     0.915 ms   21.1 TFLOPS    165 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=65536    K3=384   N=384   f: M chunked x4                  1.040 ms   18.6 TFLOPS    145 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=65536    K3=384   N=384   g: bmm [8,M/8,K3]                1.141 ms   16.9 TFLOPS    133 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=65536    K3=384   N=384   h: fp32 SGEMM (K=K3/3)           1.350 ms    4.8 TFLOPS    100 GB/s  volta_sgemm_128x128_tn
+gemm M=65536    K3=384   N=384   i: addmm bias1d alpha            1.636 ms   11.8 TFLOPS     92 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=65536    K3=384   N=384   i: addmm residual2d beta=1       2.028 ms    9.5 TFLOPS    124 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=65536    K3=384   N=384   j: _int_mm int8 K2=256 (err 0)     0.657 ms   19.6 TFLOPS    179 GB/s  void cutlass::Kernel2<cutlass_75_tensorop_i8816gemm_s8_128x128_t
+gemm M=16384    K3=384   N=384   a: mm out_dtype=fp32             0.255 ms   19.0 TFLOPS    149 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=16384    K3=384   N=384   b: mm fp16 out (bound)           0.186 ms   26.0 TFLOPS    205 GB/s  turing_fp16_s1688gemm_fp16_128x128_ldg8_f2f_tn
+gemm M=16384    K3=384   N=384   c: NN layout out_dtype           0.246 ms   19.6 TFLOPS    155 GB/s  turing_s1688gemm_fp16_128x128_ldg8_nn
+gemm M=16384    K3=384   N=384   d: preferred=cublaslt            0.264 ms   18.3 TFLOPS    144 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=16384    K3=384   N=384   d: preferred=cublas              0.259 ms   18.7 TFLOPS    147 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=16384    K3=384   N=384   e: reduced-prec reduction ON     0.265 ms   18.2 TFLOPS    143 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=16384    K3=384   N=384   f: M chunked x4                  0.269 ms   17.9 TFLOPS    141 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=16384    K3=384   N=384   g: bmm [8,M/8,K3]                0.286 ms   16.9 TFLOPS    133 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=16384    K3=384   N=384   h: fp32 SGEMM (K=K3/3)           0.352 ms    4.6 TFLOPS     96 GB/s  volta_sgemm_128x128_tn
+gemm M=16384    K3=384   N=384   i: addmm bias1d alpha            0.452 ms   10.7 TFLOPS     84 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=16384    K3=384   N=384   i: addmm residual2d beta=1       0.573 ms    8.4 TFLOPS    110 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=16384    K3=384   N=384   j: _int_mm int8 K2=256 (err 0)     0.196 ms   16.4 TFLOPS    150 GB/s  void cutlass::Kernel2<cutlass_75_tensorop_i8816gemm_s8_128x128_t
+gemm M=8192     K3=384   N=384   a: mm out_dtype=fp32             0.146 ms   16.6 TFLOPS    132 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=384   N=384   b: mm fp16 out (bound)           0.107 ms   22.6 TFLOPS    179 GB/s  turing_fp16_s1688gemm_fp16_128x128_ldg8_f2f_tn
+gemm M=8192     K3=384   N=384   c: NN layout out_dtype           0.137 ms   17.6 TFLOPS    140 GB/s  turing_s1688gemm_fp16_128x128_ldg8_nn
+gemm M=8192     K3=384   N=384   d: preferred=cublaslt            0.152 ms   15.9 TFLOPS    126 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=384   N=384   d: preferred=cublas              0.147 ms   16.5 TFLOPS    131 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=384   N=384   e: reduced-prec reduction ON     0.145 ms   16.6 TFLOPS    132 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=384   N=384   f: M chunked x4                  0.169 ms   14.3 TFLOPS    113 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=384   N=384   g: bmm [8,M/8,K3]                0.166 ms   14.6 TFLOPS    116 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=8192     K3=384   N=384   h: fp32 SGEMM (K=K3/3)           0.192 ms    4.2 TFLOPS     88 GB/s  volta_sgemm_128x128_tn
+gemm M=8192     K3=384   N=384   i: addmm bias1d alpha            0.250 ms    9.7 TFLOPS     77 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=384   N=384   i: addmm residual2d beta=1       0.301 ms    8.0 TFLOPS    105 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=384   N=384   j: _int_mm int8 K2=256 (err 0)     0.112 ms   14.4 TFLOPS    132 GB/s  void cutlass::Kernel2<cutlass_75_tensorop_i8816gemm_s8_128x128_t
+gemm M=8192     K3=96    N=96    a: mm out_dtype=fp32             0.057 ms    2.6 TFLOPS     82 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=8192     K3=96    N=96    b: mm fp16 out (bound)           0.053 ms    2.9 TFLOPS     90 GB/s  turing_fp16_s1688gemm_fp16_128x128_ldg8_f2f_stages_32x1_tn
+gemm M=8192     K3=96    N=96    c: NN layout out_dtype           0.051 ms    2.9 TFLOPS     92 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_nn
+gemm M=8192     K3=96    N=96    d: preferred=cublaslt            0.057 ms    2.6 TFLOPS     82 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=8192     K3=96    N=96    d: preferred=cublas              0.054 ms    2.8 TFLOPS     88 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=8192     K3=96    N=96    e: reduced-prec reduction ON     0.057 ms    2.7 TFLOPS     84 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=8192     K3=96    N=96    f: M chunked x4                  0.189 ms    0.8 TFLOPS     25 GB/s  void cutlass::Kernel2<cutlass_75_tensorop_s1688gemm_f16_64x64_tn
+gemm M=8192     K3=96    N=96    g: bmm [8,M/8,K3]                0.069 ms    2.2 TFLOPS     69 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=8192     K3=96    N=96    h: fp32 SGEMM (K=K3/3)           0.051 ms    1.0 TFLOPS     82 GB/s  volta_sgemm_32x128_tn
+gemm M=8192     K3=96    N=96    i: addmm bias1d alpha            0.078 ms    1.9 TFLOPS     60 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=8192     K3=96    N=96    i: addmm residual2d beta=1       0.093 ms    1.6 TFLOPS     85 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=8192     K3=96    N=96    j: _int_mm int8 K2=64 (err 0)     0.049 ms    2.1 TFLOPS     75 GB/s  void cutlass::Kernel2<cutlass_75_tensorop_i8816gemm_s8_128x128_t
+gemm M=8192     K3=3072  N=3072  a: mm out_dtype=fp32             4.592 ms   33.7 TFLOPS     37 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=3072  N=3072  b: mm fp16 out (bound)           7.274 ms   21.3 TFLOPS     23 GB/s  turing_fp16_s1688gemm_fp16_128x128_ldg8_f2f_tn
+gemm M=8192     K3=3072  N=3072  c: NN layout out_dtype           6.767 ms   22.8 TFLOPS     25 GB/s  turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_nn
+gemm M=8192     K3=3072  N=3072  d: preferred=cublaslt            6.284 ms   24.6 TFLOPS     27 GB/s  turing_s1688gemm_fp16_256x128_ldg8_tn
+gemm M=8192     K3=3072  N=3072  d: preferred=cublas              7.333 ms   21.1 TFLOPS     23 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=3072  N=3072  e: reduced-prec reduction ON     6.849 ms   22.6 TFLOPS     25 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=3072  N=3072  f: M chunked x4                  6.355 ms   24.3 TFLOPS     27 GB/s  turing_s1688gemm_fp16_256x128_ldg8_tn
+gemm M=8192     K3=3072  N=3072  g: bmm [8,M/8,K3]                7.228 ms   21.4 TFLOPS     24 GB/s  turing_s1688gemm_fp16_256x128_ldg8_stages_32x1_tn
+gemm M=8192     K3=3072  N=3072  h: fp32 SGEMM (K=K3/3)          11.579 ms    4.5 TFLOPS     13 GB/s  volta_sgemm_128x128_tn
+gemm M=8192     K3=3072  N=3072  i: addmm bias1d alpha            6.925 ms   22.3 TFLOPS     25 GB/s  turing_s1688gemm_fp16_256x128_ldg8_tn
+gemm M=8192     K3=3072  N=3072  i: addmm residual2d beta=1       7.961 ms   19.4 TFLOPS     34 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=3072  N=3072  j: _int_mm int8 K2=2048 (err 0)     1.489 ms   69.2 TFLOPS     83 GB/s  void cutlass::Kernel2<cutlass_75_tensorop_i8816gemm_s8_128x128_t
+gemm M=8192     K3=3072  N=1024  a: mm out_dtype=fp32             1.264 ms   40.8 TFLOPS     71 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=3072  N=1024  b: mm fp16 out (bound)           1.722 ms   29.9 TFLOPS     52 GB/s  turing_fp16_s1688gemm_fp16_128x128_ldg8_f2f_tn
+gemm M=8192     K3=3072  N=1024  c: NN layout out_dtype           2.375 ms   21.7 TFLOPS     38 GB/s  turing_s1688gemm_fp16_256x128_ldg8_stages_32x1_nn
+gemm M=8192     K3=3072  N=1024  d: preferred=cublaslt            1.921 ms   26.8 TFLOPS     47 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=3072  N=1024  d: preferred=cublas              2.061 ms   25.0 TFLOPS     44 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=3072  N=1024  e: reduced-prec reduction ON     2.113 ms   24.4 TFLOPS     43 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=3072  N=1024  f: M chunked x4                  2.340 ms   22.0 TFLOPS     39 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=3072  N=1024  g: bmm [8,M/8,K3]                2.271 ms   22.7 TFLOPS     40 GB/s  turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+gemm M=8192     K3=3072  N=1024  h: fp32 SGEMM (K=K3/3)           3.922 ms    4.4 TFLOPS     18 GB/s  volta_sgemm_128x128_tn
+gemm M=8192     K3=3072  N=1024  i: addmm bias1d alpha            1.779 ms   29.0 TFLOPS     51 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=3072  N=1024  i: addmm residual2d beta=1       2.478 ms   20.8 TFLOPS     50 GB/s  turing_s1688gemm_fp16_128x128_ldg8_tn
+gemm M=8192     K3=3072  N=1024  j: _int_mm int8 K2=2048 (err 0)     0.516 ms   66.6 TFLOPS    102 GB/s  void cutlass::Kernel2<cutlass_75_tensorop_i8816gemm_s8_128x128_t
+fingerprint[gemm-end]: 1530 MHz, 1590 MHz, 5000 MHz, 53, 51.81 W, 0x0000000000000004 / 300 MHz, 1590 MHz, 405 MHz, 33, 9.16 W, 0x0000000000000001 | sgemm 4096^2 33.18 ms = 4.1 TFLOPS
+fingerprint[end]: 1215 MHz, 1590 MHz, 5000 MHz, 53, 67.79 W, 0x0000000000000004 / 300 MHz, 1590 MHz, 405 MHz, 33, 9.16 W, 0x0000000000000001 | sgemm 4096^2 33.20 ms = 4.1 TFLOPS
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 1023901 bytes to __results__.html

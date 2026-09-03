@@ -1,0 +1,18 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+fingerprint[start]: 300 MHz, 1590 MHz, 405 MHz, 47, 12.34 W, 0x0000000000000001 / 300 MHz, 1590 MHz, 405 MHz, 38, 12.04 W, 0x0000000000000001 | sgemm 4096^2 35.69 ms = 3.9 TFLOPS
+Traceback (most recent call last):
+  File "/kaggle/src/script.py", line 3621, in <module>
+    _main()
+  File "/kaggle/src/script.py", line 3493, in _main
+    _x3_geo_bench(device)
+  File "/kaggle/src/script.py", line 3365, in _x3_geo_bench
+    import kernels.fp16x3 as KX
+ModuleNotFoundError: No module named 'kernels'
+fingerprint[end]: 1215 MHz, 1590 MHz, 5000 MHz, 49, 33.92 W, 0x0000000000000004 / 300 MHz, 1590 MHz, 405 MHz, 38, 12.04 W, 0x0000000000000001 | sgemm 4096^2 35.70 ms = 3.8 TFLOPS
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 1070628 bytes to __results__.html

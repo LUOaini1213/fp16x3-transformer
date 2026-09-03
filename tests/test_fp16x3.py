@@ -46,15 +46,22 @@ def test_split_kernels_match_reference(device, n):
     b = torch.randn(n, device=device)
     tol = 2e-3  # hi halves may differ by one fp16 ulp between implementations
     got = K.x3_ln_split(x, w, b, 1e-5).float()
-    ref = K._x3_ln_split_ref(x, w, b, 1e-5).view(-1, 3 * n + K._X3_TAIL).float()
+    T = K._x3_tail(n)
+    ref = K._x3_ln_split_ref(x, w, b, 1e-5).view(-1, 3 * n + T).float()
     assert got.shape == ref.shape and (got - ref).abs().max().item() < tol
     s, a3 = K.x3_add_ln_split(x, r, w, b, 1e-5)
     s_ref, a3_ref = K._x3_add_ln_split_ref(x, r, w, b, 1e-5)
     assert (s - s_ref).abs().max().item() < 1e-5
-    assert (a3.float() - a3_ref.view(-1, 3 * n + K._X3_TAIL).float()).abs().max().item() < tol
+    assert (a3.float() - a3_ref.view(-1, 3 * n + T).float()).abs().max().item() < tol
+    rb = torch.randn(n, device=device) * 0.1
+    s, a3 = K.x3_add_ln_split(x, r, w, b, 1e-5, 0.5, rb)
+    s_ref, a3_ref = K._x3_add_ln_split_ref(x, r, w, b, 1e-5, 0.5, rb)
+    assert (s - s_ref).abs().max().item() < 1e-5
+    assert (a3.float() - a3_ref.view(-1, 3 * n + T).float()).abs().max().item() < tol
+    assert (K.x3_add_ln(x, r, w, b, 1e-5, 0.5, rb) - K._x3_add_ln_ref(x, r, w, b, 1e-5, 0.5, rb)).abs().max().item() < 1e-4
     for gelu in (True, False):
-        got = K.x3_act_split(x, gelu).float()
-        ref = K._x3_act_split_ref(x, gelu).view(-1, 3 * n + K._X3_TAIL).float()
+        got = K.x3_act_split(x, gelu, 1.0, rb).float()
+        ref = K._x3_act_split_ref(x, gelu, 1.0, rb).view(-1, 3 * n + T).float()
         assert (got - ref).abs().max().item() < tol
 
 
@@ -62,7 +69,7 @@ def test_split_kernels_match_reference(device, n):
 def test_rows_wider_than_the_kernel_limit_use_the_reference(device):
     x = torch.randn(4, K.MAX_X3_WIDTH + 1, device=device)
     assert not K.x3_can_use(x)
-    assert K.x3_act_split(x, False).shape == (4, 3 * (K.MAX_X3_WIDTH + 1) + K._X3_TAIL)
+    assert K.x3_act_split(x, False).shape == (4, 3 * (K.MAX_X3_WIDTH + 1) + K._x3_tail(K.MAX_X3_WIDTH + 1))
 
 
 def test_split_reconstructs_fp32_to_2pow_minus_22():
@@ -93,10 +100,16 @@ def test_prepare_handles_any_finite_weight_scale(scale):
     bias = torch.randn(8)
     a = torch.randn(64, 16)
     w3, b, inv = K.x3_prepare(w, bias)
+    T = K._x3_tail(16)
     assert b is None
-    assert w3.shape == (8, 48 + K._X3_TAIL) and w3.dtype == torch.float16 and torch.isfinite(w3).all()
+    assert w3.shape == (8, 48 + T) and w3.dtype == torch.float16 and torch.isfinite(w3).all()
     ref = a.double() @ w.double().t() + bias.double()
-    out = K.x3_linear(K._x3_split_ref(a).view(-1, 48 + K._X3_TAIL), w3, None, inv).double()
+    out = K.x3_linear(K._x3_split_ref(a).view(-1, 48 + T), w3, None, inv).double()
+    # the tail-free form: bias handed back for the consumer, operand sliced
+    w3n, bn, invn = K.x3_prepare(w, bias, fold_bias=False)
+    assert w3n.shape == (8, 48) and torch.equal(bn, bias)
+    outn = K.x3_linear(K._x3_split_ref(a).view(-1, 48 + T)[:, :48], w3n, None, invn, False).double() * invn + bias.double()
+    assert (outn - ref).abs().max().item() <= 2.0 ** -19 * ref.abs().max().item() + 1e-30
     assert (out - ref).abs().max().item() <= 2.0 ** -19 * ref.abs().max().item() + 1e-30
     if scale == 1.0:
         hi, lo = w3[:, :16].float(), w3[:, 16:32].float()
@@ -135,7 +148,7 @@ def test_consumer_folded_scale_matches_reference():
     bias = torch.randn(32) * 0.1
     ref = a @ w.t() + bias
     w3, _, inv = K.x3_prepare(w, bias)
-    scaled = K.x3_linear(K._x3_split_ref(a).view(-1, 3 * 64 + K._X3_TAIL), w3, None, inv, False)
+    scaled = K.x3_linear(K._x3_split_ref(a).view(-1, 3 * 64 + K._x3_tail(64)), w3, None, inv, False)
     assert (scaled * inv - ref).abs().max().item() < 1e-5
     # the split kernels undo the scale on their input
     a3 = K.x3_act_split(scaled, False, inv)
@@ -153,7 +166,7 @@ def test_emulated_linear_is_fp32_class(k):
     w = (torch.rand(1024, k) * 2 - 1) / math.sqrt(k)
     bias = (torch.rand(1024) * 2 - 1) / math.sqrt(k)
     ref = a.double() @ w.double().t() + bias.double()
-    a3 = K._x3_split_ref(a).view(-1, 3 * k + K._X3_TAIL)
+    a3 = K._x3_split_ref(a).view(-1, 3 * k + K._x3_tail(k))
     out = K.x3_linear(a3, *K.x3_prepare(w, bias))
     assert (out.double() - ref).abs().max().item() < 3e-6   # the committed "1.2e-6 on CPU" claim, with margin
 

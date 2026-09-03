@@ -1,0 +1,225 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+fingerprint[start]: 300 MHz, 1590 MHz, 405 MHz, 48, 10.83 W, 0x0000000000000001 / 300 MHz, 1590 MHz, 405 MHz, 49, 10.14 W, 0x0000000000000001 | sgemm 4096^2 33.16 ms = 4.1 TFLOPS
+sdpa backend probe  (head_dim -> which backends can run, is_causal=True)
+/kaggle/src/script.py:2787: UserWarning: Memory efficient kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:960.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2787: UserWarning: Memory Efficient attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/sdp_utils_cpp.h:552.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2787: UserWarning: Flash attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:962.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2787: UserWarning: Flash attention only supports gpu architectures in the range [sm80, sm121]. Attempting to run on a sm 7.5 gpu. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:339.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2787: UserWarning: cuDNN attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:964.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2787: UserWarning: cuDNN attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:680.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+  PROBE float32  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 256  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 256  flash=no   efficient=yes  math=yes
+  shapes -> head_dim: D=128,H=4 -> 32 | D=32,H=4 -> 8 | D=1024,H=4 -> 256 | D=128,H=1 -> 128 | D=128,H=2 -> 64 | D=128,H=16 -> 8 | shape14 D=1024,H=16 -> 64
+mm(out_dtype=fp32) available: True
+
+##### PROFILE SHAPE 1 : B=64 D=128 H=4 S=128 L=4 F=128 hd=32 #####
+/usr/local/lib/python3.12/dist-packages/torch/profiler/profiler.py:217: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+eager forward, GPU time 5.957 ms/iter (9 distinct kernels):
+      2.048 ms  34.4%  x4   fmha_cutlassF_f32_aligned_64x64_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, c
+      1.825 ms  30.6%  x16  turing_s1688gemm_fp16_128x128_ldg8_tn
+      0.903 ms  15.2%  x8   _x3_ln_split_fwd
+      0.538 ms   9.0%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      0.401 ms   6.7%  x8   _x3_act_split_fwd
+      0.176 ms   2.9%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.053 ms   0.9%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.012 ms   0.2%  x1   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.002 ms   0.0%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [64,4,128,32]: efficient 0.540 ms | math 1.239 ms | math/eff 2.29 | max|diff| 1.24e-06
+linear q/k/v/o  M=8192 K=128 N=128: fp32 0.174 ms (1.8e-06) | fp16 0.109 ms (1.3e-03) | fp16x3 0.361 ms (5.4e-06; GEMM alone 0.097 ms) | fp32/fp16x3 0.48
+
+##### PROFILE SHAPE 2 : B=1 D=128 H=4 S=128 L=4 F=128 hd=32 #####
+eager forward, GPU time 0.486 ms/iter (9 distinct kernels):
+      0.183 ms  37.6%  x4   fmha_cutlassF_f32_aligned_64x64_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, c
+      0.168 ms  34.6%  x16  void cutlass::Kernel2<cutlass_75_wmma_tensorop_s161616gemm_f16_32x32_128x2_tn_align8>(cu
+      0.060 ms  12.3%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      0.037 ms   7.6%  x8   _x3_ln_split_fwd
+      0.021 ms   4.2%  x8   _x3_act_split_fwd
+      0.007 ms   1.5%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.006 ms   1.2%  x1   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.003 ms   0.6%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.002 ms   0.3%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [1,4,128,32]: efficient 0.072 ms | math 0.299 ms | math/eff 4.18 | max|diff| 5.36e-07
+linear q/k/v/o  M=128 K=128 N=128: fp32 0.048 ms (4.4e-07) | fp16 0.103 ms (1.0e-03) | fp16x3 0.206 ms (3.8e-06; GEMM alone 0.049 ms) | fp32/fp16x3 0.23
+
+##### PROFILE SHAPE 3 : B=4 D=128 H=4 S=128 L=4 F=128 hd=32 #####
+eager forward, GPU time 0.722 ms/iter (10 distinct kernels):
+      0.209 ms  29.0%  x12  void cutlass::Kernel2<cutlass_75_wmma_tensorop_s161616gemm_f16_32x32_128x2_tn_align8>(cu
+      0.202 ms  28.0%  x4   fmha_cutlassF_f32_aligned_64x64_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, c
+      0.101 ms  14.0%  x4   turing_s1688gemm_fp16_64x128_sliced1x2_ldg8_tn
+      0.077 ms  10.7%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      0.072 ms  10.0%  x8   _x3_ln_split_fwd
+      0.033 ms   4.6%  x8   _x3_act_split_fwd
+      0.014 ms   1.9%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.008 ms   1.1%  x1   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.004 ms   0.5%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.002 ms   0.2%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [4,4,128,32]: efficient 0.076 ms | math 0.318 ms | math/eff 4.16 | max|diff| 1.13e-06
+linear q/k/v/o  M=512 K=128 N=128: fp32 0.051 ms (3.9e-07) | fp16 0.118 ms (1.1e-03) | fp16x3 0.219 ms (1.3e-06; GEMM alone 0.051 ms) | fp32/fp16x3 0.23
+
+##### PROFILE SHAPE 4 : B=16 D=128 H=4 S=128 L=4 F=128 hd=32 #####
+eager forward, GPU time 1.560 ms/iter (10 distinct kernels):
+      0.516 ms  33.1%  x4   fmha_cutlassF_f32_aligned_64x64_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, c
+      0.307 ms  19.7%  x12  turing_s1688gemm_fp16_128x64_sliced1x2_ldg8_tn
+      0.239 ms  15.3%  x4   turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+      0.204 ms  13.0%  x8   _x3_ln_split_fwd
+      0.153 ms   9.8%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      0.087 ms   5.6%  x8   _x3_act_split_fwd
+      0.037 ms   2.4%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.009 ms   0.6%  x1   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.008 ms   0.5%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.002 ms   0.1%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [16,4,128,32]: efficient 0.156 ms | math 0.426 ms | math/eff 2.74 | max|diff| 1.19e-06
+linear q/k/v/o  M=2048 K=128 N=128: fp32 0.079 ms (1.1e-06) | fp16 0.100 ms (1.2e-03) | fp16x3 0.216 ms (5.8e-06; GEMM alone 0.061 ms) | fp32/fp16x3 0.37
+
+##### PROFILE SHAPE 5 : B=128 D=128 H=4 S=128 L=4 F=128 hd=32 #####
+eager forward, GPU time 9.564 ms/iter (9 distinct kernels):
+      3.193 ms  33.4%  x16  turing_s1688gemm_fp16_128x128_ldg8_tn
+      2.988 ms  31.2%  x4   fmha_cutlassF_f32_aligned_64x64_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, c
+      1.387 ms  14.5%  x8   _x3_ln_split_fwd
+      0.901 ms   9.4%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      0.707 ms   7.4%  x8   _x3_act_split_fwd
+      0.269 ms   2.8%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.105 ms   1.1%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.013 ms   0.1%  x1   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.002 ms   0.0%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [128,4,128,32]: efficient 0.788 ms | math 1.891 ms | math/eff 2.40 | max|diff| 1.43e-06
+linear q/k/v/o  M=16384 K=128 N=128: fp32 0.204 ms (1.3e-06) | fp16 0.139 ms (1.5e-03) | fp16x3 0.666 ms (5.8e-06; GEMM alone 0.142 ms) | fp32/fp16x3 0.31
+
+##### PROFILE SHAPE 6 : B=10000 D=128 H=4 S=128 L=4 F=128 hd=32 #####
+eager forward, GPU time 645.435 ms/iter (11 distinct kernels):
+    177.663 ms  27.5%  x4   fmha_cutlassF_f32_aligned_64x64_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, c
+    120.277 ms  18.6%  x12  turing_s1688gemm_fp16_128x128_ldg8_tn
+    105.495 ms  16.3%  x4   turing_s1688gemm_fp16_128x256_ldg8_stages_32x1_tn
+     94.912 ms  14.7%  x8   _x3_ln_split_fwd
+     67.788 ms  10.5%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+     55.462 ms   8.6%  x8   _x3_act_split_fwd
+     15.820 ms   2.5%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      7.998 ms   1.2%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.016 ms   0.0%  x1   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.001 ms   0.0%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [10000,4,128,32]: efficient 37.234 ms | math 138.690 ms | math/eff 3.72 | max|diff| 2.50e-06
+linear q/k/v/o  M=1280000 K=128 N=128: fp32 14.736 ms (1.8e-06) | fp16 6.788 ms (1.6e-03) | fp16x3 48.545 ms (7.9e-06; GEMM alone 9.263 ms) | fp32/fp16x3 0.30
+
+##### PROFILE SHAPE 7 : B=64 D=32 H=4 S=128 L=4 F=32 hd=8 #####
+eager forward, GPU time 1.404 ms/iter (10 distinct kernels):
+      0.628 ms  44.7%  x4   fmha_cutlassF_f32_aligned_64x64_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, c
+      0.259 ms  18.5%  x8   _x3_ln_split_fwd
+      0.120 ms   8.6%  x8   _x3_act_split_fwd
+      0.118 ms   8.4%  x12  void cutlass::Kernel2<cutlass_75_tensorop_s1688gemm_f16_64x64_tn_align8>(cutlass_75_tens
+      0.105 ms   7.5%  x4   turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+      0.096 ms   6.8%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      0.064 ms   4.6%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.007 ms   0.5%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.005 ms   0.3%  x0   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.001 ms   0.1%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [64,4,128,8]: efficient 0.183 ms | math 0.949 ms | math/eff 5.18 | max|diff| 1.07e-06
+linear q/k/v/o  M=8192 K=32 N=32: fp32 0.057 ms (6.4e-07) | fp16 0.113 ms (1.4e-03) | fp16x3 0.222 ms (1.9e-06; GEMM alone 0.053 ms) | fp32/fp16x3 0.26
+
+##### PROFILE SHAPE 8 : B=64 D=1024 H=4 S=128 L=4 F=1024 hd=256 #####
+eager forward, GPU time 72.380 ms/iter (10 distinct kernels):
+     27.174 ms  37.5%  x4   turing_s1688gemm_fp16_256x128_ldg8_tn
+     26.069 ms  36.0%  x12  turing_s1688gemm_fp16_128x128_ldg8_tn
+      7.116 ms   9.8%  x4   fmha_cutlassF_f32_aligned_32x128_gmem_sm75(PyTorchMemEffAttention::AttentionKernel<float
+      4.860 ms   6.7%  x8   _x3_ln_split_fwd
+      3.518 ms   4.9%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      2.898 ms   4.0%  x8   _x3_act_split_fwd
+      0.412 ms   0.6%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.323 ms   0.4%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.009 ms   0.0%  x0   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.002 ms   0.0%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [64,4,128,256]: efficient 1.089 ms | math 2.339 ms | math/eff 2.15 | max|diff| 9.54e-07
+linear q/k/v/o  M=8192 K=1024 N=1024: fp32 5.131 ms (2.7e-06) | fp16 0.934 ms (1.3e-03) | fp16x3 3.908 ms (3.0e-05; GEMM alone 2.074 ms) | fp32/fp16x3 1.31
+
+##### PROFILE SHAPE 9 : B=64 D=128 H=1 S=128 L=4 F=128 hd=128 #####
+eager forward, GPU time 3.549 ms/iter (9 distinct kernels):
+      1.449 ms  40.8%  x16  turing_s1688gemm_fp16_128x128_ldg8_tn
+      0.602 ms  17.0%  x8   _x3_ln_split_fwd
+      0.570 ms  16.1%  x4   fmha_cutlassF_f32_aligned_32x128_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, 
+      0.456 ms  12.8%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      0.337 ms   9.5%  x8   _x3_act_split_fwd
+      0.076 ms   2.1%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.051 ms   1.4%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.005 ms   0.1%  x0   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.001 ms   0.0%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [64,1,128,128]: efficient 0.163 ms | math 0.443 ms | math/eff 2.72 | max|diff| 2.03e-06
+linear q/k/v/o  M=8192 K=128 N=128: fp32 0.109 ms (1.2e-06) | fp16 0.103 ms (1.4e-03) | fp16x3 0.333 ms (6.8e-06; GEMM alone 0.081 ms) | fp32/fp16x3 0.33
+
+##### PROFILE SHAPE 10 : B=64 D=128 H=2 S=128 L=4 F=128 hd=64 #####
+eager forward, GPU time 3.600 ms/iter (9 distinct kernels):
+      1.450 ms  40.3%  x16  turing_s1688gemm_fp16_128x128_ldg8_tn
+      0.630 ms  17.5%  x4   fmha_cutlassF_f32_aligned_64x64_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, c
+      0.597 ms  16.6%  x8   _x3_ln_split_fwd
+      0.460 ms  12.8%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      0.331 ms   9.2%  x8   _x3_act_split_fwd
+      0.075 ms   2.1%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.050 ms   1.4%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.005 ms   0.1%  x0   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.001 ms   0.0%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [64,2,128,64]: efficient 0.181 ms | math 0.640 ms | math/eff 3.55 | max|diff| 9.54e-07
+linear q/k/v/o  M=8192 K=128 N=128: fp32 0.113 ms (1.5e-06) | fp16 0.105 ms (1.2e-03) | fp16x3 0.332 ms (5.9e-06; GEMM alone 0.085 ms) | fp32/fp16x3 0.34
+
+##### PROFILE SHAPE 11 : B=64 D=128 H=16 S=128 L=4 F=128 hd=8 #####
+eager forward, GPU time 5.782 ms/iter (9 distinct kernels):
+      2.793 ms  48.3%  x4   fmha_cutlassF_f32_aligned_64x64_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, c
+      1.459 ms  25.2%  x16  turing_s1688gemm_fp16_128x128_ldg8_tn
+      0.602 ms  10.4%  x8   _x3_ln_split_fwd
+      0.460 ms   8.0%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      0.326 ms   5.6%  x8   _x3_act_split_fwd
+      0.085 ms   1.5%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.051 ms   0.9%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.006 ms   0.1%  x0   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.001 ms   0.0%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [64,16,128,8]: efficient 0.638 ms | math 3.252 ms | math/eff 5.10 | max|diff| 1.55e-06
+linear q/k/v/o  M=8192 K=128 N=128: fp32 0.117 ms (1.4e-06) | fp16 0.103 ms (1.3e-03) | fp16x3 0.337 ms (5.8e-06; GEMM alone 0.085 ms) | fp32/fp16x3 0.35
+
+##### PROFILE SHAPE 12 : B=64 D=128 H=4 S=32 L=4 F=128 hd=32 #####
+eager forward, GPU time 0.925 ms/iter (10 distinct kernels):
+      0.285 ms  30.8%  x4   fmha_cutlassF_f32_aligned_64x64_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, c
+      0.168 ms  18.1%  x12  turing_s1688gemm_fp16_128x64_sliced1x2_ldg8_tn
+      0.142 ms  15.4%  x4   turing_s1688gemm_fp16_128x128_ldg8_stages_32x1_tn
+      0.142 ms  15.3%  x8   _x3_ln_split_fwd
+      0.105 ms  11.4%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      0.052 ms   5.6%  x8   _x3_act_split_fwd
+      0.019 ms   2.1%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.007 ms   0.8%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.004 ms   0.4%  x0   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.001 ms   0.1%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [64,4,32,32]: efficient 0.099 ms | math 0.319 ms | math/eff 3.22 | max|diff| 1.19e-06
+linear q/k/v/o  M=2048 K=128 N=128: fp32 0.054 ms (1.1e-06) | fp16 0.105 ms (1.1e-03) | fp16x3 0.194 ms (4.9e-06; GEMM alone 0.046 ms) | fp32/fp16x3 0.28
+
+##### PROFILE SHAPE 13 : B=64 D=128 H=4 S=1024 L=4 F=128 hd=32 #####
+eager forward, GPU time 62.819 ms/iter (9 distinct kernels):
+     39.497 ms  62.9%  x4   fmha_cutlassF_f32_aligned_64x64_rf_sm75(PyTorchMemEffAttention::AttentionKernel<float, c
+     10.935 ms  17.4%  x16  turing_s1688gemm_fp16_128x128_ldg8_tn
+      4.880 ms   7.8%  x8   _x3_ln_split_fwd
+      3.497 ms   5.6%  x16  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::nativ
+      2.844 ms   4.5%  x8   _x3_act_split_fwd
+      0.732 ms   1.2%  x1   void at::native::(anonymous namespace)::vectorized_layer_norm_kernel<float, float, false
+      0.416 ms   0.7%  x1   void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, st
+      0.017 ms   0.0%  x0   void at::native::reduce_kernel<512, 1, at::native::ReduceOp<bool, at::native::func_wrapp
+      0.001 ms   0.0%  x1   Memcpy DtoH (Device -> Pinned)
+sdpa fp32 causal [64,4,1024,32]: efficient 9.292 ms | math 52.241 ms | math/eff 5.62 | max|diff| 1.55e-06
+linear q/k/v/o  M=65536 K=128 N=128: fp32 0.630 ms (1.8e-06) | fp16 0.387 ms (1.5e-03) | fp16x3 2.504 ms (6.2e-06; GEMM alone 0.437 ms) | fp32/fp16x3 0.25
+fingerprint[end]: 1560 MHz, 1590 MHz, 5000 MHz, 61, 38.38 W, 0x0000000000000004 / 300 MHz, 1590 MHz, 405 MHz, 48, 10.23 W, 0x0000000000000001 | sgemm 4096^2 34.40 ms = 4.0 TFLOPS
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 1023904 bytes to __results__.html

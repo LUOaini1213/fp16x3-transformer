@@ -1,0 +1,165 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+fingerprint[start]: 300 MHz, 1590 MHz, 405 MHz, 35, 12.05 W, 0x0000000000000001 / 300 MHz, 1590 MHz, 405 MHz, 36, 9.96 W, 0x0000000000000001 | sgemm 4096^2 30.44 ms = 4.5 TFLOPS
+x3_available: True | selfcheck(thorough): True
+fingerprint[x3geo-start]: 585 MHz, 1590 MHz, 5000 MHz, 38, 25.49 W, 0x0000000000000000 / 300 MHz, 1590 MHz, 405 MHz, 36, 9.16 W, 0x0000000000000001 | sgemm 4096^2 30.91 ms = 4.4 TFLOPS
+geo M=8192     N=128   torch LN    0.139 ms @  60 GB/s
+geo M=8192     N=128   rows=1   warps=2  ln_split    0.153 @  68 | add_ln_split    0.206 @  91 | gelu_split    0.152 @  69 | ln32    0.153 @  55 GB/s
+geo M=8192     N=128   rows=1   warps=4  ln_split    0.155 @  68 | add_ln_split    0.215 @  88 | gelu_split    0.173 @  60 | ln32    0.152 @  55 GB/s
+geo M=8192     N=128   rows=1   warps=8  ln_split    0.197 @  53 | add_ln_split    0.209 @  90 | gelu_split    0.147 @  71 | ln32    0.180 @  46 GB/s
+geo M=8192     N=128   rows=2   warps=2  ln_split    0.153 @  69 | add_ln_split    0.214 @  88 | gelu_split    0.147 @  71 | ln32    0.152 @  55 GB/s
+geo M=8192     N=128   rows=2   warps=4  ln_split    0.181 @  58 | add_ln_split    0.201 @  94 | gelu_split    0.145 @  72 | ln32    0.160 @  52 GB/s
+geo M=8192     N=128   rows=2   warps=8  ln_split    0.208 @  50 | add_ln_split    0.232 @  81 | gelu_split    0.154 @  68 | ln32    0.198 @  42 GB/s
+geo M=8192     N=128   rows=4   warps=2  ln_split    0.165 @  64 | add_ln_split    0.209 @  90 | gelu_split    0.165 @  63 | ln32    0.151 @  56 GB/s
+geo M=8192     N=128   rows=4   warps=4  ln_split    0.154 @  68 | add_ln_split    0.201 @  94 | gelu_split    0.150 @  70 | ln32    0.158 @  53 GB/s
+geo M=8192     N=128   rows=4   warps=8  ln_split    0.186 @  56 | add_ln_split    0.201 @  94 | gelu_split    0.152 @  69 | ln32    0.165 @  51 GB/s
+geo M=8192     N=128   rows=8   warps=2  ln_split    0.176 @  60 | add_ln_split    0.223 @  85 | gelu_split    0.171 @  61 | ln32    0.141 @  59 GB/s
+geo M=8192     N=128   rows=8   warps=4  ln_split    0.157 @  67 | add_ln_split    0.209 @  90 | gelu_split    0.151 @  69 | ln32    0.143 @  59 GB/s
+geo M=8192     N=128   rows=8   warps=8  ln_split    0.153 @  69 | add_ln_split    0.209 @  90 | gelu_split    0.174 @  60 | ln32    0.161 @  52 GB/s
+geo M=8192     N=128   rows=16  warps=2  ln_split    0.174 @  60 | add_ln_split    0.225 @  84 | gelu_split    0.176 @  60 | ln32    0.146 @  57 GB/s
+geo M=8192     N=128   rows=16  warps=4  ln_split    0.168 @  63 | add_ln_split    0.217 @  87 | gelu_split    0.156 @  67 | ln32    0.175 @  48 GB/s
+geo M=8192     N=128   rows=16  warps=8  ln_split    0.175 @  60 | add_ln_split    0.223 @  85 | gelu_split    0.153 @  68 | ln32    0.150 @  56 GB/s
+geo M=8192     N=128   rows=32  warps=2  ln_split    0.190 @  55 | add_ln_split    0.250 @  76 | gelu_split    0.188 @  56 | ln32    0.144 @  58 GB/s
+geo M=8192     N=128   rows=32  warps=4  ln_split    0.186 @  56 | add_ln_split    0.223 @  85 | gelu_split    0.162 @  65 | ln32    0.152 @  55 GB/s
+geo M=8192     N=128   rows=32  warps=8  ln_split    0.170 @  62 | add_ln_split    0.230 @  82 | gelu_split    0.166 @  63 | ln32    0.164 @  51 GB/s
+geo M=65536    N=128   torch LN    1.323 ms @  51 GB/s
+geo M=65536    N=128   rows=1   warps=2  ln_split    0.786 @ 107 | add_ln_split    0.808 @ 187 | gelu_split    0.521 @ 161 | ln32    0.529 @ 127 GB/s
+geo M=65536    N=128   rows=1   warps=4  ln_split    0.915 @  92 | add_ln_split    0.985 @ 153 | gelu_split    0.512 @ 164 | ln32    0.848 @  79 GB/s
+geo M=65536    N=128   rows=1   warps=8  ln_split    1.669 @  50 | add_ln_split    1.690 @  89 | gelu_split    0.668 @ 126 | ln32    1.081 @  62 GB/s
+geo M=65536    N=128   rows=2   warps=2  ln_split    0.529 @ 159 | add_ln_split    0.833 @ 181 | gelu_split    0.526 @ 159 | ln32    0.386 @ 174 GB/s
+geo M=65536    N=128   rows=2   warps=4  ln_split    0.534 @ 157 | add_ln_split    0.811 @ 186 | gelu_split    0.510 @ 164 | ln32    0.420 @ 160 GB/s
+geo M=65536    N=128   rows=2   warps=8  ln_split    0.656 @ 128 | add_ln_split    0.797 @ 190 | gelu_split    0.508 @ 165 | ln32    0.608 @ 110 GB/s
+geo M=65536    N=128   rows=4   warps=2  ln_split    0.559 @ 150 | add_ln_split    0.866 @ 174 | gelu_split    0.557 @ 151 | ln32    0.383 @ 175 GB/s
+geo M=65536    N=128   rows=4   warps=4  ln_split    0.536 @ 156 | add_ln_split    0.821 @ 184 | gelu_split    0.524 @ 160 | ln32    0.381 @ 176 GB/s
+geo M=65536    N=128   rows=4   warps=8  ln_split    0.509 @ 165 | add_ln_split    0.803 @ 188 | gelu_split    0.510 @ 165 | ln32    0.377 @ 178 GB/s
+geo M=65536    N=128   rows=8   warps=2  ln_split    0.612 @ 137 | add_ln_split    0.942 @ 160 | gelu_split    0.608 @ 138 | ln32    0.390 @ 172 GB/s
+geo M=65536    N=128   rows=8   warps=4  ln_split    0.566 @ 148 | add_ln_split    0.879 @ 172 | gelu_split    0.565 @ 148 | ln32    0.387 @ 173 GB/s
+geo M=65536    N=128   rows=8   warps=8  ln_split    0.553 @ 152 | add_ln_split    0.851 @ 177 | gelu_split    0.532 @ 158 | ln32    0.385 @ 174 GB/s
+geo M=65536    N=128   rows=16  warps=2  ln_split    0.649 @ 129 | add_ln_split    0.999 @ 151 | gelu_split    0.680 @ 123 | ln32    0.396 @ 170 GB/s
+geo M=65536    N=128   rows=16  warps=4  ln_split    0.597 @ 141 | add_ln_split    0.934 @ 162 | gelu_split    0.610 @ 138 | ln32    0.397 @ 169 GB/s
+geo M=65536    N=128   rows=16  warps=8  ln_split    0.573 @ 146 | add_ln_split    0.891 @ 169 | gelu_split    0.563 @ 149 | ln32    0.389 @ 173 GB/s
+geo M=65536    N=128   rows=32  warps=2  ln_split    0.616 @ 136 | add_ln_split    1.032 @ 146 | gelu_split    0.716 @ 117 | ln32    0.395 @ 170 GB/s
+geo M=65536    N=128   rows=32  warps=4  ln_split    0.621 @ 135 | add_ln_split    0.954 @ 158 | gelu_split    0.600 @ 140 | ln32    0.393 @ 171 GB/s
+geo M=65536    N=128   rows=32  warps=8  ln_split    0.610 @ 137 | add_ln_split    0.930 @ 162 | gelu_split    0.598 @ 140 | ln32    0.394 @ 170 GB/s
+geo M=1280000  N=128   torch LN   12.420 ms @ 106 GB/s
+geo M=1280000  N=128   rows=1   warps=2  ln_split    7.993 @ 205 | add_ln_split   13.897 @ 212 | gelu_split    8.196 @ 200 | ln32    5.348 @ 245 GB/s
+geo M=1280000  N=128   rows=1   warps=4  ln_split    9.673 @ 169 | add_ln_split   13.042 @ 226 | gelu_split    7.839 @ 209 | ln32    7.760 @ 169 GB/s
+geo M=1280000  N=128   rows=1   warps=8  ln_split   15.461 @ 106 | add_ln_split   18.338 @ 161 | gelu_split    9.170 @ 179 | ln32   13.740 @  95 GB/s
+geo M=1280000  N=128   rows=2   warps=2  ln_split    8.491 @ 193 | add_ln_split   14.256 @ 207 | gelu_split    8.551 @ 192 | ln32    5.632 @ 233 GB/s
+geo M=1280000  N=128   rows=2   warps=4  ln_split    7.999 @ 205 | add_ln_split   13.741 @ 215 | gelu_split    8.168 @ 201 | ln32    5.378 @ 244 GB/s
+geo M=1280000  N=128   rows=2   warps=8  ln_split    9.355 @ 175 | add_ln_split   13.124 @ 225 | gelu_split    7.882 @ 208 | ln32    7.738 @ 169 GB/s
+geo M=1280000  N=128   rows=4   warps=2  ln_split    9.046 @ 181 | add_ln_split   14.895 @ 198 | gelu_split    9.182 @ 178 | ln32    5.708 @ 230 GB/s
+geo M=1280000  N=128   rows=4   warps=4  ln_split    8.433 @ 194 | add_ln_split   14.122 @ 209 | gelu_split    8.492 @ 193 | ln32    5.603 @ 234 GB/s
+geo M=1280000  N=128   rows=4   warps=8  ln_split    7.969 @ 206 | add_ln_split   13.707 @ 215 | gelu_split    8.110 @ 202 | ln32    5.352 @ 245 GB/s
+geo M=1280000  N=128   rows=8   warps=2  ln_split    9.750 @ 168 | add_ln_split   15.940 @ 185 | gelu_split    9.997 @ 164 | ln32    5.786 @ 227 GB/s
+geo M=1280000  N=128   rows=8   warps=4  ln_split    8.979 @ 182 | add_ln_split   14.788 @ 199 | gelu_split    9.057 @ 181 | ln32    5.715 @ 229 GB/s
+geo M=1280000  N=128   rows=8   warps=8  ln_split    8.491 @ 193 | add_ln_split   14.285 @ 206 | gelu_split    8.533 @ 192 | ln32    5.609 @ 234 GB/s
+geo M=1280000  N=128   rows=16  warps=2  ln_split   10.380 @ 158 | add_ln_split   17.080 @ 173 | gelu_split   11.047 @ 148 | ln32    5.843 @ 224 GB/s
+geo M=1280000  N=128   rows=16  warps=4  ln_split    9.648 @ 170 | add_ln_split   15.794 @ 187 | gelu_split    9.761 @ 168 | ln32    5.773 @ 227 GB/s
+geo M=1280000  N=128   rows=16  warps=8  ln_split    9.079 @ 180 | add_ln_split   14.879 @ 198 | gelu_split    9.027 @ 182 | ln32    5.724 @ 229 GB/s
+geo M=1280000  N=128   rows=32  warps=2  ln_split    9.869 @ 166 | add_ln_split   17.894 @ 165 | gelu_split   10.386 @ 158 | ln32    5.816 @ 225 GB/s
+geo M=1280000  N=128   rows=32  warps=4  ln_split    9.847 @ 166 | add_ln_split   16.168 @ 182 | gelu_split    9.669 @ 169 | ln32    5.828 @ 225 GB/s
+geo M=1280000  N=128   rows=32  warps=8  ln_split    9.685 @ 169 | add_ln_split   15.759 @ 187 | gelu_split    9.591 @ 171 | ln32    5.790 @ 226 GB/s
+geo M=2048     N=128   torch LN    0.033 ms @  64 GB/s
+geo M=2048     N=128   rows=1   warps=2  ln_split    0.160 @  16 | add_ln_split    0.175 @  27 | gelu_split    0.127 @  21 | ln32    0.139 @  15 GB/s
+geo M=2048     N=128   rows=1   warps=4  ln_split    0.137 @  19 | add_ln_split    0.160 @  30 | gelu_split    0.124 @  21 | ln32    0.137 @  15 GB/s
+geo M=2048     N=128   rows=1   warps=8  ln_split    0.135 @  19 | add_ln_split    0.156 @  30 | gelu_split    0.123 @  21 | ln32    0.136 @  15 GB/s
+geo M=2048     N=128   rows=2   warps=2  ln_split    0.133 @  20 | add_ln_split    0.161 @  29 | gelu_split    0.125 @  21 | ln32    0.158 @  13 GB/s
+geo M=2048     N=128   rows=2   warps=4  ln_split    0.150 @  17 | add_ln_split    0.163 @  29 | gelu_split    0.133 @  20 | ln32    0.135 @  16 GB/s
+geo M=2048     N=128   rows=2   warps=8  ln_split    0.133 @  20 | add_ln_split    0.158 @  30 | gelu_split    0.128 @  21 | ln32    0.139 @  15 GB/s
+geo M=2048     N=128   rows=4   warps=2  ln_split    0.135 @  19 | add_ln_split    0.175 @  27 | gelu_split    0.123 @  21 | ln32    0.134 @  16 GB/s
+geo M=2048     N=128   rows=4   warps=4  ln_split    0.137 @  19 | add_ln_split    0.159 @  30 | gelu_split    0.124 @  21 | ln32    0.135 @  16 GB/s
+geo M=2048     N=128   rows=4   warps=8  ln_split    0.128 @  21 | add_ln_split    0.160 @  30 | gelu_split    0.124 @  21 | ln32    0.133 @  16 GB/s
+geo M=2048     N=128   rows=8   warps=2  ln_split    0.133 @  20 | add_ln_split    0.156 @  30 | gelu_split    0.120 @  22 | ln32    0.139 @  15 GB/s
+geo M=2048     N=128   rows=8   warps=4  ln_split    0.135 @  19 | add_ln_split    0.159 @  30 | gelu_split    0.122 @  21 | ln32    0.134 @  16 GB/s
+geo M=2048     N=128   rows=8   warps=8  ln_split    0.141 @  19 | add_ln_split    0.159 @  30 | gelu_split    0.130 @  20 | ln32    0.137 @  15 GB/s
+geo M=2048     N=128   rows=16  warps=2  ln_split    0.134 @  20 | add_ln_split    0.153 @  31 | gelu_split    0.120 @  22 | ln32    0.138 @  15 GB/s
+geo M=2048     N=128   rows=16  warps=4  ln_split    0.137 @  19 | add_ln_split    0.158 @  30 | gelu_split    0.128 @  20 | ln32    0.164 @  13 GB/s
+geo M=2048     N=128   rows=16  warps=8  ln_split    0.139 @  19 | add_ln_split    0.160 @  30 | gelu_split    0.128 @  21 | ln32    0.133 @  16 GB/s
+geo M=2048     N=128   rows=32  warps=2  ln_split    0.137 @  19 | add_ln_split    0.170 @  28 | gelu_split    0.131 @  20 | ln32    0.135 @  16 GB/s
+geo M=2048     N=128   rows=32  warps=4  ln_split    0.143 @  18 | add_ln_split    0.186 @  25 | gelu_split    0.147 @  18 | ln32    0.164 @  13 GB/s
+geo M=2048     N=128   rows=32  warps=8  ln_split    0.139 @  19 | add_ln_split    0.206 @  23 | gelu_split    0.135 @  19 | ln32    0.136 @  15 GB/s
+geo M=128      N=128   torch LN    0.031 ms @   4 GB/s
+geo M=128      N=128   rows=1   warps=2  ln_split    0.131 @   1 | add_ln_split    0.161 @   2 | gelu_split    0.158 @   1 | ln32    0.144 @   1 GB/s
+geo M=128      N=128   rows=1   warps=4  ln_split    0.143 @   1 | add_ln_split    0.177 @   2 | gelu_split    0.134 @   1 | ln32    0.137 @   1 GB/s
+geo M=128      N=128   rows=1   warps=8  ln_split    0.156 @   1 | add_ln_split    0.168 @   2 | gelu_split    0.138 @   1 | ln32    0.150 @   1 GB/s
+geo M=128      N=128   rows=2   warps=2  ln_split    0.191 @   1 | add_ln_split    0.181 @   2 | gelu_split    0.133 @   1 | ln32    0.137 @   1 GB/s
+geo M=128      N=128   rows=2   warps=4  ln_split    0.143 @   1 | add_ln_split    0.160 @   2 | gelu_split    0.144 @   1 | ln32    0.141 @   1 GB/s
+geo M=128      N=128   rows=2   warps=8  ln_split    0.141 @   1 | add_ln_split    0.159 @   2 | gelu_split    0.124 @   1 | ln32    0.145 @   1 GB/s
+geo M=128      N=128   rows=4   warps=2  ln_split    0.137 @   1 | add_ln_split    0.159 @   2 | gelu_split    0.125 @   1 | ln32    0.154 @   1 GB/s
+geo M=128      N=128   rows=4   warps=4  ln_split    0.131 @   1 | add_ln_split    0.159 @   2 | gelu_split    0.125 @   1 | ln32    0.153 @   1 GB/s
+geo M=128      N=128   rows=4   warps=8  ln_split    0.150 @   1 | add_ln_split    0.160 @   2 | gelu_split    0.121 @   1 | ln32    0.139 @   1 GB/s
+geo M=128      N=128   rows=8   warps=2  ln_split    0.148 @   1 | add_ln_split    0.165 @   2 | gelu_split    0.125 @   1 | ln32    0.137 @   1 GB/s
+geo M=128      N=128   rows=8   warps=4  ln_split    0.141 @   1 | add_ln_split    0.176 @   2 | gelu_split    0.126 @   1 | ln32    0.143 @   1 GB/s
+geo M=128      N=128   rows=8   warps=8  ln_split    0.131 @   1 | add_ln_split    0.182 @   2 | gelu_split    0.133 @   1 | ln32    0.137 @   1 GB/s
+geo M=128      N=128   rows=16  warps=2  ln_split    0.133 @   1 | add_ln_split    0.165 @   2 | gelu_split    0.129 @   1 | ln32    0.137 @   1 GB/s
+geo M=128      N=128   rows=16  warps=4  ln_split    0.136 @   1 | add_ln_split    0.156 @   2 | gelu_split    0.122 @   1 | ln32    0.141 @   1 GB/s
+geo M=128      N=128   rows=16  warps=8  ln_split    0.139 @   1 | add_ln_split    0.158 @   2 | gelu_split    0.126 @   1 | ln32    0.144 @   1 GB/s
+geo M=128      N=128   rows=32  warps=2  ln_split    0.145 @   1 | add_ln_split    0.160 @   2 | gelu_split    0.128 @   1 | ln32    0.134 @   1 GB/s
+geo M=128      N=128   rows=32  warps=4  ln_split    0.144 @   1 | add_ln_split    0.156 @   2 | gelu_split    0.124 @   1 | ln32    0.135 @   1 GB/s
+geo M=128      N=128   rows=32  warps=8  ln_split    0.141 @   1 | add_ln_split    0.156 @   2 | gelu_split    0.123 @   1 | ln32    0.139 @   1 GB/s
+geo M=8192     N=32    torch LN    0.076 ms @  28 GB/s
+geo M=8192     N=32    rows=1   warps=2  ln_split    0.141 @  19 | add_ln_split    0.205 @  23 | gelu_split    0.150 @  18 | ln32    0.150 @  14 GB/s
+geo M=8192     N=32    rows=1   warps=4  ln_split    0.136 @  19 | add_ln_split    0.195 @  24 | gelu_split    0.131 @  20 | ln32    0.146 @  14 GB/s
+geo M=8192     N=32    rows=1   warps=8  ln_split    0.143 @  18 | add_ln_split    0.174 @  27 | gelu_split    0.174 @  15 | ln32    0.195 @  11 GB/s
+geo M=8192     N=32    rows=2   warps=2  ln_split    0.169 @  16 | add_ln_split    0.174 @  27 | gelu_split    0.133 @  20 | ln32    0.156 @  13 GB/s
+geo M=8192     N=32    rows=2   warps=4  ln_split    0.141 @  19 | add_ln_split    0.173 @  27 | gelu_split    0.135 @  19 | ln32    0.151 @  14 GB/s
+geo M=8192     N=32    rows=2   warps=8  ln_split    0.170 @  15 | add_ln_split    0.264 @  18 | gelu_split    0.168 @  16 | ln32    0.180 @  12 GB/s
+geo M=8192     N=32    rows=4   warps=2  ln_split    0.141 @  19 | add_ln_split    0.187 @  25 | gelu_split    0.141 @  19 | ln32    0.165 @  13 GB/s
+geo M=8192     N=32    rows=4   warps=4  ln_split    0.290 @   9 | add_ln_split    0.201 @  23 | gelu_split    0.150 @  17 | ln32    0.176 @  12 GB/s
+geo M=8192     N=32    rows=4   warps=8  ln_split    0.163 @  16 | add_ln_split    0.187 @  25 | gelu_split    0.146 @  18 | ln32    0.148 @  14 GB/s
+geo M=8192     N=32    rows=8   warps=2  ln_split    0.147 @  18 | add_ln_split    0.184 @  26 | gelu_split    0.135 @  19 | ln32    0.153 @  14 GB/s
+geo M=8192     N=32    rows=8   warps=4  ln_split    0.137 @  19 | add_ln_split    0.174 @  27 | gelu_split    0.141 @  19 | ln32    0.162 @  13 GB/s
+geo M=8192     N=32    rows=8   warps=8  ln_split    0.152 @  17 | add_ln_split    0.178 @  26 | gelu_split    0.148 @  18 | ln32    0.154 @  14 GB/s
+geo M=8192     N=32    rows=16  warps=2  ln_split    0.144 @  18 | add_ln_split    0.176 @  27 | gelu_split    0.138 @  19 | ln32    0.161 @  13 GB/s
+geo M=8192     N=32    rows=16  warps=4  ln_split    0.145 @  18 | add_ln_split    0.172 @  27 | gelu_split    0.135 @  19 | ln32    0.149 @  14 GB/s
+geo M=8192     N=32    rows=16  warps=8  ln_split    0.160 @  16 | add_ln_split    0.174 @  27 | gelu_split    0.146 @  18 | ln32    0.146 @  14 GB/s
+geo M=8192     N=32    rows=32  warps=2  ln_split    0.149 @  18 | add_ln_split    0.176 @  27 | gelu_split    0.142 @  19 | ln32    0.156 @  13 GB/s
+geo M=8192     N=32    rows=32  warps=4  ln_split    0.172 @  15 | add_ln_split    0.171 @  28 | gelu_split    0.139 @  19 | ln32    0.147 @  14 GB/s
+geo M=8192     N=32    rows=32  warps=8  ln_split    0.145 @  18 | add_ln_split    0.186 @  25 | gelu_split    0.133 @  20 | ln32    0.146 @  14 GB/s
+geo M=8192     N=1024  torch LN    0.401 ms @ 168 GB/s
+geo M=8192     N=1024  rows=1   warps=2  ln_split    0.563 @ 149 | add_ln_split    0.877 @ 172 | gelu_split    0.556 @ 151 | ln32    0.393 @ 171 GB/s
+geo M=8192     N=1024  rows=1   warps=4  ln_split    0.612 @ 137 | add_ln_split    0.823 @ 183 | gelu_split    0.514 @ 163 | ln32    0.387 @ 174 GB/s
+geo M=8192     N=1024  rows=1   warps=8  ln_split    0.524 @ 160 | add_ln_split    0.800 @ 189 | gelu_split    0.501 @ 167 | ln32    0.385 @ 174 GB/s
+geo M=8192     N=1024  rows=2   warps=2  ln_split    0.577 @ 145 | add_ln_split    0.909 @ 166 | gelu_split    0.552 @ 152 | ln32    0.410 @ 164 GB/s
+geo M=8192     N=1024  rows=2   warps=4  ln_split    0.542 @ 155 | add_ln_split    0.866 @ 174 | gelu_split    0.545 @ 154 | ln32    0.390 @ 172 GB/s
+geo M=8192     N=1024  rows=2   warps=8  ln_split    0.522 @ 161 | add_ln_split    0.831 @ 182 | gelu_split    0.523 @ 160 | ln32    0.384 @ 175 GB/s
+geo M=8192     N=1024  rows=4   warps=2  ln_split    0.594 @ 141 | add_ln_split    0.932 @ 162 | gelu_split    0.557 @ 151 | ln32    0.403 @ 166 GB/s
+geo M=8192     N=1024  rows=4   warps=4  ln_split    0.594 @ 141 | add_ln_split    0.924 @ 163 | gelu_split    0.568 @ 148 | ln32    0.401 @ 167 GB/s
+geo M=8192     N=1024  rows=4   warps=8  ln_split    0.549 @ 153 | add_ln_split    0.872 @ 173 | gelu_split    0.555 @ 151 | ln32    0.399 @ 168 GB/s
+geo M=8192     N=1024  rows=8   warps=2  ln_split    0.602 @ 139 | add_ln_split    0.928 @ 163 | gelu_split    0.938 @  89 | ln32    0.413 @ 162 GB/s
+geo M=8192     N=1024  rows=8   warps=4  ln_split    0.584 @ 144 | add_ln_split    0.899 @ 168 | gelu_split    0.570 @ 147 | ln32    0.411 @ 163 GB/s
+geo M=8192     N=1024  rows=8   warps=8  ln_split    0.549 @ 153 | add_ln_split    0.862 @ 175 | gelu_split    0.551 @ 152 | ln32    0.400 @ 168 GB/s
+geo M=8192     N=1024  rows=16  warps=2  ln_split    1.122 @  75 | add_ln_split    1.935 @  78 | gelu_split    5.978 @  14 | ln32    0.681 @  98 GB/s
+geo M=8192     N=1024  rows=16  warps=4  ln_split    0.683 @ 123 | add_ln_split    0.978 @ 154 | gelu_split    0.954 @  88 | ln32    0.396 @ 169 GB/s
+geo M=8192     N=1024  rows=16  warps=8  ln_split    0.665 @ 126 | add_ln_split    0.901 @ 168 | gelu_split    0.670 @ 125 | ln32    0.404 @ 166 GB/s
+geo M=8192     N=1024  rows=32  warps=2  ln_split    4.441 @  19 | add_ln_split    5.872 @  26 | gelu_split    3.215 @  26 | ln32    2.524 @  27 GB/s
+geo M=8192     N=1024  rows=32  warps=4  ln_split    4.259 @  20 | add_ln_split    2.201 @  69 | gelu_split    5.831 @  14 | ln32    0.697 @  96 GB/s
+geo M=8192     N=1024  rows=32  warps=8  ln_split    0.973 @  86 | add_ln_split    1.302 @ 116 | gelu_split    1.087 @  77 | ln32    0.494 @ 136 GB/s
+geo M=65536    N=384   torch LN    1.759 ms @ 114 GB/s
+geo M=65536    N=384   rows=1   warps=2  ln_split    1.350 @ 186 | add_ln_split    2.258 @ 201 | gelu_split    1.366 @ 184 | ln32    0.960 @ 210 GB/s
+geo M=65536    N=384   rows=1   warps=4  ln_split    1.584 @ 159 | add_ln_split    2.166 @ 209 | gelu_split    1.319 @ 191 | ln32    1.060 @ 190 GB/s
+geo M=65536    N=384   rows=1   warps=8  ln_split    2.392 @ 105 | add_ln_split    2.584 @ 175 | gelu_split    1.306 @ 193 | ln32    1.746 @ 115 GB/s
+geo M=65536    N=384   rows=2   warps=2  ln_split    1.414 @ 178 | add_ln_split    2.408 @ 188 | gelu_split    1.450 @ 174 | ln32    0.970 @ 208 GB/s
+geo M=65536    N=384   rows=2   warps=4  ln_split    1.366 @ 184 | add_ln_split    2.233 @ 203 | gelu_split    1.370 @ 184 | ln32    0.948 @ 212 GB/s
+geo M=65536    N=384   rows=2   warps=8  ln_split    1.827 @ 138 | add_ln_split    2.140 @ 212 | gelu_split    1.311 @ 192 | ln32    1.262 @ 160 GB/s
+geo M=65536    N=384   rows=4   warps=2  ln_split    1.530 @ 165 | add_ln_split    2.444 @ 185 | gelu_split    1.460 @ 172 | ln32    0.988 @ 204 GB/s
+geo M=65536    N=384   rows=4   warps=4  ln_split    1.424 @ 177 | add_ln_split    2.333 @ 194 | gelu_split    1.428 @ 176 | ln32    0.970 @ 207 GB/s
+geo M=65536    N=384   rows=4   warps=8  ln_split    1.422 @ 177 | add_ln_split    2.233 @ 203 | gelu_split    1.364 @ 185 | ln32    0.943 @ 214 GB/s
+geo M=65536    N=384   rows=8   warps=2  ln_split    1.573 @ 160 | add_ln_split    2.489 @ 182 | gelu_split    1.525 @ 165 | ln32    0.977 @ 206 GB/s
+geo M=65536    N=384   rows=8   warps=4  ln_split    1.495 @ 168 | add_ln_split    2.409 @ 188 | gelu_split    1.450 @ 174 | ln32    0.983 @ 205 GB/s
+geo M=65536    N=384   rows=8   warps=8  ln_split    1.392 @ 181 | add_ln_split    2.292 @ 198 | gelu_split    1.426 @ 177 | ln32    0.951 @ 212 GB/s
+geo M=65536    N=384   rows=16  warps=2  ln_split    1.583 @ 159 | add_ln_split    2.680 @ 169 | gelu_split    3.082 @  82 | ln32    0.988 @ 204 GB/s
+geo M=65536    N=384   rows=16  warps=4  ln_split    1.489 @ 169 | add_ln_split    2.411 @ 188 | gelu_split    1.530 @ 164 | ln32    0.978 @ 206 GB/s
+geo M=65536    N=384   rows=16  warps=8  ln_split    1.466 @ 172 | add_ln_split    2.365 @ 191 | gelu_split    1.457 @ 173 | ln32    0.978 @ 206 GB/s
+geo M=65536    N=384   rows=32  warps=2  ln_split   15.124 @  17 | add_ln_split    6.264 @  72 | gelu_split   19.039 @  13 | ln32    1.513 @ 133 GB/s
+geo M=65536    N=384   rows=32  warps=4  ln_split    2.226 @ 113 | add_ln_split    2.975 @ 152 | gelu_split    3.037 @  83 | ln32    0.993 @ 203 GB/s
+geo M=65536    N=384   rows=32  warps=8  ln_split    1.743 @ 144 | add_ln_split    2.338 @ 194 | gelu_split    1.858 @ 135 | ln32    1.051 @ 192 GB/s
+fingerprint[x3geo-end]: 585 MHz, 1590 MHz, 5000 MHz, 49, 27.27 W, 0x0000000000000000 / 300 MHz, 1590 MHz, 405 MHz, 36, 8.96 W, 0x0000000000000001 | sgemm 4096^2 31.51 ms = 4.4 TFLOPS
+fingerprint[end]: 1215 MHz, 1590 MHz, 5000 MHz, 50, 68.71 W, 0x0000000000000004 / 300 MHz, 1590 MHz, 405 MHz, 36, 11.04 W, 0x0000000000000001 | sgemm 4096^2 31.98 ms = 4.3 TFLOPS
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 1093576 bytes to __results__.html

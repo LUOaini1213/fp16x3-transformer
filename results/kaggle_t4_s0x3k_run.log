@@ -1,0 +1,68 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+fingerprint[start]: 300 MHz, 1590 MHz, 405 MHz, 43, 9.56 W, 0x0000000000000001 / 300 MHz, 1590 MHz, 405 MHz, 45, 10.05 W, 0x0000000000000001 | sgemm 4096^2 32.01 ms = 4.3 TFLOPS
+x3_available: True | order=hhl splitk=1
+fingerprint[x3k-start]: 585 MHz, 1590 MHz, 5000 MHz, 46, 26.43 W, 0x0000000000000000 / 300 MHz, 1590 MHz, 405 MHz, 45, 10.25 W, 0x0000000000000001 | sgemm 4096^2 31.54 ms = 4.4 TFLOPS
+X3K,K=128,fp32-sgemm,max_abs=1.541e-06,mean_abs=8.263e-08,bias=-2.783e-11,frac_below=0.500,ms=0.2283
+X3K,K=128,hhl,max_abs=6.071e-06,mean_abs=4.212e-07,bias=-4.112e-07,frac_below=0.921,ms=0.3196
+X3K,K=128,hhl-splitk2,max_abs=3.426e-06,mean_abs=1.934e-07,bias=-1.725e-07,frac_below=0.830,ms=0.6409
+X3K,K=128,hhl-splitk4,max_abs=1.618e-06,mean_abs=1.128e-07,bias=-8.297e-08,frac_below=0.753,ms=1.2482
+X3K,K=128,lhh,max_abs=1.658e-06,mean_abs=1.165e-07,bias=-9.303e-08,frac_below=0.777,ms=0.3222
+X3K,K=128,lhh-splitk2,max_abs=1.688e-06,mean_abs=1.168e-07,bias=-9.303e-08,frac_below=0.775,ms=0.6344
+X3K,K=128,lhh-splitk4,max_abs=1.435e-06,mean_abs=8.797e-08,bias=-6.274e-08,frac_below=0.737,ms=1.2493
+X3K,K=128,split-fp64sum,max_abs=2.743e-07,mean_abs=3.595e-08,bias=+1.691e-11,frac_below=0.500,ms=0.0000
+X3K,K=128,cpu-rn,max_abs=3.309e-06,mean_abs=1.746e-07,bias=-6.417e-10,frac_below=nan,ms=0
+X3K,K=256,fp32-sgemm,max_abs=2.297e-06,mean_abs=1.163e-07,bias=-5.211e-11,frac_below=0.500,ms=0.3584
+X3K,K=256,hhl,max_abs=1.072e-05,mean_abs=8.176e-07,bias=-8.093e-07,frac_below=0.952,ms=0.3859
+X3K,K=256,hhl-splitk2,max_abs=5.159e-06,mean_abs=3.536e-07,bias=-3.329e-07,frac_below=0.879,ms=0.6825
+X3K,K=256,hhl-splitk4,max_abs=2.126e-06,mean_abs=1.887e-07,bias=-1.546e-07,frac_below=0.801,ms=1.2923
+X3K,K=256,lhh,max_abs=3.031e-06,mean_abs=2.041e-07,bias=-1.745e-07,frac_below=0.815,ms=0.3931
+X3K,K=256,lhh-splitk2,max_abs=3.031e-06,mean_abs=2.043e-07,bias=-1.744e-07,frac_below=0.814,ms=0.6841
+X3K,K=256,lhh-splitk4,max_abs=2.260e-06,mean_abs=1.440e-07,bias=-1.146e-07,frac_below=0.782,ms=1.2977
+X3K,K=256,split-fp64sum,max_abs=1.944e-07,mean_abs=2.887e-08,bias=-1.630e-11,frac_below=0.500,ms=0.0000
+X3K,K=256,cpu-rn,max_abs=2.923e-06,mean_abs=1.593e-07,bias=-4.701e-10,frac_below=nan,ms=0
+X3K,K=512,fp32-sgemm,max_abs=3.159e-06,mean_abs=1.643e-07,bias=-1.075e-10,frac_below=0.500,ms=0.6805
+X3K,K=512,hhl,max_abs=1.786e-05,mean_abs=1.617e-06,bias=-1.605e-06,frac_below=0.960,ms=0.5422
+X3K,K=512,hhl-splitk2,max_abs=8.783e-06,mean_abs=6.830e-07,bias=-6.527e-07,frac_below=0.900,ms=0.8580
+X3K,K=512,hhl-splitk4,max_abs=4.412e-06,mean_abs=3.460e-07,bias=-2.960e-07,frac_below=0.825,ms=1.4220
+X3K,K=512,lhh,max_abs=6.117e-06,mean_abs=3.872e-07,bias=-3.360e-07,frac_below=0.828,ms=0.5763
+X3K,K=512,lhh-splitk2,max_abs=6.072e-06,mean_abs=3.872e-07,bias=-3.360e-07,frac_below=0.828,ms=0.8749
+X3K,K=512,lhh-splitk4,max_abs=3.935e-06,mean_abs=2.654e-07,bias=-2.170e-07,frac_below=0.799,ms=1.4226
+X3K,K=512,split-fp64sum,max_abs=2.464e-07,mean_abs=3.606e-08,bias=-2.659e-11,frac_below=0.501,ms=0.0000
+X3K,K=512,cpu-rn,max_abs=2.249e-06,mean_abs=1.599e-07,bias=-4.011e-11,frac_below=nan,ms=0
+X3K,K=1024,fp32-sgemm,max_abs=2.281e-06,mean_abs=1.741e-07,bias=-1.316e-10,frac_below=0.500,ms=1.2931
+X3K,K=1024,hhl,max_abs=1.531e-05,mean_abs=1.348e-06,bias=-1.295e-06,frac_below=0.908,ms=0.9399
+X3K,K=1024,hhl-splitk2,max_abs=1.531e-05,mean_abs=1.348e-06,bias=-1.295e-06,frac_below=0.908,ms=1.3926
+X3K,K=1024,hhl-splitk4,max_abs=8.434e-06,mean_abs=6.628e-07,bias=-5.814e-07,frac_below=0.841,ms=1.9071
+X3K,K=1024,lhh,max_abs=9.562e-06,mean_abs=7.557e-07,bias=-6.607e-07,frac_below=0.834,ms=1.1264
+X3K,K=1024,lhh-splitk2,max_abs=9.562e-06,mean_abs=7.557e-07,bias=-6.607e-07,frac_below=0.834,ms=1.3681
+X3K,K=1024,lhh-splitk4,max_abs=6.513e-06,mean_abs=5.082e-07,bias=-4.220e-07,frac_below=0.808,ms=1.8739
+X3K,K=1024,split-fp64sum,max_abs=2.149e-07,mean_abs=2.894e-08,bias=+2.550e-11,frac_below=0.500,ms=0.0000
+X3K,K=1024,cpu-rn,max_abs=1.801e-06,mean_abs=1.601e-07,bias=-5.324e-10,frac_below=nan,ms=0
+X3K,K=2048,fp32-sgemm,max_abs=3.547e-06,mean_abs=2.455e-07,bias=-7.407e-11,frac_below=0.500,ms=2.4991
+X3K,K=2048,hhl,max_abs=2.401e-05,mean_abs=2.675e-06,bias=-2.573e-06,frac_below=0.911,ms=2.4432
+X3K,K=2048,hhl-splitk2,max_abs=1.278e-05,mean_abs=1.293e-06,bias=-1.147e-06,frac_below=0.847,ms=2.9929
+X3K,K=2048,hhl-splitk4,max_abs=1.278e-05,mean_abs=1.293e-06,bias=-1.147e-06,frac_below=0.847,ms=3.0164
+X3K,K=2048,lhh,max_abs=1.513e-05,mean_abs=1.492e-06,bias=-1.304e-06,frac_below=0.835,ms=2.1332
+X3K,K=2048,lhh-splitk2,max_abs=1.188e-05,mean_abs=9.968e-07,bias=-8.290e-07,frac_below=0.809,ms=2.5575
+X3K,K=2048,lhh-splitk4,max_abs=1.188e-05,mean_abs=9.968e-07,bias=-8.290e-07,frac_below=0.809,ms=2.8095
+X3K,K=2048,split-fp64sum,max_abs=2.337e-07,mean_abs=3.613e-08,bias=+5.993e-12,frac_below=0.500,ms=0.0000
+X3K,K=2048,cpu-rn,max_abs=1.746e-06,mean_abs=1.617e-07,bias=+3.870e-12,frac_below=nan,ms=0
+X3K,K=4096,fp32-sgemm,max_abs=5.308e-06,mean_abs=3.472e-07,bias=+3.109e-10,frac_below=0.500,ms=9.0197
+X3K,K=4096,hhl,max_abs=4.545e-05,mean_abs=5.335e-06,bias=-5.136e-06,frac_below=0.912,ms=4.3272
+X3K,K=4096,hhl-splitk2,max_abs=2.283e-05,mean_abs=2.555e-06,bias=-2.280e-06,frac_below=0.851,ms=5.2040
+X3K,K=4096,hhl-splitk4,max_abs=1.043e-05,mean_abs=1.220e-06,bias=-1.082e-06,frac_below=0.846,ms=5.4948
+X3K,K=4096,lhh,max_abs=2.749e-05,mean_abs=2.969e-06,bias=-2.598e-06,frac_below=0.836,ms=4.7487
+X3K,K=4096,lhh-splitk2,max_abs=1.763e-05,mean_abs=1.975e-06,bias=-1.645e-06,frac_below=0.810,ms=5.0934
+X3K,K=4096,lhh-splitk4,max_abs=9.622e-06,mean_abs=1.073e-06,bias=-9.231e-07,frac_below=0.828,ms=5.5088
+X3K,K=4096,split-fp64sum,max_abs=1.872e-07,mean_abs=2.891e-08,bias=-2.000e-11,frac_below=0.500,ms=0.0000
+X3K,K=4096,cpu-rn,max_abs=1.260e-06,mean_abs=1.639e-07,bias=-1.320e-10,frac_below=nan,ms=0
+X3K,accprobe,K=2048,got=682.500000,exact=682.500000,diff=+0.000e+00
+fingerprint[x3k-end]: 1590 MHz, 1590 MHz, 5000 MHz, 49, 34.49 W, 0x0000000000000000 / 300 MHz, 1590 MHz, 405 MHz, 45, 10.05 W, 0x0000000000000001 | sgemm 4096^2 32.39 ms = 4.2 TFLOPS
+fingerprint[end]: 1230 MHz, 1590 MHz, 5000 MHz, 50, 70.35 W, 0x0000000000000004 / 300 MHz, 1590 MHz, 405 MHz, 45, 9.95 W, 0x0000000000000001 | sgemm 4096^2 32.61 ms = 4.2 TFLOPS
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 1023900 bytes to __results__.html

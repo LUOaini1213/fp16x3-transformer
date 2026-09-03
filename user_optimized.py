@@ -82,14 +82,14 @@ try:
     from kernels import (HAVE_TRITON_OP, can_fuse, fused_add_layernorm,
                          triton_attention, can_use_attention,
                          x3_available, x3_prepare, x3_linear, x3_ln_split,
-                         x3_add_ln_split, x3_act_split, x3_ln)
+                         x3_add_ln_split, x3_act_split, x3_ln, x3_add_ln)
     HAVE_KERNELS = True
 except Exception:  # the package is optional; the model works without it
     HAVE_KERNELS = False
     HAVE_TRITON_OP = False
     triton_attention = can_use_attention = None
     x3_available = x3_prepare = x3_linear = None
-    x3_ln_split = x3_add_ln_split = x3_act_split = x3_ln = None
+    x3_ln_split = x3_add_ln_split = x3_act_split = x3_ln = x3_add_ln = None
 # --- kernels import (end) ---
 
 
@@ -405,7 +405,8 @@ class UserOptimizedTransformer(BaselineTransformer):
                        lin.bias._version if lin.bias is not None else -1,
                        str(lin.weight.device), str(lin.weight.dtype))
                 if getattr(lin, "_x3_key", None) != key:
-                    lin._x3 = x3_prepare(lin.weight, lin.bias)
+                    # tail-free weight: the consumer kernel adds the bias
+                    lin._x3 = x3_prepare(lin.weight, lin.bias, fold_bias=False)
                     lin._x3_key = key
                     changed = True
         if changed:
@@ -533,38 +534,45 @@ class UserOptimizedTransformer(BaselineTransformer):
                 q, k, v, attn_mask=None, is_causal=causal,
                 scale=attn.scale * inv_q * inv_q)
             o = o.transpose(1, 2).reshape(b * s, d)
+            # Sites other than qkv use tail-free weights on the first 3K
+            # columns of the split (a strided view, no copy) and hand their
+            # bias to the consumer kernel; qkv keeps its bias in the K tail.
             if "out" in sites:
-                w3o, _, inv_o = attn.out_proj._x3
-                proj = x3_linear(x3_act_split(o, False, inv_q), w3o, None, inv_o, False)
+                w3o, b_o, inv_o = attn.out_proj._x3
+                proj = x3_linear(x3_act_split(o, False, inv_q)[:, :3 * d], w3o, None, inv_o, False)
             else:
-                inv_o = 1.0
+                inv_o, b_o = 1.0, None
                 proj = F.linear(o if inv_q == 1.0 else o * inv_q,
                                 attn.out_proj.weight, attn.out_proj.bias)
             n2 = layer.norm2
             if "ffn_in" in sites:
-                w3i, _, inv_i = layer.ffn_in._x3
-                x, a2 = x3_add_ln_split(x, proj, n2.weight, n2.bias, n2.eps, inv_o)
-                hid = x3_linear(a2, w3i, None, inv_i, False)       # [M, F] fp32, x s_i
+                w3i, b_i, inv_i = layer.ffn_in._x3
+                x, a2 = x3_add_ln_split(x, proj, n2.weight, n2.bias, n2.eps, inv_o, b_o)
+                hid = x3_linear(a2[:, :3 * d], w3i, None, inv_i, False)   # [M, F] fp32, x s_i
             else:
-                inv_i = 1.0
-                x = torch.add(x, proj, alpha=inv_o)
+                inv_i, b_i = 1.0, None
+                x = torch.add(x, proj, alpha=inv_o) if b_o is None else torch.add(x, proj, alpha=inv_o) + b_o
                 hid = layer.ffn_in(F.layer_norm(x, (d,), n2.weight, n2.bias, n2.eps))
             if "ffn_out" in sites:
-                w3f, _, inv_f = layer.ffn_out._x3
-                f = x3_linear(x3_act_split(hid, True, inv_i), w3f, None, inv_f, False)
+                w3f, b_f, inv_f = layer.ffn_out._x3
+                fdim = hid.shape[-1]
+                f = x3_linear(x3_act_split(hid, True, inv_i, b_i)[:, :3 * fdim], w3f, None, inv_f, False)
             else:
-                inv_f = 1.0
-                f = F.linear(F.gelu(hid if inv_i == 1.0 else hid * inv_i, approximate="none"),
-                             layer.ffn_out.weight, layer.ffn_out.bias)
+                inv_f, b_f = 1.0, None
+                g_in = hid if inv_i == 1.0 else hid * inv_i
+                if b_i is not None:
+                    g_in = g_in + b_i
+                f = F.linear(F.gelu(g_in, approximate="none"), layer.ffn_out.weight, layer.ffn_out.bias)
             if i + 1 < len(layers):
                 n1 = layers[i + 1].norm1
                 if "qkv" in sites:
-                    x, a2 = x3_add_ln_split(x, f, n1.weight, n1.bias, n1.eps, inv_f)
+                    x, a2 = x3_add_ln_split(x, f, n1.weight, n1.bias, n1.eps, inv_f, b_f)
                 else:
-                    x = torch.add(x, f, alpha=inv_f)
+                    x = torch.add(x, f, alpha=inv_f) if b_f is None else torch.add(x, f, alpha=inv_f) + b_f
                     h1 = F.layer_norm(x, (d,), n1.weight, n1.bias, n1.eps)
             else:
-                x = torch.add(x, f, alpha=inv_f)
+                fn = self.final_norm
+                return x3_add_ln(x, f, fn.weight, fn.bias, fn.eps, inv_f, b_f).view(b, s, d)
         fn = self.final_norm
         return x3_ln(x, fn.weight, fn.bias, fn.eps).view(b, s, d)
 

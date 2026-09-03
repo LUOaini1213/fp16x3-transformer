@@ -58,3 +58,16 @@ logs/
 !results/kaggle_t4_def3_run.log
 !results/kaggle_t4_fp32b_run.log
 !results/kaggle_t4_fp32c_run.log
+!results/kaggle_t4_s0gemm_run.log
+!results/kaggle_t4_s0x3k_run.log
+!results/kaggle_t4_s0profile_run.log
+!results/kaggle_t4_b0x3_run.log
+!results/kaggle_t4_b0sweep_run.log
+!results/kaggle_t4_b0tail_run.log
+!results/kaggle_t4_b2geo_run.log
+!results/kaggle_t4_b2geo2_run.log
+!results/kaggle_t4_b1x3_run.log
+!results/kaggle_t4_b1sweep_run.log
+!results/kaggle_t4_d1_run.log
+!results/kaggle_t4_d2_run.log
+!results/kaggle_t4_d3_run.log
