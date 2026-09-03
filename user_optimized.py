@@ -54,6 +54,12 @@ Ablation / robustness toggles via environment variables (see README):
                                                   forward's output is checked for
                                                   finiteness once; 'every' checks each
                                                   forward at the cost of a sync)
+  T3_X3_SITES   = auto | <list>                   (which GEMMs take the fp16x3 path: a comma
+                                                  list of qkv,out,ffn_in,ffn_out; auto = qkv
+                                                  and ffn_in always, out when d_model >= 512,
+                                                  ffn_out when ffn_dim >= 512 -- the sites
+                                                  where the operand split is not an extra
+                                                  pass, measured per site)
   T3_X3_ORDER   = hhl | lhh                       (operand order along the tripled K; see
                                                   kernels/fp16x3.py)
   T3_X3_SPLITK  = 1 | 2 | 4                       (chunks of the tripled K combined in the
@@ -76,14 +82,14 @@ try:
     from kernels import (HAVE_TRITON_OP, can_fuse, fused_add_layernorm,
                          triton_attention, can_use_attention,
                          x3_available, x3_prepare, x3_linear, x3_ln_split,
-                         x3_add_ln_split, x3_act_split)
+                         x3_add_ln_split, x3_act_split, x3_ln)
     HAVE_KERNELS = True
 except Exception:  # the package is optional; the model works without it
     HAVE_KERNELS = False
     HAVE_TRITON_OP = False
     triton_attention = can_use_attention = None
     x3_available = x3_prepare = x3_linear = None
-    x3_ln_split = x3_add_ln_split = x3_act_split = None
+    x3_ln_split = x3_add_ln_split = x3_act_split = x3_ln = None
 # --- kernels import (end) ---
 
 
@@ -191,6 +197,17 @@ class UserOptimizedTransformer(BaselineTransformer):
             self._x3_guard = "static+first"
         self._x3_checked = False     # first-forward finiteness check done
         self._x3_bound = None        # static activation bound from the weights
+        raw = os.environ.get("T3_X3_SITES", "auto").strip().lower()
+        if raw == "auto":
+            d, f = config.d_model, config.ffn_dim
+            sites = {"qkv", "ffn_in"} | ({"out"} if d >= 512 else set()) | ({"ffn_out"} if f >= 512 else set())
+        else:
+            sites = {t.strip() for t in raw.split(",") if t.strip()}
+            bad = sites - {"qkv", "out", "ffn_in", "ffn_out"}
+            if bad:
+                print(f"[user_optimized] ignoring unknown T3_X3_SITES entries {sorted(bad)}")
+                sites -= bad
+        self._x3_sites = frozenset(sites)
 
     # ---- one-time device/shape aware planning -------------------------------
     def _plan(self, x: torch.Tensor) -> None:
@@ -372,7 +389,7 @@ class UserOptimizedTransformer(BaselineTransformer):
             key = tuple(m.weight._version for m in parts) + tuple(
                 (m.bias._version if m.bias is not None else -1) for m in parts
             ) + (str(attn.q_proj.weight.device), str(attn.q_proj.weight.dtype))
-            if getattr(attn, "_x3_qkv_key", None) != key:
+            if "qkv" in self._x3_sites and getattr(attn, "_x3_qkv_key", None) != key:
                 with torch.no_grad():
                     w = torch.cat([m.weight for m in parts], dim=0)
                     b = (None if attn.q_proj.bias is None
@@ -380,7 +397,10 @@ class UserOptimizedTransformer(BaselineTransformer):
                 attn._x3_qkv = x3_prepare(w, b)
                 attn._x3_qkv_key = key
                 changed = True
-            for lin in (attn.out_proj, layer.ffn_in, layer.ffn_out):
+            for site, lin in (("out", attn.out_proj), ("ffn_in", layer.ffn_in),
+                              ("ffn_out", layer.ffn_out)):
+                if site not in self._x3_sites:
+                    continue
                 key = (lin.weight._version,
                        lin.bias._version if lin.bias is not None else -1,
                        str(lin.weight.device), str(lin.weight.dtype))
@@ -487,30 +507,66 @@ class UserOptimizedTransformer(BaselineTransformer):
         h = self.config.num_heads
         hd = d // h
         layers = self.layers
+        sites = self._x3_sites
         x = x.contiguous().view(b * s, d)
         n0 = layers[0].norm1
-        a2 = x3_ln_split(x, n0.weight, n0.bias, n0.eps)
+        # Every fp16x3 GEMM returns s * (true value): the power-of-two weight
+        # scale of kernels/fp16x3.py is undone by the consumer for free. Sites
+        # that stay on fp32 SGEMM (T3_X3_SITES) read the fp32 tensor directly.
+        a2 = x3_ln_split(x, n0.weight, n0.bias, n0.eps) if "qkv" in sites else None
+        h1 = F.layer_norm(x, (d,), n0.weight, n0.bias, n0.eps) if "qkv" not in sites else None
         for i, layer in enumerate(layers):
             attn = layer.attention
-            qkv = x3_linear(a2, *attn._x3_qkv)                     # [M, 3D] fp32
-            q, k, v = qkv.split(d, dim=-1)
+            if "qkv" in sites:
+                w3q, _, inv_q = attn._x3_qkv
+                qkv = x3_linear(a2, w3q, None, inv_q, False)       # [M, 3D] fp32, x s_q
+                q, k, v = qkv.split(d, dim=-1)
+            else:
+                inv_q = 1.0
+                q, k, v = attn.q_proj(h1), attn.k_proj(h1), attn.v_proj(h1)
             q = q.reshape(b, s, h, hd).transpose(1, 2)
             k = k.reshape(b, s, h, hd).transpose(1, 2)
             v = v.reshape(b, s, h, hd).transpose(1, 2)
+            # q.k carries s_q^2 -> folded into the softmax scale; the output
+            # carries s_q through v -> folded into whatever consumes it.
             o = F.scaled_dot_product_attention(
-                q, k, v, attn_mask=None, is_causal=causal, scale=attn.scale)
+                q, k, v, attn_mask=None, is_causal=causal,
+                scale=attn.scale * inv_q * inv_q)
             o = o.transpose(1, 2).reshape(b * s, d)
-            proj = x3_linear(x3_act_split(o, False), *attn.out_proj._x3)
+            if "out" in sites:
+                w3o, _, inv_o = attn.out_proj._x3
+                proj = x3_linear(x3_act_split(o, False, inv_q), w3o, None, inv_o, False)
+            else:
+                inv_o = 1.0
+                proj = F.linear(o if inv_q == 1.0 else o * inv_q,
+                                attn.out_proj.weight, attn.out_proj.bias)
             n2 = layer.norm2
-            x, a2 = x3_add_ln_split(x, proj, n2.weight, n2.bias, n2.eps)
-            hid = x3_linear(a2, *layer.ffn_in._x3)                  # [M, F] fp32
-            f = x3_linear(x3_act_split(hid, True), *layer.ffn_out._x3)
+            if "ffn_in" in sites:
+                w3i, _, inv_i = layer.ffn_in._x3
+                x, a2 = x3_add_ln_split(x, proj, n2.weight, n2.bias, n2.eps, inv_o)
+                hid = x3_linear(a2, w3i, None, inv_i, False)       # [M, F] fp32, x s_i
+            else:
+                inv_i = 1.0
+                x = torch.add(x, proj, alpha=inv_o)
+                hid = layer.ffn_in(F.layer_norm(x, (d,), n2.weight, n2.bias, n2.eps))
+            if "ffn_out" in sites:
+                w3f, _, inv_f = layer.ffn_out._x3
+                f = x3_linear(x3_act_split(hid, True, inv_i), w3f, None, inv_f, False)
+            else:
+                inv_f = 1.0
+                f = F.linear(F.gelu(hid if inv_i == 1.0 else hid * inv_i, approximate="none"),
+                             layer.ffn_out.weight, layer.ffn_out.bias)
             if i + 1 < len(layers):
                 n1 = layers[i + 1].norm1
-                x, a2 = x3_add_ln_split(x, f, n1.weight, n1.bias, n1.eps)
+                if "qkv" in sites:
+                    x, a2 = x3_add_ln_split(x, f, n1.weight, n1.bias, n1.eps, inv_f)
+                else:
+                    x = torch.add(x, f, alpha=inv_f)
+                    h1 = F.layer_norm(x, (d,), n1.weight, n1.bias, n1.eps)
             else:
-                x = x + f
-        return self.final_norm(x).view(b, s, d)
+                x = torch.add(x, f, alpha=inv_f)
+        fn = self.final_norm
+        return x3_ln(x, fn.weight, fn.bias, fn.eps).view(b, s, d)
 
     # ---- entry point --------------------------------------------------------
     def forward(self, x: torch.Tensor, valid_token_mask: Optional[torch.Tensor] = None):
@@ -628,35 +684,47 @@ class UserOptimizedTransformer(BaselineTransformer):
         """Keep the fastest of eager / compiled / captured-eager on this input.
 
         Six untimed calls per candidate first (Dynamo tracing, and the CUDA
-        graph that reduce-overhead records), then a median of seven timed
-        calls. Any failure leaves the compiled path as it was. A captured
-        graph of the eager path is kept only when it wins outright.
+        graph that reduce-overhead records), then timed calls interleaved
+        round-robin across the candidates -- so a clock ramp or a thermal
+        drift during the tune hits all of them alike -- with the median per
+        candidate. Seven samples each, or twenty-one when the forward is under
+        two milliseconds, where the verdict used to flip between runs on
+        differences the sampling could not resolve. Any failure leaves the
+        compiled path as it was. A captured graph of the eager path is kept
+        only when it wins outright.
         """
-        def median_ms(call):
-            with torch.no_grad():
-                for _ in range(warm):
-                    call()
-                torch.cuda.synchronize(x.device)
-                start = torch.cuda.Event(enable_timing=True)
-                end = torch.cuda.Event(enable_timing=True)
-                times = []
-                for _ in range(iters):
-                    start.record()
-                    call()
-                    end.record()
-                    torch.cuda.synchronize(x.device)
-                    times.append(start.elapsed_time(end))
-            times.sort()
-            return times[len(times) // 2]
-
         inf = float("inf")
         try:
-            eager_ms = median_ms(lambda: invoke(self._run_full, x, mask, all_valid))
-            compiled_ms = (median_ms(lambda: invoke(self._compiled, x, mask, all_valid))
-                           if self._compiled is not None else inf)
-            graph_ms = inf
+            cands = [("eager", lambda: invoke(self._run_full, x, mask, all_valid))]
+            if self._compiled is not None:
+                cands.append(("compiled", lambda: invoke(self._compiled, x, mask, all_valid)))
             if self._cudagraph and all_valid and self._capture_graph(x, mask, invoke):
-                graph_ms = median_ms(lambda: self._replay(x, mask))
+                cands.append(("graph", lambda: self._replay(x, mask)))
+            start = torch.cuda.Event(enable_timing=True)
+            end = torch.cuda.Event(enable_timing=True)
+            with torch.no_grad():
+                for _, call in cands:
+                    for _ in range(warm):
+                        call()
+                torch.cuda.synchronize(x.device)
+                # a first look at the eager forward sets the sample count
+                start.record()
+                cands[0][1]()
+                end.record()
+                torch.cuda.synchronize(x.device)
+                n = 21 if start.elapsed_time(end) < 2.0 else iters
+                times = {name: [] for name, _ in cands}
+                for _ in range(n):
+                    for name, call in cands:
+                        start.record()
+                        call()
+                        end.record()
+                        torch.cuda.synchronize(x.device)
+                        times[name].append(start.elapsed_time(end))
+            med = {name: sorted(t)[len(t) // 2] for name, t in times.items()}
+            eager_ms = med["eager"]
+            compiled_ms = med.get("compiled", inf)
+            graph_ms = med.get("graph", inf)
         except Exception as e:
             print(f"[user_optimized] autotune failed ({type(e).__name__}: "
                   f"{str(e)[:120]}); keeping the current configuration")

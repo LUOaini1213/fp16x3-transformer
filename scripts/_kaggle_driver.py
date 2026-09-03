@@ -604,11 +604,27 @@ def _gemm_probe(device):
     """Which cuBLAS path is the fp16x3 GEMM actually on, and how far from the
     roofline? Variants on the shipped geometries, each with its kernel name,
     plus the int8 IMMA go/no-go for the cross-term idea."""
+    import os
     import torch
     print(f"x3_available: {x3_available(device)}", flush=True)
     _gpu_fingerprint("gemm-start")
     geoms = [(1280000, 384, 128), (1280000, 384, 384), (65536, 384, 384), (16384, 384, 384),
              (8192, 384, 384), (8192, 96, 96), (8192, 3072, 3072), (8192, 3072, 1024)]
+    if os.environ.get("T3_GEMM_TAILS") == "1":
+        # How much does a K that is only a multiple of 8 (the bias tail) cost?
+        for (M, K3, N) in ((8192, 3072, 3072), (8192, 3072, 1024), (1280000, 384, 128),
+                           (65536, 384, 384), (8192, 384, 384), (8192, 96, 96)):
+            for t in (0, 8, 16, 32, 64):
+                a3 = torch.randn(M, K3 + t, device=device).half()
+                w3 = (torch.randn(N, K3 + t, device=device) * 0.03).half()
+                fn = lambda: torch.mm(a3, w3.t(), out_dtype=torch.float32)
+                ms = _med(fn)
+                print(f"tail M={M:<8d} K3={K3 + t:<5d} (tail {t:<2d}) N={N:<5d} {ms:9.3f} ms "
+                      f"{2.0 * M * (K3 + t) * N / ms / 1e9:6.1f} TFLOPS  {_top_kernel(fn)}", flush=True)
+                del a3, w3
+            torch.cuda.empty_cache()
+        _gpu_fingerprint("gemm-end")
+        return
     for (M, K3, N) in geoms:
         try:
             a3 = torch.randn(M, K3, device=device).half()
@@ -699,6 +715,7 @@ def _x3_kbench(device):
             w3, _b, inv = x3_prepare(w, None)
             hi = a.half()
             lo = (a - hi.float()).half()
+            w3 = w3[:, :3 * K].contiguous()          # the K-sweep measures the GEMM alone
             a_hhl = torch.cat([hi, hi, lo], 1).contiguous()
             a_lhh = torch.cat([lo, hi, hi], 1).contiguous()
 
@@ -710,7 +727,7 @@ def _x3_kbench(device):
 
             stats(a @ w.t(), "fp32-sgemm", _med(lambda: a @ w.t()))
             for tag, a3 in (("hhl", a_hhl), ("lhh", a_lhh)):
-                fn = (lambda a3=a3: torch.mm(a3, w3.t(), out_dtype=torch.float32) * inv)
+                fn = (lambda a3=a3: torch.mm(a3, w3.t(), out_dtype=torch.float32) * inv)  # GEMM only, no tail
                 stats(fn(), tag, _med(fn))
                 for c in (2, 4):
                     k3, ch = 3 * K, (3 * K) // c
@@ -745,6 +762,41 @@ def _x3_kbench(device):
     except Exception as e:
         print(f"X3K,accprobe,error,{str(e)[:100]}", flush=True)
     _gpu_fingerprint("x3k-end")
+
+
+def _x3_geo_bench(device):
+    """Sweep rows-per-program and warps for the tiled split/LayerNorm kernels
+    on the graded row widths, and run the thorough self-check on this GPU."""
+    import torch
+    import torch.nn.functional as F
+    import kernels.fp16x3 as KX
+    print(f"x3_available: {x3_available(device)} | selfcheck(thorough): {x3_selfcheck(device, True)}", flush=True)
+    _gpu_fingerprint("x3geo-start")
+    geoms = [(8192, 128), (65536, 128), (1280000, 128), (2048, 128), (128, 128),
+             (8192, 32), (8192, 1024), (65536, 384)]
+    for (M, N) in geoms:
+        x = torch.randn(M, N, device=device); r = torch.randn_like(x)
+        g = torch.rand(N, device=device) + 0.5; be = torch.randn(N, device=device) * 0.1
+        by_s = M * N * (4 + 6); by_as = M * N * (8 + 4 + 6); by_ln = M * N * 8
+        t_torch = _med(lambda: F.layer_norm(x, (N,), g, be, 1e-5))
+        print(f"geo M={M:<8d} N={N:<5d} torch LN {t_torch:8.3f} ms @{by_ln / t_torch / 1e6:4.0f} GB/s", flush=True)
+        for rows in (1, 2, 4, 8, 16, 32):
+            for warps in (2, 4, 8):
+                KX._X3_ROWS_OVERRIDE, KX._X3_WARPS_OVERRIDE = rows, warps
+                try:
+                    t_s = _med(lambda: x3_ln_split(x, g, be, 1e-5))
+                    t_as = _med(lambda: x3_add_ln_split(x, r, g, be, 1e-5, 1.0))
+                    t_g = _med(lambda: x3_act_split(x, True, 1.0))
+                    t_ln = _med(lambda: x3_ln(x, g, be, 1e-5))
+                    print(f"geo M={M:<8d} N={N:<5d} rows={rows:<3d} warps={warps}  ln_split {t_s:8.3f} @{by_s / t_s / 1e6:4.0f} | "
+                          f"add_ln_split {t_as:8.3f} @{by_as / t_as / 1e6:4.0f} | gelu_split {t_g:8.3f} @{by_s / t_g / 1e6:4.0f} | "
+                          f"ln32 {t_ln:8.3f} @{by_ln / t_ln / 1e6:4.0f} GB/s", flush=True)
+                except Exception as e:
+                    print(f"geo M={M} N={N} rows={rows} warps={warps} error: {str(e)[:100]}", flush=True)
+        KX._X3_ROWS_OVERRIDE = KX._X3_WARPS_OVERRIDE = None
+        del x, r
+        torch.cuda.empty_cache()
+    _gpu_fingerprint("x3geo-end")
 
 
 def _x3_bench(device):
@@ -804,12 +856,13 @@ def _x3_bench(device):
                     base = lambda: F.linear(F.gelu(x, approximate="none"), w, bias)
                     split = lambda: x3_act_split(x, True)
                     ref = F.gelu(x[:n_err].double(), approximate="none") @ w.double().t() + bias.double()
-                x3 = lambda: x3_linear(split(), *prep)
+                w3, _, inv = prep
+                x3 = lambda: x3_linear(split(), w3, None, inv, False)   # the model's call: scaled output
                 e32 = (base()[:n_err].double() - ref).abs().max().item()
-                ex3 = (x3()[:n_err].double() - ref).abs().max().item()
+                ex3 = ((x3()[:n_err].double() * inv) - ref).abs().max().item()
                 t_base = _med(base); t_x3 = _med(x3); t_split = _med(split)
                 a3 = split()
-                t_gemm = _med(lambda: x3_linear(a3, *prep))
+                t_gemm = _med(lambda: x3_linear(a3, w3, None, inv, False))
                 gbps = M * K * (4 + 6) / t_split / 1e6
                 print(f"site {idx:>2} {site:7s} M={M:<8d} K={K:<5d} N={N:<5d} fp32 {t_base:8.3f} ms | "
                       f"x3 {t_x3:8.3f} ms (split {t_split:.3f} @{gbps:4.0f} GB/s + GEMM {t_gemm:.3f}) | "
@@ -842,6 +895,9 @@ def _main():
         return
     if only == "x3k":
         _x3_kbench(device)
+        return
+    if only == "x3geo":
+        _x3_geo_bench(device)
         return
     try:
         _sdpa_probe(device)

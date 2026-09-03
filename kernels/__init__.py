@@ -27,6 +27,7 @@ from .fp16x3 import (  # noqa: F401
     x3_prepare,
     x3_linear,
     x3_ln_split,
+    x3_ln,
     x3_add_ln_split,
     x3_act_split,
 )
