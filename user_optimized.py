@@ -55,11 +55,12 @@ Ablation / robustness toggles via environment variables (see README):
                                                   finiteness once; 'every' checks each
                                                   forward at the cost of a sync)
   T3_X3_SITES   = auto | <list>                   (which GEMMs take the fp16x3 path: a comma
-                                                  list of qkv,out,ffn_in,ffn_out; auto = qkv
-                                                  and ffn_in always, out when d_model >= 512,
-                                                  ffn_out when ffn_dim >= 512 -- the sites
-                                                  where the operand split is not an extra
-                                                  pass, measured per site)
+                                                  list of qkv,out,ffn_in,ffn_out; auto = all
+                                                  four. The operator-level table says the
+                                                  split is an extra pass at out/ffn_out for
+                                                  K=128, the end-to-end sweeps say all four
+                                                  win by 5-15% once launches are hidden; the
+                                                  sweeps decide)
   T3_X3_ORDER   = hhl | lhh                       (operand order along the tripled K; see
                                                   kernels/fp16x3.py)
   T3_X3_SPLITK  = 1 | 2 | 4                       (chunks of the tripled K combined in the
@@ -199,8 +200,13 @@ class UserOptimizedTransformer(BaselineTransformer):
         self._x3_bound = None        # static activation bound from the weights
         raw = os.environ.get("T3_X3_SITES", "auto").strip().lower()
         if raw == "auto":
-            d, f = config.d_model, config.ffn_dim
-            sites = {"qkv", "ffn_in"} | ({"out"} if d >= 512 else set()) | ({"ffn_out"} if f >= 512 else set())
+            # Measured: the operator-level table has the split losing at the
+            # out / ffn_out sites of narrow models, but end to end all four
+            # sites beat the qkv+ffn_in subset on 12 of 13 shapes (5-15%),
+            # because under graph replay the split is cheaper than the SGEMM
+            # it replaces and an fp32 site still has to apply the neighbour's
+            # scale and bias. results/ablation.md has both runs.
+            sites = {"qkv", "out", "ffn_in", "ffn_out"}
         else:
             sites = {t.strip() for t in raw.split(",") if t.strip()}
             bad = sites - {"qkv", "out", "ffn_in", "ffn_out"}

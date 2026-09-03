@@ -1,0 +1,118 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+fingerprint[start]: 300 MHz, 1590 MHz, 405 MHz, 53, 10.36 W, 0x0000000000000001 / 300 MHz, 1590 MHz, 405 MHz, 50, 10.06 W, 0x0000000000000001 | sgemm 4096^2 33.73 ms = 4.1 TFLOPS
+sdpa backend probe  (head_dim -> which backends can run, is_causal=True)
+/kaggle/src/script.py:3032: UserWarning: Memory efficient kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:960.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3032: UserWarning: Memory Efficient attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/sdp_utils_cpp.h:552.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3032: UserWarning: Flash attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:962.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3032: UserWarning: Flash attention only supports gpu architectures in the range [sm80, sm121]. Attempting to run on a sm 7.5 gpu. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:339.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3032: UserWarning: cuDNN attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:964.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3032: UserWarning: cuDNN attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:680.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+  PROBE float32  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 256  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 256  flash=no   efficient=yes  math=yes
+  shapes -> head_dim: D=128,H=4 -> 32 | D=32,H=4 -> 8 | D=1024,H=4 -> 256 | D=128,H=1 -> 128 | D=128,H=2 -> 64 | D=128,H=16 -> 8 | shape14 D=1024,H=16 -> 64
+
+##### SHAPE 1 : B=64 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=4.2762ms compiled=3.9328ms graph=4.1592ms -> compiled
+linear: fp16x3 (forced)
+PASS max_abs=1.91e-06 max_rel=0.437 | baseline=9.5962ms optimized=3.9000ms | speedup=2.461x
+
+##### SHAPE 2 : B=1 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=3.1700ms compiled=0.7844ms graph=0.6800ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.19e-06 max_rel=0.00962 | baseline=3.2071ms optimized=0.7868ms | speedup=4.076x
+
+##### SHAPE 3 : B=4 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=3.0859ms compiled=1.0111ms graph=0.9215ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.19e-06 max_rel=0.0547 | baseline=3.2101ms optimized=0.8851ms | speedup=3.627x
+
+##### SHAPE 4 : B=16 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=3.1228ms compiled=2.0808ms graph=1.9932ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.67e-06 max_rel=0.553 | baseline=3.2117ms optimized=1.1592ms | speedup=2.771x
+
+##### SHAPE 5 : B=128 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=8.1274ms compiled=7.6001ms graph=8.0151ms -> compiled
+linear: fp16x3 (forced)
+PASS max_abs=1.55e-06 max_rel=2.67 | baseline=18.6836ms optimized=7.6699ms | speedup=2.436x
+
+##### SHAPE 6 : B=10000 D=128 H=4 S=128 L=4 F=128 #####
+linear: fp16x3 (forced)
+PASS max_abs=2.86e-06 max_rel=2.1e+05 | baseline=1496.3035ms optimized=647.8663ms | speedup=2.310x
+
+##### SHAPE 7 : B=64 D=32 H=4 S=128 L=4 F=32 #####
+autotune: eager=3.1946ms compiled=2.7934ms graph=2.7194ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.19e-06 max_rel=1.5 | baseline=6.3570ms optimized=1.5964ms | speedup=3.982x
+
+##### SHAPE 8 : B=64 D=1024 H=4 S=128 L=4 F=1024 #####
+autotune: eager=86.4581ms compiled=87.2110ms graph=85.9331ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=9.54e-06 max_rel=42.1 | baseline=142.6046ms optimized=92.0781ms | speedup=1.549x
+
+##### SHAPE 9 : B=64 D=128 H=1 S=128 L=4 F=128 #####
+autotune: eager=5.2610ms compiled=4.9228ms graph=5.1277ms -> compiled
+linear: fp16x3 (forced)
+PASS max_abs=1.67e-06 max_rel=0.304 | baseline=6.6099ms optimized=3.9423ms | speedup=1.677x
+
+##### SHAPE 10 : B=64 D=128 H=2 S=128 L=4 F=128 #####
+autotune: eager=5.3494ms compiled=4.3278ms graph=4.3757ms -> compiled
+linear: fp16x3 (forced)
+PASS max_abs=1.67e-06 max_rel=1.67 | baseline=8.0794ms optimized=3.9067ms | speedup=2.068x
+
+##### SHAPE 11 : B=64 D=128 H=16 S=128 L=4 F=128 #####
+autotune: eager=10.0815ms compiled=7.3093ms graph=6.4433ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.67e-06 max_rel=1.29 | baseline=22.5439ms optimized=6.3401ms | speedup=3.556x
+
+##### SHAPE 12 : B=64 D=128 H=4 S=32 L=4 F=128 #####
+autotune: eager=3.2131ms compiled=2.0895ms graph=2.0188ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.43e-06 max_rel=0.188 | baseline=3.3636ms optimized=1.2339ms | speedup=2.726x
+
+##### SHAPE 13 : B=64 D=128 H=4 S=1024 L=4 F=128 #####
+linear: fp16x3 (forced)
+PASS max_abs=1.91e-06 max_rel=8 | baseline=324.2400ms optimized=65.6189ms | speedup=4.941x
+
+##### SHAPE 14 : optimized-only (baseline infeasible ~20.5 TB) #####
+skipped for this T3_ONLY selector
+
+=================== SUMMARY (copy from here) ===================
+shape,pass,max_abs,max_rel,baseline_ms,opt_ms,speedup,note
+1,PASS,1.9073486328125e-06,0.4374999403953552,9.5962,3.9000,2.461,
+2,PASS,1.1920928955078125e-06,0.009615234099328518,3.2071,0.7868,4.076,
+3,PASS,1.1920928955078125e-06,0.0546557679772377,3.2101,0.8851,3.627,
+4,PASS,1.6689300537109375e-06,0.5526314973831177,3.2117,1.1592,2.771,
+5,PASS,1.5497207641601562e-06,2.6666669845581055,18.6836,7.6699,2.436,
+6,PASS,2.86102294921875e-06,209502.359375,1496.3035,647.8663,2.310,
+7,PASS,1.1920928955078125e-06,1.5,6.3570,1.5964,3.982,
+8,PASS,9.5367431640625e-06,42.136383056640625,142.6046,92.0781,1.549,
+9,PASS,1.6689300537109375e-06,0.30446186661720276,6.6099,3.9423,1.677,
+10,PASS,1.6689300537109375e-06,1.6666667461395264,8.0794,3.9067,2.068,
+11,PASS,1.6689300537109375e-06,1.2933332920074463,22.5439,6.3401,3.556,
+12,PASS,1.430511474609375e-06,0.1881188154220581,3.3636,1.2339,2.726,
+13,PASS,1.9073486328125e-06,8.000000953674316,324.2400,65.6189,4.941,
+# median_speedup=2.726x min=1.549x max=4.941x over 13 PASS shapes
+=================== END SUMMARY ===================
+fingerprint[end]: 585 MHz, 1590 MHz, 5000 MHz, 78, 33.15 W, 0x0000000000000000 / 300 MHz, 1590 MHz, 405 MHz, 37, 9.16 W, 0x0000000000000001 | sgemm 4096^2 42.18 ms = 3.3 TFLOPS
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 1120430 bytes to __results__.html

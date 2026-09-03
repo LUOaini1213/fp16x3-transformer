@@ -1,0 +1,168 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+fingerprint[start]: 300 MHz, 1590 MHz, 405 MHz, 47, 10.13 W, 0x0000000000000001 / 300 MHz, 1590 MHz, 405 MHz, 50, 10.72 W, 0x0000000000000001 | sgemm 4096^2 35.05 ms = 3.9 TFLOPS
+sdpa backend probe  (head_dim -> which backends can run, is_causal=True)
+/kaggle/src/script.py:3034: UserWarning: Memory efficient kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:960.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3034: UserWarning: Memory Efficient attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/sdp_utils_cpp.h:552.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3034: UserWarning: Flash attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:962.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3034: UserWarning: Flash attention only supports gpu architectures in the range [sm80, sm121]. Attempting to run on a sm 7.5 gpu. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:339.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3034: UserWarning: cuDNN attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:964.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3034: UserWarning: cuDNN attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:680.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+  PROBE float32  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 256  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 256  flash=no   efficient=yes  math=yes
+  shapes -> head_dim: D=128,H=4 -> 32 | D=32,H=4 -> 8 | D=1024,H=4 -> 256 | D=128,H=1 -> 128 | D=128,H=2 -> 64 | D=128,H=16 -> 8 | shape14 D=1024,H=16 -> 64
+
+##### FP16x3 LINEAR BENCH #####
+x3_available: True | triton ok: True | addmm bias epilogue: True | order=lhh splitk=1
+fingerprint[x3-start]: 585 MHz, 1590 MHz, 5000 MHz, 51, 29.12 W, 0x0000000000000000 / 300 MHz, 1590 MHz, 405 MHz, 49, 10.03 W, 0x0000000000000001 | sgemm 4096^2 35.69 ms = 3.9 TFLOPS
+lnk   1 M=8192     D=128   torch LN    0.149 ms @  56 GB/s | torch add+LN    0.198 | ln_split    0.170 @  62 GB/s | add_ln_split    0.224 @  84 GB/s
+site  1 qkv     M=8192     K=128   N=384   fp32    0.241 ms | x3    0.361 ms (split 0.161 @  65 GB/s + GEMM 0.188) | x0.67 | err 1.7e-06 -> 2.3e-06
+site  1 out     M=8192     K=128   N=128   fp32    0.103 ms | x3    0.283 ms (split 0.149 @  70 GB/s + GEMM 0.121) | x0.36 | err 1.6e-06 -> 1.7e-06
+site  1 ffn_in  M=8192     K=128   N=128   fp32    0.164 ms | x3    0.276 ms (split 0.149 @  70 GB/s + GEMM 0.118) | x0.59 | err 1.5e-06 -> 1.9e-06
+site  1 ffn_out M=8192     K=128   N=128   fp32    0.123 ms | x3    0.264 ms (split 0.141 @  74 GB/s + GEMM 0.121) | x0.47 | err 1.4e-06 -> 1.1e-06
+lnk   2 M=128      D=128   torch LN    0.028 ms @   5 GB/s | torch add+LN    0.041 | ln_split    0.150 @   1 GB/s | add_ln_split    0.192 @   2 GB/s
+site  2 qkv     M=128      K=128   N=384   fp32    0.069 ms | x3    0.268 ms (split 0.136 @   1 GB/s + GEMM 0.099) | x0.26 | err 5.3e-07 -> 1.2e-06
+site  2 out     M=128      K=128   N=128   fp32    0.035 ms | x3    0.310 ms (split 0.142 @   1 GB/s + GEMM 0.211) | x0.11 | err 3.1e-07 -> 1.4e-06
+site  2 ffn_in  M=128      K=128   N=128   fp32    0.061 ms | x3    0.289 ms (split 0.152 @   1 GB/s + GEMM 0.120) | x0.21 | err 4.9e-07 -> 1.3e-06
+site  2 ffn_out M=128      K=128   N=128   fp32    0.053 ms | x3    0.288 ms (split 0.125 @   1 GB/s + GEMM 0.118) | x0.18 | err 2.4e-07 -> 1.3e-06
+lnk   3 M=512      D=128   torch LN    0.029 ms @  18 GB/s | torch add+LN    0.045 | ln_split    0.148 @   4 GB/s | add_ln_split    0.174 @   7 GB/s
+site  3 qkv     M=512      K=128   N=384   fp32    0.106 ms | x3    0.266 ms (split 0.153 @   4 GB/s + GEMM 0.092) | x0.40 | err 1.3e-06 -> 7.9e-07
+site  3 out     M=512      K=128   N=128   fp32    0.058 ms | x3    0.252 ms (split 0.131 @   5 GB/s + GEMM 0.108) | x0.23 | err 4.2e-07 -> 5.0e-07
+site  3 ffn_in  M=512      K=128   N=128   fp32    0.069 ms | x3    0.275 ms (split 0.137 @   5 GB/s + GEMM 0.105) | x0.25 | err 4.7e-07 -> 5.1e-07
+site  3 ffn_out M=512      K=128   N=128   fp32    0.061 ms | x3    0.268 ms (split 0.154 @   4 GB/s + GEMM 0.112) | x0.23 | err 3.1e-07 -> 3.5e-07
+lnk   4 M=2048     D=128   torch LN    0.061 ms @  34 GB/s | torch add+LN    0.073 | ln_split    0.159 @  16 GB/s | add_ln_split    0.182 @  26 GB/s
+site  4 qkv     M=2048     K=128   N=384   fp32    0.185 ms | x3    0.291 ms (split 0.152 @  17 GB/s + GEMM 0.131) | x0.64 | err 1.3e-06 -> 2.1e-06
+site  4 out     M=2048     K=128   N=128   fp32    0.079 ms | x3    0.278 ms (split 0.129 @  20 GB/s + GEMM 0.101) | x0.29 | err 1.1e-06 -> 1.6e-06
+site  4 ffn_in  M=2048     K=128   N=128   fp32    0.121 ms | x3    0.281 ms (split 0.144 @  18 GB/s + GEMM 0.102) | x0.43 | err 1.1e-06 -> 1.4e-06
+site  4 ffn_out M=2048     K=128   N=128   fp32    0.095 ms | x3    0.258 ms (split 0.137 @  19 GB/s + GEMM 0.099) | x0.37 | err 6.9e-07 -> 1.2e-06
+lnk   5 M=16384    D=128   torch LN    0.348 ms @  48 GB/s | torch add+LN    0.451 | ln_split    0.217 @  97 GB/s | add_ln_split    0.299 @ 126 GB/s
+site  5 qkv     M=16384    K=128   N=384   fp32    1.087 ms | x3    0.637 ms (split 0.228 @  92 GB/s + GEMM 0.481) | x1.71 | err 1.6e-06 -> 2.0e-06
+site  5 out     M=16384    K=128   N=128   fp32    0.303 ms | x3    0.365 ms (split 0.193 @ 109 GB/s + GEMM 0.223) | x0.83 | err 1.5e-06 -> 1.6e-06
+site  5 ffn_in  M=16384    K=128   N=128   fp32    0.631 ms | x3    0.379 ms (split 0.218 @  96 GB/s + GEMM 0.280) | x1.67 | err 1.2e-06 -> 1.6e-06
+site  5 ffn_out M=16384    K=128   N=128   fp32    0.365 ms | x3    0.387 ms (split 0.215 @  98 GB/s + GEMM 0.222) | x0.94 | err 9.5e-07 -> 1.1e-06
+lnk   6 M=1280000  D=128   torch LN   13.732 ms @  95 GB/s | torch add+LN   20.674 | ln_split    8.213 @ 199 GB/s | add_ln_split   13.868 @ 213 GB/s
+site  6 qkv     M=1280000  K=128   N=384   fp32   51.208 ms | x3   31.994 ms (split 8.123 @ 202 GB/s + GEMM 25.844) | x1.60 | err 1.5e-06 -> 2.2e-06
+site  6 out     M=1280000  K=128   N=128   fp32   14.936 ms | x3   16.977 ms (split 8.339 @ 196 GB/s + GEMM 9.935) | x0.88 | err 1.6e-06 -> 1.5e-06
+site  6 ffn_in  M=1280000  K=128   N=128   fp32   28.414 ms | x3   16.814 ms (split 8.141 @ 201 GB/s + GEMM 10.000) | x1.69 | err 1.2e-06 -> 1.8e-06
+site  6 ffn_out M=1280000  K=128   N=128   fp32   19.452 ms | x3   17.296 ms (split 8.375 @ 196 GB/s + GEMM 9.728) | x1.12 | err 9.6e-07 -> 1.3e-06
+lnk   7 M=8192     D=32    torch LN    0.081 ms @  26 GB/s | torch add+LN    0.092 | ln_split    0.153 @  17 GB/s | add_ln_split    0.193 @  24 GB/s
+site  7 qkv     M=8192     K=32    N=96    fp32    0.133 ms | x3    0.242 ms (split 0.134 @  20 GB/s + GEMM 0.082) | x0.55 | err 9.4e-07 -> 7.9e-07
+site  7 out     M=8192     K=32    N=32    fp32    0.051 ms | x3    0.309 ms (split 0.148 @  18 GB/s + GEMM 0.107) | x0.17 | err 6.8e-07 -> 5.9e-07
+site  7 ffn_in  M=8192     K=32    N=32    fp32    0.108 ms | x3    0.283 ms (split 0.144 @  18 GB/s + GEMM 0.109) | x0.38 | err 6.0e-07 -> 6.0e-07
+site  7 ffn_out M=8192     K=32    N=32    fp32    0.076 ms | x3    0.303 ms (split 0.140 @  19 GB/s + GEMM 0.128) | x0.25 | err 4.7e-07 -> 4.8e-07
+lnk   8 M=8192     D=1024  torch LN    0.317 ms @ 212 GB/s | torch add+LN    0.740 | ln_split    0.526 @ 159 GB/s | add_ln_split    0.817 @ 185 GB/s
+site  8 qkv     M=8192     K=1024  N=3072  fp32   13.745 ms | x3    8.858 ms (split 0.496 @ 169 GB/s + GEMM 8.636) | x1.55 | err 4.6e-06 -> 9.6e-06
+site  8 out     M=8192     K=1024  N=1024  fp32    3.349 ms | x3    2.967 ms (split 0.506 @ 166 GB/s + GEMM 2.597) | x1.13 | err 2.6e-06 -> 8.6e-06
+site  8 ffn_in  M=8192     K=1024  N=1024  fp32    3.260 ms | x3    2.565 ms (split 0.492 @ 171 GB/s + GEMM 2.398) | x1.27 | err 2.8e-06 -> 9.0e-06
+site  8 ffn_out M=8192     K=1024  N=1024  fp32    3.258 ms | x3    3.023 ms (split 0.512 @ 164 GB/s + GEMM 2.676) | x1.08 | err 1.7e-06 -> 5.3e-06
+lnk  13 M=65536    D=128   torch LN    1.294 ms @  52 GB/s | torch add+LN    1.364 | ln_split    0.522 @ 161 GB/s | add_ln_split    0.824 @ 183 GB/s
+site 13 qkv     M=65536    K=128   N=384   fp32    2.031 ms | x3    1.729 ms (split 0.527 @ 159 GB/s + GEMM 1.309) | x1.17 | err 1.6e-06 -> 1.8e-06
+site 13 out     M=65536    K=128   N=128   fp32    0.782 ms | x3    0.965 ms (split 0.519 @ 162 GB/s + GEMM 0.504) | x0.81 | err 1.3e-06 -> 1.7e-06
+site 13 ffn_in  M=65536    K=128   N=128   fp32    1.262 ms | x3    0.971 ms (split 0.523 @ 160 GB/s + GEMM 0.508) | x1.30 | err 1.4e-06 -> 2.1e-06
+site 13 ffn_out M=65536    K=128   N=128   fp32    0.875 ms | x3    0.981 ms (split 0.528 @ 159 GB/s + GEMM 0.508) | x0.89 | err 1.1e-06 -> 1.1e-06
+fingerprint[x3-end]: 1410 MHz, 1590 MHz, 5000 MHz, 58, 72.52 W, 0x0000000000000004 / 300 MHz, 1590 MHz, 405 MHz, 49, 10.03 W, 0x0000000000000001 | sgemm 4096^2 36.46 ms = 3.8 TFLOPS
+
+##### SHAPE 1 : B=64 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=5.2388ms compiled=4.9331ms graph=5.1228ms -> compiled
+linear: fp16x3 (forced)
+PASS max_abs=1.91e-06 max_rel=0.553 | baseline=9.7649ms optimized=3.9854ms | speedup=2.450x
+
+##### SHAPE 2 : B=1 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=3.1182ms compiled=0.7729ms graph=0.6798ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.19e-06 max_rel=0.0577 | baseline=2.9553ms optimized=0.7554ms | speedup=3.912x
+
+##### SHAPE 3 : B=4 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=3.1054ms compiled=1.0114ms graph=0.9175ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.19e-06 max_rel=0.0615 | baseline=3.0271ms optimized=0.8516ms | speedup=3.555x
+
+##### SHAPE 4 : B=16 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=2.9563ms compiled=2.0487ms graph=1.9985ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.43e-06 max_rel=0.054 | baseline=3.0857ms optimized=1.1589ms | speedup=2.663x
+
+##### SHAPE 5 : B=128 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=8.2884ms compiled=7.7615ms graph=8.2224ms -> compiled
+linear: fp16x3 (forced)
+PASS max_abs=1.91e-06 max_rel=1 | baseline=19.0897ms optimized=7.9022ms | speedup=2.416x
+
+##### SHAPE 6 : B=10000 D=128 H=4 S=128 L=4 F=128 #####
+linear: fp16x3 (forced)
+PASS max_abs=1.91e-06 max_rel=2.77e+05 | baseline=1643.2189ms optimized=714.4020ms | speedup=2.300x
+
+##### SHAPE 7 : B=64 D=32 H=4 S=128 L=4 F=32 #####
+autotune: eager=3.1290ms compiled=2.7966ms graph=2.7115ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.19e-06 max_rel=2.5 | baseline=6.4983ms optimized=1.6241ms | speedup=4.001x
+
+##### SHAPE 8 : B=64 D=1024 H=4 S=128 L=4 F=1024 #####
+autotune: eager=98.9826ms compiled=99.5084ms graph=99.9136ms -> eager
+linear: fp16x3 (forced)
+PASS max_abs=9.54e-06 max_rel=42.1 | baseline=162.2672ms optimized=104.7739ms | speedup=1.549x
+
+##### SHAPE 9 : B=64 D=128 H=1 S=128 L=4 F=128 #####
+autotune: eager=5.0252ms compiled=4.6610ms graph=4.8636ms -> compiled
+linear: fp16x3 (forced)
+PASS max_abs=1.67e-06 max_rel=0.205 | baseline=6.8762ms optimized=4.0137ms | speedup=1.713x
+
+##### SHAPE 10 : B=64 D=128 H=2 S=128 L=4 F=128 #####
+autotune: eager=5.3429ms compiled=5.0204ms graph=5.2306ms -> compiled
+linear: fp16x3 (forced)
+PASS max_abs=1.67e-06 max_rel=0.833 | baseline=8.4292ms optimized=4.1740ms | speedup=2.019x
+
+##### SHAPE 11 : B=64 D=128 H=16 S=128 L=4 F=128 #####
+autotune: eager=6.5460ms compiled=6.2342ms graph=6.4211ms -> compiled
+linear: fp16x3 (forced)
+PASS max_abs=1.67e-06 max_rel=0.973 | baseline=23.1169ms optimized=6.3612ms | speedup=3.634x
+
+##### SHAPE 12 : B=64 D=128 H=4 S=32 L=4 F=128 #####
+autotune: eager=2.9906ms compiled=2.0726ms graph=2.0091ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.67e-06 max_rel=0.188 | baseline=3.1069ms optimized=1.2388ms | speedup=2.508x
+
+##### SHAPE 13 : B=64 D=128 H=4 S=1024 L=4 F=128 #####
+linear: fp16x3 (forced)
+PASS max_abs=1.91e-06 max_rel=5.43 | baseline=372.0928ms optimized=67.6170ms | speedup=5.503x
+
+##### SHAPE 14 : optimized-only (baseline infeasible ~20.5 TB) #####
+skipped for this T3_ONLY selector
+
+=================== SUMMARY (copy from here) ===================
+shape,pass,max_abs,max_rel,baseline_ms,opt_ms,speedup,note
+1,PASS,1.9073486328125e-06,0.553191602230072,9.7649,3.9854,2.450,
+2,PASS,1.1920928955078125e-06,0.0576925165951252,2.9553,0.7554,3.912,
+3,PASS,1.1920928955078125e-06,0.06153852120041847,3.0271,0.8516,3.555,
+4,PASS,1.430511474609375e-06,0.053968220949172974,3.0857,1.1589,2.663,
+5,PASS,1.9073486328125e-06,1.0,19.0897,7.9022,2.416,
+6,PASS,1.9073486328125e-06,276842.40625,1643.2189,714.4020,2.300,
+7,PASS,1.1920928955078125e-06,2.5,6.4983,1.6241,4.001,
+8,PASS,9.5367431640625e-06,42.136383056640625,162.2672,104.7739,1.549,
+9,PASS,1.6689300537109375e-06,0.20472434163093567,6.8762,4.0137,1.713,
+10,PASS,1.6689300537109375e-06,0.8333333134651184,8.4292,4.1740,2.019,
+11,PASS,1.6689300537109375e-06,0.9733334183692932,23.1169,6.3612,3.634,
+12,PASS,1.6689300537109375e-06,0.18811888992786407,3.1069,1.2388,2.508,
+13,PASS,1.9073486328125e-06,5.428571701049805,372.0928,67.6170,5.503,
+# median_speedup=2.508x min=1.549x max=5.503x over 13 PASS shapes
+=================== END SUMMARY ===================
+fingerprint[end]: 585 MHz, 1590 MHz, 5000 MHz, 76, 34.71 W, 0x0000000000000000 / 300 MHz, 1590 MHz, 405 MHz, 43, 10.33 W, 0x0000000000000001 | sgemm 4096^2 45.86 ms = 3.0 TFLOPS
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 1120924 bytes to __results__.html

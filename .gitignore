@@ -71,3 +71,6 @@ logs/
 !results/kaggle_t4_d1_run.log
 !results/kaggle_t4_d2_run.log
 !results/kaggle_t4_d3_run.log
+!results/kaggle_t4_sall_run.log
+!results/kaggle_t4_sall2_run.log
+!results/kaggle_t4_sall3_run.log
