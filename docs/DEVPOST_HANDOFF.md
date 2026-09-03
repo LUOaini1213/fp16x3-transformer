@@ -253,7 +253,7 @@ It is also slower: $0.04$—$0.72\times$ fp32 SDPA, median ${med_a:.3f}\times$ a
 The trap: registered through `triton_op`, the kernel measured **$2.08e-03$ under `torch.compile`** — fp16-level — from code that is $2.98e-06$ eager. Inductor does not emulate intermediate precision casts inside the kernels it fuses, so $x - \mathrm{fp32}(\mathrm{fp16}(x))$ folds to zero and the low halves vanish. An opaque `custom_op` boundary fixes it. Precision tricks and fusing compilers do not mix unless you draw the line yourself.
 
 <!-- x3-next:begin -->
-Split-K for the fp16x3 GEMMs, with the partial sums reduced in IEEE fp32 outside the tensor core, would take the K=1024 error from $9.5 \times 10^{-6}$ back to the $10^{-6}$ the emulation shows is possible, and make the path fp32-class at any width, not only at this gate.
+Split-K for the fp16x3 GEMMs, with the partial sums reduced in IEEE fp32 outside the tensor core, would take the K=1024 error from $9.5 \times 10^{-6}$ back to the $10^{-6}$ the emulation shows is possible, and make the path fp32-class at any width, not only at this gate. The int8 tensor cores are not the next step: computing the two cross terms on them (two cost units instead of three) measured as a wash on speed and an order of magnitude worse in error, because eight bits of a row-scaled operand keep 0.4% of the row maximum. What would move shape 8 further is an Ampere-class card, where the fp16 tensor-core ratio doubles and the same three-term GEMM runs at 2.7x fp32 rather than 1.5x.
 <!-- x3-next:end -->
 
 ---8<--- 复制到这里为止 ---8<---
@@ -282,6 +282,9 @@ Split-K for the fp16x3 GEMMs, with the partial sums reduced in IEEE fp32 outside
 | 数字 | 来源 |
 |---|---|
 | T4 中位 2.834× / 13-13 PASS(默认 fp16x3,3 次独立运行逐 shape 取中位数) | `results/results_t4.csv`、`results/results_t4_runs.csv`、`results/kaggle_t4_{x3force2,def2,def3}_run.log` |
+| T4 fp32 SGEMM 对照 2.300×(3 次运行) | `results/results_t4_fp32.csv`、`results/kaggle_t4_{fix1,fp32b,fp32c}_run.log` |
+| T4 `T3_LINEAR=auto` 两次 2.299× / 2.214× | `results/results_t4_x3v4.csv`、`results/results_t4_x3v4b.csv` |
+| fp16x3 算子级对比、误差 | `results/kaggle_t4_x3v3_run.log`;kernel 级 profile `results/kaggle_t4_profile_run.log` |
 | T4 fp32 SGEMM 对照 2.300×(3 次运行) | `results/results_t4_fp32.csv`、`results/kaggle_t4_{fix1,fp32b,fp32c}_run.log` |
 | T4 `T3_LINEAR=auto` 两次 2.299× / 2.214× | `results/results_t4_x3v4.csv`、`results/results_t4_x3v4b.csv` |
 | fp16x3 算子级对比、误差 | `results/kaggle_t4_x3v3_run.log`;kernel 级 profile `results/kaggle_t4_profile_run.log` |

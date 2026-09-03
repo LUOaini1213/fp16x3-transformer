@@ -379,7 +379,11 @@ The retired per-shape tuner (`T3_LINEAR=auto`) scored 2.299x and
 4. *Alignment is not a detail.* Eight padding columns made K=392 and cost 10-30% on the
    K=128 shapes' GEMMs; rounding to 32 made it free, and for K=32 (shape 7) it made the
    GEMM 2.5x faster than the unpadded K=96.
-5. *Do not tune two Dynamo variants through Inductor's CUDA-graph trees.* Timing fp16x3
+5. *Cheaper arithmetic has to survive the rounding first.* int8 IMMA for the two cross
+   terms (two cost units instead of three) was a wash on speed and an order of magnitude
+   worse in error at the operator level (`kaggle_t4_x3i8_run.log`): a row-scaled 8-bit
+   `a_hi` keeps 0.4% of the row maximum, and that times `w_lo` is 2e-5 by itself.
+6. *Do not tune two Dynamo variants through Inductor's CUDA-graph trees.* Timing fp16x3
    as a second compiled variant of the same reduce-overhead function, then switching
    back, corrupted the caching allocator (`Expected curr_block->next == nullptr` on the
    next capture); the tuner was retired.

@@ -76,7 +76,7 @@ def build_selector(only, extra_env):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="all",
-                    choices=["all", "1-13", "14", "ablation", "triton", "probe", "attn", "profile", "x3", "gemm", "x3k", "x3geo"],
+                    choices=["all", "1-13", "14", "ablation", "triton", "probe", "attn", "profile", "x3", "gemm", "x3k", "x3geo", "x3i8"],
                     help="which section of the sweep the kernel runs (default: all)")
     ap.add_argument("--id", default="wenjiluo/track3-bench",
                     help="Kaggle kernel id to push to")
@@ -109,6 +109,9 @@ def main():
     ta = ta.replace("from __future__ import annotations", "")
     tx = read(os.path.join("kernels", "fp16x3.py"))
     tx = tx.replace("from __future__ import annotations", "")
+    ti = read(os.path.join("kernels", "fp16x3_int8.py"))
+    ti = ti.replace("from __future__ import annotations", "")
+    ti = ti.replace("from .fp16x3 import _x3_geometry, _x3_tail", "")
 
     uo = read("user_optimized.py")
     uo = uo.replace("from __future__ import annotations\n", "")
@@ -131,6 +134,8 @@ def main():
         + ta
         + "\n\n# ============ kernels/fp16x3.py (inlined) ============\n\n"
         + tx
+        + "\n\n# ============ kernels/fp16x3_int8.py (inlined) ============\n\n"
+        + ti
         + "\n\n# ================= user_optimized.py (inlined) =================\n\n"
         + uo
         + "\n\n# ================= sweep driver =================\n\n"

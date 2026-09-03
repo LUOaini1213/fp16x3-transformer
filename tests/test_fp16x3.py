@@ -275,3 +275,26 @@ def test_chunked_path_allocates_no_split_weights(monkeypatch):
     assert not opt._x3_on
     assert not hasattr(opt.layers[0].ffn_in, "_x3")
     assert torch.allclose(out, ref, atol=1e-4)
+
+
+# --------------------------------------------------------------------------
+# The int8 cross-term experiment (kernels/fp16x3_int8.py): not wired into the
+# model; this pins the arithmetic and its quantisation floor.
+# --------------------------------------------------------------------------
+@pytest.mark.parametrize("k", [128, 1024])
+def test_int8_cross_terms_reference(k):
+    from kernels import fp16x3_int8 as I8
+    torch.manual_seed(k)
+    a = torch.nn.functional.layer_norm(torch.randn(1024, k), (k,))
+    w = (torch.rand(512, k) * 2 - 1) / math.sqrt(k)
+    b = (torch.rand(512) * 2 - 1) / math.sqrt(k)
+    ref = a.double() @ w.double().t() + b.double()
+    a_hi, a_q, s_r = I8.x3i8_split(a)
+    w_hi, w_q, t_n, _ = I8.x3i8_prepare(w, b)
+    assert a_q.dtype == torch.int8 and w_q.dtype == torch.int8
+    assert a_hi.shape == (1024, k + K._x3_tail(k)) and a_q.shape == (1024, 2 * k)
+    out = I8.x3i8_linear(a_hi, a_q, s_r, w_hi, w_q, t_n)
+    err = (out.double() - ref).abs().max().item()
+    # 8-bit cross terms: ~2e-5, an order above fp16x3's ~1e-6 -- the reason
+    # the experiment was declined (results/ablation.md)
+    assert 3e-6 < err < 1e-4

@@ -764,6 +764,60 @@ def _x3_kbench(device):
     _gpu_fingerprint("x3k-end")
 
 
+def _x3i8_bench(device):
+    """fp16x3 (one K-tripled fp16 GEMM) against fp16 main + int8 cross terms
+    (one K fp16 GEMM + one 2K int8 GEMM + dequant) per graded GEMM geometry:
+    time and max-abs error against fp64."""
+    import math
+    import torch
+    import torch.nn.functional as F
+    print(f"x3_available: {x3_available(device)}", flush=True)
+    _gpu_fingerprint("x3i8-start")
+    geoms = [(8192, 1024, 3072, "8 qkv"), (8192, 1024, 1024, "8 o/ffn"), (65536, 128, 384, "13 qkv"),
+             (65536, 128, 128, "13 o"), (16384, 128, 384, "5 qkv"), (1280000, 128, 128, "6 o")]
+    for (M, K, N, tag) in geoms:
+        try:
+            x = torch.randn(M, K, device=device)
+            g = torch.rand(K, device=device) + 0.5
+            be = torch.randn(K, device=device) * 0.1
+            w = (torch.rand(N, K, device=device) * 2 - 1) / math.sqrt(K)
+            bias = (torch.rand(N, device=device) * 2 - 1) / math.sqrt(K)
+            n_err = min(M, 4096)
+            ref = F.layer_norm(x[:n_err].double(), (K,), g.double(), be.double(), 1e-5) @ w.double().t() + bias.double()
+            # shipped fp16x3: LN-split + one GEMM (bias in the K tail)
+            w3, _, inv = x3_prepare(w, bias)
+            f3 = lambda: x3_linear(x3_ln_split(x, g, be, 1e-5), w3, None, inv, False)
+            t3 = _med(f3)
+            e3 = ((f3()[:n_err].double() * inv) - ref).abs().max().item()
+            # int8 cross terms: LN (fp32, torch) + i8 split + fp16 GEMM + int8 GEMM + dequant
+            w_hi, w_q, t_n, _ = x3i8_prepare(w, bias)
+            ln = lambda: F.layer_norm(x, (K,), g, be, 1e-5)
+            def f8():
+                a_hi, a_q, s_r = x3i8_split(ln())
+                return x3i8_linear(a_hi, a_q, s_r, w_hi, w_q, t_n)
+            t8 = _med(f8)
+            e8 = (f8()[:n_err].double() - ref).abs().max().item()
+            # components
+            y = ln()
+            t_ln = _med(ln)
+            t_split8 = _med(lambda: x3i8_split(y))
+            a_hi, a_q, s_r = x3i8_split(y)
+            a_hi_k = a_hi[:, :w_hi.shape[1]]
+            t_main = _med(lambda: torch.mm(a_hi_k, w_hi.t(), out_dtype=torch.float32))
+            t_cross = _med(lambda: torch._int_mm(a_q, w_q.t()))
+            main = torch.mm(a_hi_k, w_hi.t(), out_dtype=torch.float32); cross = torch._int_mm(a_q, w_q.t())
+            t_deq = _med(lambda: main + (s_r[:, None] * t_n[None, :] * (1.0 / 2048.0)) * cross.float())
+            print(f"x3i8 shape {tag:8s} M={M:<8d} K={K:<5d} N={N:<5d} fp16x3 {t3:8.3f} ms (err {e3:.1e}) | "
+                  f"int8-cross {t8:8.3f} ms (err {e8:.1e}) = LN {t_ln:.3f} + split {t_split8:.3f} + main {t_main:.3f} + cross {t_cross:.3f} + dequant {t_deq:.3f} | "
+                  f"x{t3 / t8:.2f}", flush=True)
+            del x, w, w3, w_hi, w_q, a_hi, a_q, main, cross, y
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            print(f"x3i8 shape {tag} error: {str(e)[:160]}", flush=True)
+        torch.cuda.empty_cache()
+    _gpu_fingerprint("x3i8-end")
+
+
 def _x3_geo_bench(device):
     """Sweep rows-per-program and warps for the tiled split/LayerNorm kernels
     on the graded row widths, and run the thorough self-check on this GPU."""
@@ -907,6 +961,9 @@ def _main():
         return
     if only == "x3geo":
         _x3_geo_bench(device)
+        return
+    if only == "x3i8":
+        _x3i8_bench(device)
         return
     try:
         _sdpa_probe(device)

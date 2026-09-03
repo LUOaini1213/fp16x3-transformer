@@ -193,9 +193,10 @@ truncating accumulator, growing linearly with K, halved for free by summing the 
 terms first — still 210x inside the gate. Four variants lost and are published: a
 PyTorch-side split, a two-GEMM form, a cuBLAS epilogue for bias and scale (40-90% slower
 than a bare `mm`), and a first-forward tuner for the fp32/fp16x3 choice (retired at the
-noise floor). Every activation the path splits is bounded from the weights, and the
-first forward is checked for finiteness, so the fp16 range is guarded without a sync in
-steady state.
+noise floor). A fifth, int8 tensor cores for the two cross terms, was a wash on speed
+and ten times worse in error and is declined with its table. Every activation the path
+splits is bounded from the weights, and the first forward is checked for finiteness, so
+the fp16 range is guarded without a sync in steady state.
 
 <!-- x3-report:end -->
 

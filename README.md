@@ -449,6 +449,26 @@ first-forward tuner for this axis (`T3_LINEAR=auto`) was measured twice and reti
 its seven-sample verdicts sat at the noise floor on the sub-millisecond shapes, and the
 static choice scored higher; the runs are kept in the ablation as history.
 
+**The int8 idea, measured and declined.** A T4's int8 tensor cores run at twice the fp16
+rate (`torch._int_mm`, probed at ~67 TFLOPS on sm_75), and the two cross terms are only
+2^-11 of the result, so computing them as one K-doubled int8 GEMM with per-row and
+per-column power-of-two scales would make the path two cost units instead of three
+(`kernels/fp16x3_int8.py`, `results/kaggle_t4_x3i8_run.log`). It is a wash on speed
+— the int8 GEMM did not run at twice the fp16 rate at these sizes, and a fused
+dequant would only bring the total level with the single fp16 GEMM — and it costs an
+order of magnitude in accuracy, because eight bits of a row-scaled `a_hi` leave 0.4% of
+the row maximum in the cross term (2.7e-5 at K=128 in the exact CPU emulation, against
+1.2e-6 for fp16x3). Declined; the module and its test stay as the record.
+
+| shape / site | M | K | N | fp16x3 ms | err | int8: main + cross ms | err |
+|---|---|---|---|---|---|---|---|
+| 8 qkv | 8192 | 1024 | 3072 | 5.00 | 1.0e-05 | 1.96 + 2.50 (+ 4.65 unfused dequant) | 3.2e-05 |
+| 8 o/ffn | 8192 | 1024 | 1024 | 1.76 | 9.0e-06 | 0.67 + 0.67 (+ 1.60 unfused dequant) | 3.6e-05 |
+| 13 qkv | 65536 | 128 | 384 | 1.56 | 1.9e-06 | 0.68 + 0.66 (+ 4.68 unfused dequant) | 3.0e-05 |
+| 13 o | 65536 | 128 | 128 | 0.97 | 1.8e-06 | 0.32 + 0.27 (+ 1.58 unfused dequant) | 2.6e-05 |
+| 5 qkv | 16384 | 128 | 384 | 0.49 | 1.9e-06 | 0.20 + 0.18 (+ 1.21 unfused dequant) | 2.7e-05 |
+| 6 o | 1280000 | 128 | 128 | 16.64 | 1.9e-06 | 5.52 + 4.63 (+ 30.48 unfused dequant) | 2.7e-05 |
+
 The CPU test suite (`tests/test_fp16x3.py`, `pytest -q tests/`) runs the same arithmetic
 as exact emulation: fp16 products formed in fp32, the kernels' reference
 implementations, the guard, a weight update after the first forward, the chunked path.
