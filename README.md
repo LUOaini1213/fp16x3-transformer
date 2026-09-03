@@ -9,9 +9,9 @@ output numerically identical to the reference implementation (per-element
 
 Five results, each traceable to a committed kernel log under `results/`:
 
-1. **13/13 graded shapes pass** at `max_abs` 6.7e-06 or better on twelve shapes and
-   4.1e-05 on the one with K=1024 — 297x and 49x inside the `atol=0.002`
-   gate — with a **median speedup of 2.50x on a free Tesla T4** (per-shape median
+1. **13/13 graded shapes pass** at `max_abs` 2.9e-06 or better on twelve shapes and
+   9.5e-06 on the one with K=1024 — 699x and 210x inside the `atol=0.002`
+   gate — with a **median speedup of 2.83x on a free Tesla T4** (per-shape median
    of three independent runs; 2.07x on a P100), from fused attention, **fp32-accurate
    GEMMs on the fp16 tensor cores** (hi/lo operand compensation, fed by our own Triton
    kernels), and a per-shape autotune over eager, `torch.compile` and CUDA-graph replay.
@@ -23,9 +23,10 @@ Five results, each traceable to a committed kernel log under `results/`:
    ships — computed on the fp16 tensor cores with error compensation (item 4), not by
    giving the margin up.
 4. **Three hand-written kernel families, all measured; one ships.** The fp16x3 linear
-   path — fused LayerNorm / GELU kernels that emit split fp16 operands, one cuBLAS
-   tensor-core GEMM with K tripled — takes the GEMM-bound shape from
-   1.09x to 1.60x and the median from 2.30x to 2.50x, and is the default.
+   path — tiled Triton LayerNorm / GELU kernels that emit split fp16 operands, one
+   bare cuBLAS tensor-core GEMM with K tripled, bias and scale folded into the
+   neighbours, lo-first operand order — takes the GEMM-bound shape from
+   1.09x to 1.57x and the median from 2.30x to 2.83x, and is the default.
    A fused add+LayerNorm that matches Inductor without beating it, and a split-operand
    attention kernel with fp32-class accuracy (1.4e-6–4.2e-6 vs fp64) that loses on speed on
    a T4 for reasons that are the GPU's, stay off.
@@ -134,7 +135,7 @@ to the run that produced it.
 | GPU | what it can run | median speedup | range | worst `max_abs` |
 |---|---|---|---|---|
 | Tesla P100 (`sm_60`) | SDPA only (fp32 SGEMM; no tensor cores) | 2.065x | 1.098x - 4.001x | 1.91e-6 |
-| **Tesla T4 (`sm_75`), shipped** | **SDPA + fp16x3 tensor-core GEMMs + first-forward autotune: eager / `torch.compile` / CUDA graph** | **2.499x** | 1.534x - 4.707x | 4.09e-05 (K=1024); 6.74e-06 elsewhere |
+| **Tesla T4 (`sm_75`), shipped** | **SDPA + fp16x3 tensor-core GEMMs + first-forward autotune: eager / `torch.compile` / CUDA graph** | **2.834x** | 1.566x - 5.222x | 9.54e-06 (K=1024); 2.86e-06 elsewhere |
 | Tesla T4, `T3_LINEAR=fp32` | same, GEMMs on fp32 SGEMM | 2.300x | 1.095x - 4.818x | 3.22e-06 |
 | Tesla T4, `T3_LINEAR=auto` | per-shape choice on the first forward (two runs) | 2.299x / 2.214x | 1.429x - 4.967x | as shipped |
 | Tesla T4, `T3_AUTOCAST=fp16` | + fp16 storage | 4.014x | 1.320x - 11.528x | 2.04e-3 — *see below* |
@@ -149,24 +150,24 @@ Per shape (`results/results.csv` = P100; `results/results_t4_fp32.csv` and
 
 | # | B,D,H,S,F | P100 base -> opt | P100 | T4 base -> opt, fp32 GEMM | T4 fp32 | T4 opt, fp16x3 | **T4 shipped** |
 |---|---|---|---|---|---|---|---|
-| 1 | 64,128,4,128,128 | 5.91 -> 3.37 | 1.75x | 9.50 -> 4.16 | 2.28x | 4.34 | **2.19x** |
-| 2 | 1,128,4,128,128 | 3.16 -> 1.48 | 2.14x | 2.99 -> 0.79 | 3.83x | 0.80 | **3.85x** |
-| 3 | 4,128,4,128,128 | 3.18 -> 1.46 | 2.17x | 3.16 -> 0.92 | 3.38x | 0.96 | **3.24x** |
-| 4 | 16,128,4,128,128 | 3.15 -> 1.38 | 2.29x | 3.01 -> 1.20 | 2.48x | 1.21 | **3.11x** |
-| 5 | 128,128,4,128,128 | 11.00 -> 6.19 | 1.78x | 18.44 -> 8.02 | 2.30x | 8.48 | **2.19x** |
-| 6 | 10000,128,4,128,128 | 772.29 -> 417.97 | 1.85x | 1469.90 -> 681.01 | 2.16x | 707.87 | **2.04x** |
-| 7 | 64,32,4,128,32 | 4.05 -> 1.96 | 2.06x | 6.36 -> 2.30 | 2.76x | 1.93 | **3.29x** |
-| 8 | 64,1024,4,128,1024 | 70.93 -> 64.59 | 1.10x | 140.28 -> 128.07 | 1.09x | 85.90 | **1.60x** |
-| 9 | 64,128,1,128,128 | 3.85 -> 3.11 | 1.24x | 6.66 -> 5.27 | 1.26x | 4.29 | **1.53x** |
-| 10 | 64,128,2,128,128 | 4.77 -> 3.13 | 1.52x | 8.17 -> 5.17 | 1.58x | 4.32 | **1.87x** |
-| 11 | 64,128,16,128,128 | 12.54 -> 4.91 | 2.56x | 22.70 -> 7.38 | 3.08x | 6.69 | **3.38x** |
-| 12 | 64,128,4,32,128 | 3.06 -> 1.32 | 2.33x | 3.08 -> 1.47 | 2.09x | 1.25 | **2.50x** |
-| 13 | 64,128,4,1024,128 | 168.60 -> 42.15 | 4.00x | 324.47 -> 67.25 | 4.82x | 68.21 | **4.71x** |
+| 1 | 64,128,4,128,128 | 5.91 -> 3.37 | 1.75x | 9.50 -> 4.16 | 2.28x | 3.54 | **2.70x** |
+| 2 | 1,128,4,128,128 | 3.16 -> 1.48 | 2.14x | 2.99 -> 0.79 | 3.83x | 0.72 | **4.40x** |
+| 3 | 4,128,4,128,128 | 3.18 -> 1.46 | 2.17x | 3.16 -> 0.92 | 3.38x | 0.85 | **3.65x** |
+| 4 | 16,128,4,128,128 | 3.15 -> 1.38 | 2.29x | 3.01 -> 1.20 | 2.48x | 1.06 | **2.99x** |
+| 5 | 128,128,4,128,128 | 11.00 -> 6.19 | 1.78x | 18.44 -> 8.02 | 2.30x | 7.22 | **2.59x** |
+| 6 | 10000,128,4,128,128 | 772.29 -> 417.97 | 1.85x | 1469.90 -> 681.01 | 2.16x | 629.64 | **2.49x** |
+| 7 | 64,32,4,128,32 | 4.05 -> 1.96 | 2.06x | 6.36 -> 2.30 | 2.76x | 1.44 | **4.50x** |
+| 8 | 64,1024,4,128,1024 | 70.93 -> 64.59 | 1.10x | 140.28 -> 128.07 | 1.09x | 95.28 | **1.57x** |
+| 9 | 64,128,1,128,128 | 3.85 -> 3.11 | 1.24x | 6.66 -> 5.27 | 1.26x | 3.55 | **1.86x** |
+| 10 | 64,128,2,128,128 | 4.77 -> 3.13 | 1.52x | 8.17 -> 5.17 | 1.58x | 3.55 | **2.29x** |
+| 11 | 64,128,16,128,128 | 12.54 -> 4.91 | 2.56x | 22.70 -> 7.38 | 3.08x | 5.86 | **3.86x** |
+| 12 | 64,128,4,32,128 | 3.06 -> 1.32 | 2.33x | 3.08 -> 1.47 | 2.09x | 1.11 | **2.83x** |
+| 13 | 64,128,4,1024,128 | 168.60 -> 42.15 | 4.00x | 324.47 -> 67.25 | 4.82x | 64.51 | **5.22x** |
 
 **Measurement protocol.** Every T4 cell above is the **median of three independent
-runs** (shipped path: run medians 2.442x / 2.380x / 2.499x; fp32 GEMMs:
+runs** (shipped path: run medians 2.828x / 2.912x / 2.834x; fp32 GEMMs:
 2.261x / 2.300x / 2.332x; every run 13/13 PASS), and `max_abs` is the worst
-of the three. The per-shape spread, (max − min) / median, reaches 28% on
+of the three. The per-shape spread, (max − min) / median, reaches 25% on
 shape 4, and shape 6 alone drifts by up to 20% between sessions on the same code —
 a 70 W card under a minute of sustained load. Differences smaller than that between
 two configurations are noise, and the text says so wherever it applies. All six runs
@@ -183,7 +184,7 @@ shape 13 moved from 4.44x to 4.82x. The control run of the old code is committed
 (`results/kaggle_t4_head_run.log`) so the before and after can both be inspected.
 
 One honest observation from that table: **the T4's baselines are slower than the
-P100's** (shape 13: 324.0 ms vs 168.6 ms). The P100 has more fp32 throughput and
+P100's** (shape 13: 324.7 ms vs 168.6 ms). The P100 has more fp32 throughput and
 about twice the memory bandwidth. The T4 ratios are better anyway because our
 path picks up compile there while the baseline stays
 bandwidth-bound. A speedup is a ratio; it is worth saying which side moved.
@@ -280,7 +281,7 @@ ablation and the delivered path are literally the same code. The measured
 Shipped defaults are `T3_LINEAR=fp16x3`, `T3_AUTOCAST=off`, `T3_COMPILE=auto`,
 `T3_CUDAGRAPH=1`: SDPA, tensor-core GEMMs with hi/lo compensation, plus whichever of eager / Inductor-compiled / eager-captured-into-a-CUDA-graph a
 first-forward timing on the real input says is fastest. On the T4 that came out
-2 compiled, 6 graph, 3 eager across the 11 shapes small enough to tune;
+0 compiled, 10 graph, 1 eager across the 11 shapes small enough to tune;
 the per-shape table is in [`results/ablation.md`](results/ablation.md).
 
 **Fused QKV projection (`T3_FUSED_QKV=1`), measured and declined.** One `[3D, D]`
@@ -317,74 +318,140 @@ fp16 *arithmetic with compensation* is a different thing:
 
 ```
 x  =  x_hi + x_lo            x_hi = fp16(x),  x_lo = fp16(x - x_hi)       (~2^-22 relative)
-a.w =~ a_hi.w_hi + a_lo.w_hi + a_hi.w_lo                                  (a_lo.w_lo dropped)
+a.w =~ a_lo.w_hi + a_hi.w_lo + a_hi.w_hi                                  (a_lo.w_lo dropped)
 ```
 
 Every product of two fp16 numbers is exact in fp32, the tensor cores accumulate in
 fp32, and cuBLAS writes an fp32 result (`mm(..., out_dtype=float32)`, PyTorch >= 2.8), so
-the three cross terms are one GEMM with K tripled:
+the three cross terms are one GEMM with K tripled. The weight is scaled by a power of
+two `s` before its split so that its lo part (2^-11 of a ~0.03 weight, below fp16's
+normal range) is a normal fp16 number; weights are split once and cached, keyed on the
+parameters' version counters.
 
-```
-out = (1/s) * [a_hi | a_hi | a_lo] @ [w_hi ; w_lo ; w_hi]^T + bias
-```
+**Four things had to be true for it to pay, and each was measured.**
 
-The weight is scaled by a power of two `s` before its split so that its lo part (2^-11
-of a ~0.03 weight, below fp16's normal range) is a normal fp16 number; `alpha = 1/s`
-in the cuBLAS epilogue undoes it exactly, with the bias. Weights are split once and
-cached, keyed on the parameters' version counters like the fused-QKV cache.
+*The split has to be free.* A naive split in PyTorch (`.half()`, `x - hi.float()`,
+`cat`) is five kernels and ~10 bytes of traffic per element; on shape 8 it cost exactly
+what the faster GEMM saved (0.98x). So the split is fused into whichever kernel produces
+the activation — Triton kernels for `LayerNorm -> split`, `add + LayerNorm -> (sum,
+split)`, `GELU -> split`, a plain split for the attention output, and an fp32
+`add + LayerNorm` for the final norm — registered through `torch.library.triton_op`
+so Inductor schedules them inside its graph. Their casts are explicit in the kernel, so
+the Inductor cast-folding trap that broke the attention op cannot touch them. They
+process a `[rows, N]` tile per program; a sweep of the geometry on the T4
+(`results/kaggle_t4_b2geo2_run.log`) settled on a few rows with eight warps:
 
-**The split has to be free, or it eats the win.** A naive split in PyTorch
-(`.half()`, `x - hi.float()`, `cat`) is five kernels and ~10 bytes of traffic per
-element; measured on shape 8 it cost exactly what the faster GEMM saved (0.98x). So the
-split is fused into whichever kernel produces the activation — three Triton kernels,
-`LayerNorm -> [hi|hi|lo]`, `add + LayerNorm -> (sum, [hi|hi|lo])`, `GELU -> [hi|hi|lo]`
-(and a plain split for the attention output) — registered through
-`torch.library.triton_op` so Inductor schedules them inside its graph. Their casts are
-explicit in the kernel, so the Inductor cast-folding trap that broke the attention op
-cannot touch them. The GEMM is an opaque `custom_op` around cuBLAS.
+| M | N | one row / program (ms @ GB/s) | tiled LN-split | PyTorch `LayerNorm` | tiled fp32 LN |
+|---|---|---|---|---|---|
+| 1280000 | 128 | 9.673 @ 169 | 7.969 @ 206 (rows 4, 8 warps) | 12.420 @ 106 | 5.348 @ 245 (rows 1, 2 warps) |
+| 65536 | 128 | 0.915 @ 92 | 0.509 @ 165 (rows 4, 8 warps) | 1.323 @ 51 | 0.377 @ 178 (rows 4, 8 warps) |
+| 65536 | 384 | 1.584 @ 159 | 1.350 @ 186 (rows 1, 2 warps) | 1.759 @ 114 | 0.943 @ 214 (rows 4, 8 warps) |
+| 8192 | 1024 | 0.612 @ 137 | 0.522 @ 161 (rows 2, 8 warps) | 0.401 @ 168 | 0.384 @ 175 (rows 2, 8 warps) |
 
-**Operator level, T4, fp32 LN + SGEMM against fused LN-split + fp16x3 GEMM**
-(`results/kaggle_t4_x3v3_run.log`; error is max-abs against fp64):
+*The GEMM has to be bare.* cuBLAS's `addmm` with `alpha` and a broadcast bias
+(`results/kaggle_t4_s0gemm_run.log`) is an extra pass over the fp32 output on this card:
 
-| shape | layer | M | K | N | fp32 ms | fp16x3 ms (split + GEMM) | ratio | fp32 err | fp16x3 err |
+| M | 3K | N | fp32 SGEMM ms | fp16x3 `mm` ms | `addmm` + bias ms | addmm / mm |
+|---|---|---|---|---|---|---|
+| 8192 | 96 | 96 | 0.05 | 0.06 | 0.08 | 1.37x |
+| 8192 | 384 | 384 | 0.19 | 0.15 | 0.25 | 1.71x |
+| 8192 | 3072 | 1024 | 3.92 | 1.26 | 1.78 | 1.41x |
+| 8192 | 3072 | 3072 | 11.58 | 4.59 | 6.92 | 1.51x |
+| 16384 | 384 | 384 | 0.35 | 0.26 | 0.45 | 1.77x |
+| 65536 | 384 | 384 | 1.35 | 0.86 | 1.64 | 1.91x |
+| 1280000 | 384 | 128 | 13.54 | 8.54 | 12.87 | 1.51x |
+| 1280000 | 384 | 384 | 33.03 | 22.35 | 35.83 | 1.60x |
+
+So the GEMM returns `s * (a.w + b)` and the neighbours undo the scale for free: SDPA
+through its `scale` argument (q and k carry `s^2`, v carries `s` into the attention
+output), the add+LayerNorm-split kernel on its residual input, the GELU-split kernel on
+its input, the final add+LayerNorm on the last residual. The bias rides in the same
+kernels for the `out`, `ffn_in` and `ffn_out` GEMMs; for `qkv`, whose consumer is SDPA,
+it rides in the GEMM as an fp16 pair in a K tail that pairs with a constant `[1, 1, 0..]`
+tail the split kernels write — a tail that rounds 3K up to a multiple of 32, because
+cuBLAS's fast Turing kernels tile K by 32 and an 8-column tail measured 10–30% slower
+(`results/kaggle_t4_b0tail_run.log`, ms for K3 = 3K + tail):
+
+| M | N | tail 0 | 8 | 16 | 32 | 64 |
+|---|---|---|---|---|---|---|
+| 8192 | 96 | 0.157 | 0.131 | 0.168 | 0.062 | 0.074 |
+| 65536 | 384 | 0.856 | 1.124 | 1.172 | 1.200 | 0.996 |
+| 1280000 | 128 | 8.548 | 9.979 | 9.870 | 9.583 | 9.627 |
+
+*The operand order matters.* Turing's tensor cores accumulate with truncation, so the
+error grows almost linearly with K and is biased toward zero — the CPU emulation of
+the identical formula (exact fp16 products, IEEE fp32 sums) is K-independent at
+~1.3e-6, and the split itself contributes 2e-7 (fp64 sum of the split operands). Adding
+the two tiny cross terms *first*, into a small running total, is free and cuts the
+error 1.6–3.7x (`results/x3_error_vs_k_t4.csv`, M=4096, N=1024, max-abs vs fp64):
+
+| K | fp32 SGEMM | hi-first (`hhl`) | **lo-first (`lhh`, default)** | lo-first + split-K 4 | CPU emulation | fraction below reference, hhl / lhh |
+|---|---|---|---|---|---|---|
+| 128 | 1.5e-06 | 6.1e-06 | **1.7e-06** | 1.4e-06 (3.9x time) | 3.3e-06 | 0.92 / 0.78 |
+| 256 | 2.3e-06 | 1.1e-05 | **3.0e-06** | 2.3e-06 (3.3x time) | 2.9e-06 | 0.95 / 0.81 |
+| 512 | 3.2e-06 | 1.8e-05 | **6.1e-06** | 3.9e-06 (2.5x time) | 2.2e-06 | 0.96 / 0.83 |
+| 1024 | 2.3e-06 | 1.5e-05 | **9.6e-06** | 6.5e-06 (1.7x time) | 1.8e-06 | 0.91 / 0.83 |
+| 2048 | 3.5e-06 | 2.4e-05 | **1.5e-05** | 1.2e-05 (1.3x time) | 1.7e-06 | 0.91 / 0.83 |
+| 4096 | 5.3e-06 | 4.5e-05 | **2.7e-05** | 9.6e-06 (1.2x time) | 1.3e-06 | 0.91 / 0.84 |
+
+Split-K over the tripled axis (`T3_X3_SPLITK`) halves the error again but doubles the
+GEMM time; it stays an option. Prior art: Fasi, Higham, Mikaitis, Pranesh, *Numerical
+behavior of NVIDIA tensor cores* (PeerJ CS 2021), which reports exactly this
+round-toward-zero accumulation on V100/T4.
+
+*Not every site pays.* Per site on the T4 (`results/kaggle_t4_b1x3_run.log`; fp32 = the
+producer kernel + SGEMM, x3 = fused split + tensor-core GEMM; error vs fp64):
+
+| shape | site | M | K | N | fp32 ms | fp16x3 ms (split @ GB/s + GEMM) | ratio | fp32 err | fp16x3 err |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | qkv | 8192 | 128 | 384 | 0.564 | 0.481 (0.198 + 0.321) | **1.17x** | 1.5e-06 | 5.6e-06 |
-| 1 | o | 8192 | 128 | 128 | 0.351 | 0.312 (0.190 + 0.164) | **1.12x** | 1.5e-06 | 6.1e-06 |
-| 5 | qkv | 16384 | 128 | 384 | 0.879 | 0.739 (0.256 + 0.529) | **1.19x** | 2.2e-06 | 7.4e-06 |
-| 5 | o | 16384 | 128 | 128 | 0.539 | 0.461 (0.258 + 0.248) | **1.17x** | 1.6e-06 | 6.4e-06 |
-| 6 | o | 1280000 | 128 | 128 | 31.666 | 26.705 (10.539 + 16.351) | **1.19x** | 2.3e-06 | 7.5e-06 |
-| 8 | qkv | 8192 | 1024 | 3072 | 15.225 | 8.955 (0.462 + 8.602) | **1.70x** | 4.9e-06 | 3.4e-05 |
-| 8 | o | 8192 | 1024 | 1024 | 5.718 | 3.437 (0.461 + 3.119) | **1.66x** | 3.0e-06 | 3.3e-05 |
-| 13 | qkv | 65536 | 128 | 384 | 3.054 | 2.558 (0.781 + 1.827) | **1.19x** | 1.8e-06 | 7.1e-06 |
-| 13 | o | 65536 | 128 | 128 | 1.277 | 1.348 (0.661 + 0.735) | **0.95x** | 1.8e-06 | 6.9e-06 |
+| 5 | qkv | 16384 | 128 | 384 | 1.087 | 0.637 (0.228 @ 92 + 0.481) | **1.71x** | 1.6e-06 | 2.0e-06 |
+| 5 | out | 16384 | 128 | 128 | 0.303 | 0.365 (0.193 @ 109 + 0.223) | **0.83x** | 1.5e-06 | 1.6e-06 |
+| 5 | ffn_in | 16384 | 128 | 128 | 0.631 | 0.379 (0.218 @ 96 + 0.280) | **1.67x** | 1.2e-06 | 1.6e-06 |
+| 5 | ffn_out | 16384 | 128 | 128 | 0.365 | 0.387 (0.215 @ 98 + 0.222) | **0.94x** | 9.5e-07 | 1.1e-06 |
+| 6 | qkv | 1280000 | 128 | 384 | 51.208 | 31.994 (8.123 @ 202 + 25.844) | **1.60x** | 1.5e-06 | 2.2e-06 |
+| 6 | out | 1280000 | 128 | 128 | 14.936 | 16.977 (8.339 @ 196 + 9.935) | **0.88x** | 1.6e-06 | 1.5e-06 |
+| 6 | ffn_in | 1280000 | 128 | 128 | 28.414 | 16.814 (8.141 @ 201 + 10.000) | **1.69x** | 1.2e-06 | 1.8e-06 |
+| 6 | ffn_out | 1280000 | 128 | 128 | 19.452 | 17.296 (8.375 @ 196 + 9.728) | **1.12x** | 9.6e-07 | 1.3e-06 |
+| 8 | qkv | 8192 | 1024 | 3072 | 13.745 | 8.858 (0.496 @ 169 + 8.636) | **1.55x** | 4.6e-06 | 9.6e-06 |
+| 8 | out | 8192 | 1024 | 1024 | 3.349 | 2.967 (0.506 @ 166 + 2.597) | **1.13x** | 2.6e-06 | 8.6e-06 |
+| 8 | ffn_in | 8192 | 1024 | 1024 | 3.260 | 2.565 (0.492 @ 171 + 2.398) | **1.27x** | 2.8e-06 | 9.0e-06 |
+| 8 | ffn_out | 8192 | 1024 | 1024 | 3.258 | 3.023 (0.512 @ 164 + 2.676) | **1.08x** | 1.7e-06 | 5.3e-06 |
+| 13 | qkv | 65536 | 128 | 384 | 2.031 | 1.729 (0.527 @ 159 + 1.309) | **1.17x** | 1.6e-06 | 1.8e-06 |
+| 13 | out | 65536 | 128 | 128 | 0.782 | 0.965 (0.519 @ 162 + 0.504) | **0.81x** | 1.3e-06 | 1.7e-06 |
+| 13 | ffn_in | 65536 | 128 | 128 | 1.262 | 0.971 (0.523 @ 160 + 0.508) | **1.30x** | 1.4e-06 | 2.1e-06 |
+| 13 | ffn_out | 65536 | 128 | 128 | 0.875 | 0.981 (0.528 @ 159 + 0.508) | **0.89x** | 1.1e-06 | 1.1e-06 |
 
-Tiny GEMMs (M <= 2048) lose at the operator level in eager mode — the custom-op wrappers
-cost more than the kernels — and win anyway end to end once the shape's autotune
-replays them from a CUDA graph. **End to end**, three runs each, per-shape medians: the
-fp16x3 path wins on shapes 4, 7, 8, 9, 10, 11 and 12 and loses on 1, 3, 5 and 6
-(by 3–5%, inside the noise band on the sub-millisecond ones); median
-**2.300x -> 2.499x**, minimum 1.095x -> 1.534x. It is the default.
+Read at the operator level, the split is free where it replaces a LayerNorm (`qkv`,
+`ffn_in`) and an extra pass in front of a K=128 GEMM (`out`, `ffn_out`), so the obvious
+policy is fp16x3 at the first two sites and SGEMM at the others. We built that policy
+(`T3_X3_SITES`) and measured it three times against all four sites — and the
+operator table was wrong about the program: all four sites win on 12 of 13 shapes,
+by 5–15% (2.559x -> 2.834x on the median), because under graph replay the split
+kernel is cheaper than the SGEMM it replaces, and an SGEMM site still has to apply its
+neighbour's scale and bias in passes of its own. All four sites ship; the
+qkv+ffn_in runs are in `results/results_t4_runs.csv` under `sites=qkv,ffn_in`. Tiny
+GEMMs (M <= 2048) lose at the operator level in eager mode — the custom-op
+wrappers cost more than the kernels — and win anyway end to end for the same reason.
 
-**What it costs in accuracy, honestly.** fp32 SGEMM lands 3.2e-06 from the reference;
-fp16x3 lands 6.7e-06 on the twelve K=128 shapes and 4.1e-05 on shape 8 (K=1024) — still
-49x inside the gate, but no longer the 1000x of pure fp32, and it grows with K. The CPU
-emulation of the same arithmetic (exact fp32 products, IEEE accumulation) lands 1.2e-6 at
-K=1024, so the residual is not the split: it is the Turing tensor core's accumulator,
-which truncates rather than rounds, a bias that adds up linearly along K. Split-K with
-the partials summed outside the tensor core is the known remedy and is future work; at
-this gate it is not needed.
+**End to end**, three runs each, per-shape medians: the shipped path wins on shapes
+1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 and 13 and loses on none; median
+**2.300x -> 2.834x**, minimum 1.095x -> 1.566x, worst error 3.2e-06 -> 9.5e-06.
 
-**Two variants that lost, published.** A two-GEMM form (K doubled, then an accumulating
-`addmm` for the third term) was slower than fp32 on shape 8: the extra pass over the fp32
-output cost more than the third of the operand it saved. And `T3_LINEAR=auto`, which
-times fp32 against fp16x3 on the first forward and keeps the winner per shape, chose
-fp16x3 on shapes 2, 3, 4, 8, 9, 10 and 11 in both of its runs — consistently — but its
-seven-sample verdicts sit at the noise floor on the sub-millisecond shapes, it left the
-K=32 shape's gain on the table, and it scored 2.299x / 2.214x against the static
-default's 2.499x. The static choice ships; the tuner stays as a flag.
+**Two things it is not.** It is not fp32: 9.5e-06 at K=1024 against 3.2e-06 for
+SGEMM, 210x inside the gate rather than a thousand; we call it fp32-class where it is
+within ten times SGEMM's own error against fp64, which it is at every graded width. And
+it is not unguarded: the split cannot represent an activation beyond fp16 range, so a
+static bound computed from the weights refuses the path when a LayerNorm or GEMM output
+could get there, the first forward's output is checked for finiteness once (never
+timed: the harness runs its accuracy trials first), and `T3_X3_GUARD=off` is the
+documented way to prove the guard is load-bearing (the CPU test does). A per-shape
+first-forward tuner for this axis (`T3_LINEAR=auto`) was measured twice and retired:
+its seven-sample verdicts sat at the noise floor on the sub-millisecond shapes, and the
+static choice scored higher; the runs are kept in the ablation as history.
 
-The CPU smoke test runs this path too (`T3_LINEAR=fp16x3` on CPU is an exact emulation:
-fp16 products formed in fp32), so its arithmetic is checked on every commit without a GPU.
+The CPU test suite (`tests/test_fp16x3.py`, `pytest -q tests/`) runs the same arithmetic
+as exact emulation: fp16 products formed in fp32, the kernels' reference
+implementations, the guard, a weight update after the first forward, the chunked path.
 
 <!-- x3-section:end -->
 
@@ -544,8 +611,9 @@ on the right GPU it is the one we would reach for.
 ## Correctness notes
 
 - Every element must pass (zero failures); `NaN/Inf` is a hard fail. Measured
-  worst-case `max_abs` = 4.09e-05 (shape 8, K=1024, fp16x3 GEMMs) and 6.74e-06 on the
-  other twelve, 49x and 297x inside `atol=0.002`; the fp32-SGEMM path sits at 3.22e-06.002`.
+  worst-case `max_abs` = 9.54e-06 (shape 8, K=1024, fp16x3 GEMMs) and 2.86e-06 on the
+  other twelve, 210x and 699x inside `atol=0.002`; the fp32-SGEMM path sits
+  at 3.22e-06.
 - The `max_rel` column looks large (up to ~15) and that is expected: the harness
   computes it over *every* element as `abs_err / max(|ref|, 1e-12)`, so an output
   whose reference is ~1e-7 reports a huge ratio while its absolute error is still
@@ -578,14 +646,14 @@ on the right GPU it is the one we would reach for.
   the GPU generation's. It would need an Ampere-class card to pay.
 <!-- x3-limits:begin -->
 - The fp16x3 GEMM error is K-dependent: the Turing tensor core accumulates with
-  truncation, so the residual grows roughly linearly with the reduction length —
-  6.7e-06 at K=128, 4.1e-05 at K=1024. A model with K=4096 would sit near 1e-4: inside this
-  gate, but no longer "fp32-class" by our own standard. Split-K with an fp32 reduction
-  outside the tensor core is the fix; not built.
-- `T3_LINEAR=auto` decides from seven timed forwards per candidate. On the sub-millisecond
-  shapes that is inside the noise, and it left the K=32 shape's 20% on the table in both
-  runs; a longer first-forward budget, or a per-shape cost model, would do better than
-  the static default we ship.
+  truncation, so the residual grows roughly linearly with K — 1.658e-06 at K=128,
+  9.562e-06 at K=1024, 2.749e-05 at K=4096, all measured (`results/x3_error_vs_k_t4.csv`).
+  Split-K with an fp32 reduction outside the tensor core halves it at twice the GEMM
+  cost (`T3_X3_SPLITK`); a wider model would want it.
+- The fp16x3 path assumes activations inside fp16 range. The static bound refuses it
+  for weights that could break that and the first forward is checked, but an input that
+  overflows on a *later* forward is only caught with `T3_X3_GUARD=every`, which costs a
+  sync per forward.
 <!-- x3-limits:end -->
 
 - **`--dtype bfloat16` fails, and not because of us.** The harness accepts it

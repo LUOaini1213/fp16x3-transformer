@@ -245,67 +245,144 @@ End to end (`T3_ATTN=triton`, `results_t4_attn.csv`): 13/13 PASS, worst `max_abs
 <!-- x3-ablation:begin -->
 ## fp16x3 linear layers: measured, shipped
 
-Motivation and mechanism are in the README; the numbers behind the decision are here.
+Motivation and mechanism are in the README; the numbers behind each decision are here.
 
-**Operator level** (`kaggle_t4_x3v3_run.log`, fused LN-split + one K-tripled fp16 GEMM
-against fp32 LN + SGEMM, error against fp64):
+**cuBLAS epilogue** (`kaggle_t4_s0gemm_run.log`): a bare `mm(out_dtype=fp32)` against
+`addmm` with `alpha` and a 1-D bias, the call the first version made:
 
-| shape | layer | M | K | N | fp32 ms | fp16x3 ms (split + GEMM) | ratio | fp32 err | fp16x3 err |
+| M | 3K | N | fp32 SGEMM ms | fp16x3 `mm` ms | `addmm` + bias ms | addmm / mm |
+|---|---|---|---|---|---|---|
+| 8192 | 96 | 96 | 0.05 | 0.06 | 0.08 | 1.37x |
+| 8192 | 384 | 384 | 0.19 | 0.15 | 0.25 | 1.71x |
+| 8192 | 3072 | 1024 | 3.92 | 1.26 | 1.78 | 1.41x |
+| 8192 | 3072 | 3072 | 11.58 | 4.59 | 6.92 | 1.51x |
+| 16384 | 384 | 384 | 0.35 | 0.26 | 0.45 | 1.77x |
+| 65536 | 384 | 384 | 1.35 | 0.86 | 1.64 | 1.91x |
+| 1280000 | 384 | 128 | 13.54 | 8.54 | 12.87 | 1.51x |
+| 1280000 | 384 | 384 | 33.03 | 22.35 | 35.83 | 1.60x |
+
+**K tail** (`kaggle_t4_b0tail_run.log`, bare `mm` ms for K3 = 3K + tail):
+
+| M | N | tail 0 | 8 | 16 | 32 | 64 |
+|---|---|---|---|---|---|---|
+| 8192 | 96 | 0.157 | 0.131 | 0.168 | 0.062 | 0.074 |
+| 65536 | 384 | 0.856 | 1.124 | 1.172 | 1.200 | 0.996 |
+| 1280000 | 128 | 8.548 | 9.979 | 9.870 | 9.583 | 9.627 |
+
+**Error against K** (`x3_error_vs_k_t4.csv`, M=4096, N=1024, max-abs vs fp64; "below"
+is the fraction of outputs smaller in magnitude than the reference, 0.5 for an unbiased
+method):
+
+| K | fp32 SGEMM | hi-first | **lo-first (default)** | lo-first + split-K 4 | CPU emulation | below, hhl / lhh |
+|---|---|---|---|---|---|---|
+| 128 | 1.5e-06 | 6.1e-06 | **1.7e-06** | 1.4e-06 (3.9x time) | 3.3e-06 | 0.92 / 0.78 |
+| 256 | 2.3e-06 | 1.1e-05 | **3.0e-06** | 2.3e-06 (3.3x time) | 2.9e-06 | 0.95 / 0.81 |
+| 512 | 3.2e-06 | 1.8e-05 | **6.1e-06** | 3.9e-06 (2.5x time) | 2.2e-06 | 0.96 / 0.83 |
+| 1024 | 2.3e-06 | 1.5e-05 | **9.6e-06** | 6.5e-06 (1.7x time) | 1.8e-06 | 0.91 / 0.83 |
+| 2048 | 3.5e-06 | 2.4e-05 | **1.5e-05** | 1.2e-05 (1.3x time) | 1.7e-06 | 0.91 / 0.83 |
+| 4096 | 5.3e-06 | 4.5e-05 | **2.7e-05** | 9.6e-06 (1.2x time) | 1.3e-06 | 0.91 / 0.84 |
+
+**Kernel geometry** (`kaggle_t4_b2geo2_run.log`): rows per program x warps swept per width;
+the table in `kernels/fp16x3.py::_x3_geometry` is the winner.
+
+| M | N | one row / program | best tiled LN-split | PyTorch LayerNorm | best tiled fp32 LN |
+|---|---|---|---|---|---|
+| 1280000 | 128 | 9.673 @ 169 | 7.969 @ 206 (rows 4, 8 warps) | 12.420 @ 106 | 5.348 @ 245 (rows 1, 2 warps) |
+| 65536 | 128 | 0.915 @ 92 | 0.509 @ 165 (rows 4, 8 warps) | 1.323 @ 51 | 0.377 @ 178 (rows 4, 8 warps) |
+| 65536 | 384 | 1.584 @ 159 | 1.350 @ 186 (rows 1, 2 warps) | 1.759 @ 114 | 0.943 @ 214 (rows 4, 8 warps) |
+| 8192 | 1024 | 0.612 @ 137 | 0.522 @ 161 (rows 2, 8 warps) | 0.401 @ 168 | 0.384 @ 175 (rows 2, 8 warps) |
+
+**Per site** (`kaggle_t4_b1x3_run.log`; fp32 = producer kernel + SGEMM, x3 = fused split +
+tensor-core GEMM, errors vs fp64 on 4096 rows):
+
+| shape | site | M | K | N | fp32 ms | fp16x3 ms (split @ GB/s + GEMM) | ratio | fp32 err | fp16x3 err |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | qkv | 8192 | 128 | 384 | 0.564 | 0.481 (0.198 + 0.321) | **1.17x** | 1.5e-06 | 5.6e-06 |
-| 1 | o | 8192 | 128 | 128 | 0.351 | 0.312 (0.190 + 0.164) | **1.12x** | 1.5e-06 | 6.1e-06 |
-| 5 | qkv | 16384 | 128 | 384 | 0.879 | 0.739 (0.256 + 0.529) | **1.19x** | 2.2e-06 | 7.4e-06 |
-| 5 | o | 16384 | 128 | 128 | 0.539 | 0.461 (0.258 + 0.248) | **1.17x** | 1.6e-06 | 6.4e-06 |
-| 6 | o | 1280000 | 128 | 128 | 31.666 | 26.705 (10.539 + 16.351) | **1.19x** | 2.3e-06 | 7.5e-06 |
-| 8 | qkv | 8192 | 1024 | 3072 | 15.225 | 8.955 (0.462 + 8.602) | **1.70x** | 4.9e-06 | 3.4e-05 |
-| 8 | o | 8192 | 1024 | 1024 | 5.718 | 3.437 (0.461 + 3.119) | **1.66x** | 3.0e-06 | 3.3e-05 |
-| 13 | qkv | 65536 | 128 | 384 | 3.054 | 2.558 (0.781 + 1.827) | **1.19x** | 1.8e-06 | 7.1e-06 |
-| 13 | o | 65536 | 128 | 128 | 1.277 | 1.348 (0.661 + 0.735) | **0.95x** | 1.8e-06 | 6.9e-06 |
+| 5 | qkv | 16384 | 128 | 384 | 1.087 | 0.637 (0.228 @ 92 + 0.481) | **1.71x** | 1.6e-06 | 2.0e-06 |
+| 5 | out | 16384 | 128 | 128 | 0.303 | 0.365 (0.193 @ 109 + 0.223) | **0.83x** | 1.5e-06 | 1.6e-06 |
+| 5 | ffn_in | 16384 | 128 | 128 | 0.631 | 0.379 (0.218 @ 96 + 0.280) | **1.67x** | 1.2e-06 | 1.6e-06 |
+| 5 | ffn_out | 16384 | 128 | 128 | 0.365 | 0.387 (0.215 @ 98 + 0.222) | **0.94x** | 9.5e-07 | 1.1e-06 |
+| 6 | qkv | 1280000 | 128 | 384 | 51.208 | 31.994 (8.123 @ 202 + 25.844) | **1.60x** | 1.5e-06 | 2.2e-06 |
+| 6 | out | 1280000 | 128 | 128 | 14.936 | 16.977 (8.339 @ 196 + 9.935) | **0.88x** | 1.6e-06 | 1.5e-06 |
+| 6 | ffn_in | 1280000 | 128 | 128 | 28.414 | 16.814 (8.141 @ 201 + 10.000) | **1.69x** | 1.2e-06 | 1.8e-06 |
+| 6 | ffn_out | 1280000 | 128 | 128 | 19.452 | 17.296 (8.375 @ 196 + 9.728) | **1.12x** | 9.6e-07 | 1.3e-06 |
+| 8 | qkv | 8192 | 1024 | 3072 | 13.745 | 8.858 (0.496 @ 169 + 8.636) | **1.55x** | 4.6e-06 | 9.6e-06 |
+| 8 | out | 8192 | 1024 | 1024 | 3.349 | 2.967 (0.506 @ 166 + 2.597) | **1.13x** | 2.6e-06 | 8.6e-06 |
+| 8 | ffn_in | 8192 | 1024 | 1024 | 3.260 | 2.565 (0.492 @ 171 + 2.398) | **1.27x** | 2.8e-06 | 9.0e-06 |
+| 8 | ffn_out | 8192 | 1024 | 1024 | 3.258 | 3.023 (0.512 @ 164 + 2.676) | **1.08x** | 1.7e-06 | 5.3e-06 |
+| 13 | qkv | 65536 | 128 | 384 | 2.031 | 1.729 (0.527 @ 159 + 1.309) | **1.17x** | 1.6e-06 | 1.8e-06 |
+| 13 | out | 65536 | 128 | 128 | 0.782 | 0.965 (0.519 @ 162 + 0.504) | **0.81x** | 1.3e-06 | 1.7e-06 |
+| 13 | ffn_in | 65536 | 128 | 128 | 1.262 | 0.971 (0.523 @ 160 + 0.508) | **1.30x** | 1.4e-06 | 2.1e-06 |
+| 13 | ffn_out | 65536 | 128 | 128 | 0.875 | 0.981 (0.528 @ 159 + 0.508) | **0.89x** | 1.1e-06 | 1.1e-06 |
 
 **End to end**, three runs per configuration, per-shape medians (`results_t4_fp32.csv`,
-`results_t4.csv`; every run in `results_t4_runs.csv`). The last column is what
-`T3_LINEAR=auto` chose on the first forward, identically in both of its runs:
+`results_t4.csv`; every run in `results_t4_runs.csv`):
 
-| shape | `T3_LINEAR=fp32` | **`fp16x3` (shipped)** | delta | fp32 `max_abs` | fp16x3 `max_abs` | `auto` chose |
-|---|---|---|---|---|---|---|
-| 1 | 2.282x | **2.191x** | -4% | 1.2e-06 | 5.5e-06 | fp32 |
-| 2 | 3.826x | **3.850x** | +1% | 9.5e-07 | 3.9e-06 | fp16x3 |
-| 3 | 3.385x | **3.240x** | -4% | 1.2e-06 | 4.3e-06 | fp16x3 |
-| 4 | 2.485x | **3.110x** | +25% | 1.4e-06 | 3.2e-06 | fp16x3 |
-| 5 | 2.300x | **2.185x** | -5% | 1.4e-06 | 5.3e-06 | fp32 |
-| 6 | 2.158x | **2.040x** | -5% | 1.7e-06 | 6.7e-06 | fp32 |
-| 7 | 2.764x | **3.290x** | +19% | 9.5e-07 | 2.3e-06 | fp32 |
-| 8 | 1.095x | **1.597x** | +46% | 3.2e-06 | 4.1e-05 | fp16x3 |
-| 9 | 1.257x | **1.534x** | +22% | 1.4e-06 | 5.0e-06 | fp16x3 |
-| 10 | 1.581x | **1.874x** | +19% | 1.4e-06 | 5.3e-06 | fp16x3 |
-| 11 | 3.075x | **3.380x** | +10% | 1.4e-06 | 5.1e-06 | fp16x3 |
-| 12 | 2.093x | **2.499x** | +19% | 1.2e-06 | 3.7e-06 | fp32 |
-| 13 | 4.818x | **4.707x** | -2% | 1.4e-06 | 5.4e-06 | fp32 |
-| **median** | 2.300x | **2.499x** | +9% | 3.2e-06 | 4.1e-05 | 7/13 fp16x3 |
+| shape | `T3_LINEAR=fp32` | **`fp16x3` (shipped)** | delta | fp32 `max_abs` | fp16x3 `max_abs` |
+|---|---|---|---|---|---|
+| 1 | 2.282x | **2.702x** | +18% | 1.2e-06 | 2.0e-06 |
+| 2 | 3.826x | **4.397x** | +15% | 9.5e-07 | 1.5e-06 |
+| 3 | 3.385x | **3.652x** | +8% | 1.2e-06 | 1.3e-06 |
+| 4 | 2.485x | **2.994x** | +20% | 1.4e-06 | 1.9e-06 |
+| 5 | 2.300x | **2.588x** | +13% | 1.4e-06 | 2.1e-06 |
+| 6 | 2.158x | **2.490x** | +15% | 1.7e-06 | 2.9e-06 |
+| 7 | 2.764x | **4.496x** | +63% | 9.5e-07 | 1.7e-06 |
+| 8 | 1.095x | **1.566x** | +43% | 3.2e-06 | 9.5e-06 |
+| 9 | 1.257x | **1.865x** | +48% | 1.4e-06 | 2.4e-06 |
+| 10 | 1.581x | **2.294x** | +45% | 1.4e-06 | 2.9e-06 |
+| 11 | 3.075x | **3.857x** | +25% | 1.4e-06 | 2.4e-06 |
+| 12 | 2.093x | **2.834x** | +35% | 1.2e-06 | 1.9e-06 |
+| 13 | 4.818x | **5.222x** | +8% | 1.4e-06 | 2.4e-06 |
+| **median** | 2.300x | **2.834x** | +23% | 3.2e-06 | 9.5e-06 |
 
-Run medians: fp16x3 2.442 / 2.380 / 2.499x; fp32 2.261 / 2.300 / 2.332x.
-`auto` scored 2.299x and 2.214x (`results_t4_x3v4.csv`, `results_t4_x3v4b.csv`): it
-never picked a loser, but on the sub-millisecond shapes its seven-sample verdict is
-noise, and it declined the K=32 shape (7) where the static default gains 20%.
+Run medians: fp16x3 2.828 / 2.912 / 2.834x; fp32 2.261 / 2.300 / 2.332x.
 
-**Three things we learned building it.**
+**Site policy, end to end** (three runs each, per-shape medians): the operator table's
+policy — fp16x3 only where the split replaces a LayerNorm (`T3_X3_SITES=qkv,ffn_in`,
+`results_t4_d1..d3.csv`) — against all four sites (shipped):
 
-1. *The split must be fused.* The first version split operands in PyTorch and lost on
-   shape 8 (0.98x at the operator level) despite a 2x faster GEMM; the second used two
-   GEMMs (K doubled plus an accumulating `addmm`) and was *slower than fp32* on shape 8,
-   because the accumulate re-reads and re-writes the fp32 output. One K-tripled GEMM with
-   the scale and bias in the cuBLAS epilogue, fed by kernels that emit the split for free,
-   is the version that wins.
-2. *The residual error is the hardware's.* The CPU emulation of the identical arithmetic
-   lands 1.2e-6 at K=1024; the T4 lands 4.1e-05. Turing's tensor-core accumulator truncates,
-   so the error grows linearly with K instead of as its square root. Disabling PyTorch's
-   reduced-precision reductions changed nothing; it was never that.
-3. *Do not tune two Dynamo variants through Inductor's CUDA-graph trees.* Timing fp16x3
+| shape | qkv + ffn_in | **all four sites** | delta |
+|---|---|---|---|
+| 1 | 2.458x | **2.702x** | +10% |
+| 2 | 4.043x | **4.397x** | +9% |
+| 3 | 3.627x | **3.652x** | +1% |
+| 4 | 2.595x | **2.994x** | +15% |
+| 5 | 2.436x | **2.588x** | +6% |
+| 6 | 2.310x | **2.490x** | +8% |
+| 7 | 4.005x | **4.496x** | +12% |
+| 8 | 1.549x | **1.566x** | +1% |
+| 9 | 1.677x | **1.865x** | +11% |
+| 10 | 2.068x | **2.294x** | +11% |
+| 11 | 3.660x | **3.857x** | +5% |
+| 12 | 2.559x | **2.834x** | +11% |
+| 13 | 4.941x | **5.222x** | +6% |
+| **median** | 2.559x | **2.834x** | +11% |
+
+The retired per-shape tuner (`T3_LINEAR=auto`) scored 2.299x and
+2.214x on the first version of the path (`results_t4_x3v4.csv`, `results_t4_x3v4b.csv`).
+
+**What we learned building it.**
+
+1. *The split must be fused, and the GEMM must be bare.* The first version split
+   operands in PyTorch and lost on shape 8 despite a 2x faster GEMM; the second used two
+   GEMMs and was slower than fp32; the third used one GEMM with the bias and scale in the
+   cuBLAS epilogue and paid 40-90% for it. Bias and scale in the neighbouring kernels,
+   and a bare `mm`, is the version that wins.
+2. *Operator tables do not decide programs.* The per-site table, measured in eager mode,
+   said to keep two of the four GEMM sites on SGEMM; three end-to-end runs of that policy
+   lost to all four sites on 12 of 13 shapes. Launch overhead hidden by graph replay, and
+   the passes an SGEMM site needs for its neighbour's scale and bias, are invisible at
+   the operator level and decisive in the program.
+3. *The residual error is the hardware's, and its order is ours.* Exact emulation lands
+   ~1.3e-6 at every K; the T4 lands 1.531e-05 at K=1024 with the natural operand order and
+   9.562e-06 with the tiny terms summed first. Disabling PyTorch's reduced-precision
+   reductions changed nothing; it was never that.
+4. *Alignment is not a detail.* Eight padding columns made K=392 and cost 10-30% on the
+   K=128 shapes' GEMMs; rounding to 32 made it free, and for K=32 (shape 7) it made the
+   GEMM 2.5x faster than the unpadded K=96.
+5. *Do not tune two Dynamo variants through Inductor's CUDA-graph trees.* Timing fp16x3
    as a second compiled variant of the same reduce-overhead function, then switching
-   back, corrupted the caching allocator's private pools (`Expected curr_block->next ==
-   nullptr` on the next capture). The tuner now times the fp16x3 candidates eagerly and
-   under a manually captured graph, and only ever keeps one captured graph alive.
-
+   back, corrupted the caching allocator (`Expected curr_block->next == nullptr` on the
+   next capture); the tuner was retired.
 
 <!-- x3-ablation:end -->
 
@@ -313,10 +390,10 @@ noise, and it declined the K=32 shape (7) where the static default gains 20%.
 
 Every T4 cell of the shipped per-shape table (`results/results_t4.csv`, reproduced in the
 README and the report) is the **median of three independent runs** of the shipped
-configuration (run medians 2.442x / 2.380x / 2.499x; every run 13/13 PASS), and so is
+configuration (run medians 2.828x / 2.912x / 2.834x; every run 13/13 PASS), and so is
 the `T3_LINEAR=fp32` reference (`results_t4_fp32.csv`; 2.261x / 2.300x / 2.332x).
 `max_abs` is the worst of the three. The per-shape spread, (max − min) / median, reaches
-28% on shape 4, and shape 6 drifts by up to 20% between sessions on identical code.
+25% on shape 4, and shape 6 drifts by up to 20% between sessions on identical code.
 The other tables in this file (compile policy, fused QKV, Triton kernels, precision
 regimes) are single runs, so that spread is the yardstick for them: a difference below
 it between two configurations is noise, and the text says so wherever it applies. All
@@ -338,13 +415,13 @@ The same code on two free cards, both fp32, both 13/13 PASS:
 
 | | Tesla P100 (sm_60) | Tesla T4 (sm_75) |
 |---|---|---|
-| `torch.compile` | unavailable (Triton needs sm>=7.0) | autotuned per shape with eager and a CUDA graph as rivals: 2 compiled / 6 graph / 3 eager of 11 tuned |
+| `torch.compile` | unavailable (Triton needs sm>=7.0) | autotuned per shape with eager and a CUDA graph as rivals: 0 compiled / 10 graph / 1 eager of 11 tuned |
 | SDPA backend | memory-efficient | memory-efficient (same kernel: flash needs fp16 and sm_80+, probed) |
 | GEMMs | fp32 SGEMM (no tensor cores) | fp16 tensor cores with hi/lo compensation, fp32 accumulation (`T3_LINEAR=fp16x3`) |
-| median speedup | 2.065x | **2.499x** (2.300x with fp32 SGEMM) |
-| range | 1.098x - 4.001x | 1.534x - 4.707x |
+| median speedup | 2.065x | **2.834x** (2.300x with fp32 SGEMM) |
+| range | 1.098x - 4.001x | 1.566x - 5.222x |
 
-Note the T4's *baselines* are slower than the P100's (shape 13: 324.0 ms vs
+Note the T4's *baselines* are slower than the P100's (shape 13: 324.7 ms vs
 168.6 ms) — the P100 has higher fp32 throughput and roughly twice the memory
 bandwidth. The ratio improves on the T4 anyway, because our path picks up
 compile there while the baseline stays bandwidth-bound; the attention kernel is

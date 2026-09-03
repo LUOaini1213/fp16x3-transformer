@@ -439,7 +439,7 @@
             <td class="n mono">1.91e-6</td><td class="n mono ok">1049&times;</td></tr>
         <tr class="hi"><td><strong>T4 <span class="mono">sm_75</span> &mdash; SDPA + fp16x3 tensor-core GEMMs + first-forward autotune (shipped)</strong></td>
             <td class="n mono">__MEDIAN__&times;</td><td class="n mono">__RANGE__</td>
-            <td class="n mono">4.1e-05 (K=1024); 6.7e-06 elsewhere</td><td class="n mono ok">49&times;</td></tr>
+            <td class="n mono">9.5e-06 (K=1024); 2.9e-06 elsewhere</td><td class="n mono ok">210&times;</td></tr>
         <tr><td>T4, GEMMs on fp32 SGEMM <span class="mono">(T3_LINEAR=fp32)</span></td>
             <td class="n mono">2.300&times;</td><td class="n mono">1.095&ndash;4.818&times;</td>
             <td class="n mono">3.22e-06</td><td class="n mono ok">621&times;</td></tr>
@@ -460,7 +460,7 @@
 
   <div class="callout">
     <span class="label">A ratio has two sides</span>
-    <p>The T4's <em class="term">baselines</em> are slower than the P100's &mdash; 324.0&nbsp;ms
+    <p>The T4's <em class="term">baselines</em> are slower than the P100's &mdash; 324.7&nbsp;ms
     against 168.6&nbsp;ms on shape 13. The P100 has more fp32 throughput and roughly twice the
     memory bandwidth. Our ratios improve on the T4 anyway, because the optimized path gains compilation there while the baseline stays bandwidth-bound &mdash; the attention kernel is identical on both cards. Worth stating
     which side moved rather than banking the bigger number.</p>
@@ -637,40 +637,47 @@
     power of two so its lo part is a normal fp16 number; <code>alpha = 1/s</code> in the epilogue
     undoes it exactly.</p>
     <p>The split has to be free or it eats the win: a PyTorch-side split cost exactly what the faster
-    GEMM saved. So the Triton kernel that produces each activation &mdash; LayerNorm, add+LayerNorm,
+    GEMM saved. So the tiled Triton kernel that produces each activation &mdash; LayerNorm, add+LayerNorm,
     GELU &mdash; writes the hi/lo pair directly, registered as <code>triton_op</code>s that Inductor
-    schedules inside its graph.</p>
+    schedules inside its graph. The GEMM has to be bare: cuBLAS's epilogue for the bias and the
+    weight scale measured 40&ndash;90% slower than a plain <code>mm</code>, so both ride in the
+    neighbouring kernels instead. And the operand order matters: Turing's tensor cores accumulate
+    with truncation, so summing the two tiny cross terms first &mdash; a change of column order &mdash;
+    cut the error 1.6&ndash;3.7&times; at zero cost. All four GEMM sites take the path: the
+    operator table said two of them should not, and three end-to-end runs said otherwise.</p>
   </div>
   <div class="tablewrap">
     <table>
-      <caption>Three runs per configuration, per-shape medians. The shipped path wins on shapes 4, 7, 8, 9, 10, 11 and 12.</caption>
+      <caption>Three runs per configuration, per-shape medians. The shipped path wins on shapes 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 and 13.</caption>
       <thead><tr><th>Shape</th><th class="n">fp32 SGEMM</th><th class="n">fp16x3 (shipped)</th><th class="n">fp32 max_abs</th><th class="n">fp16x3 max_abs</th></tr></thead>
       <tbody>
-        <tr><td class="mono">1</td><td class="n mono">2.28&times;</td><td class="n mono bad">2.19&times;</td><td class="n mono">1.2e-06</td><td class="n mono">5.5e-06</td></tr>
-        <tr><td class="mono">2</td><td class="n mono">3.83&times;</td><td class="n mono">3.85&times;</td><td class="n mono">9.5e-07</td><td class="n mono">3.9e-06</td></tr>
-        <tr><td class="mono">3</td><td class="n mono">3.38&times;</td><td class="n mono bad">3.24&times;</td><td class="n mono">1.2e-06</td><td class="n mono">4.3e-06</td></tr>
-        <tr><td class="mono">4</td><td class="n mono">2.48&times;</td><td class="n mono win">3.11&times;</td><td class="n mono">1.4e-06</td><td class="n mono">3.2e-06</td></tr>
-        <tr><td class="mono">5</td><td class="n mono">2.30&times;</td><td class="n mono bad">2.19&times;</td><td class="n mono">1.4e-06</td><td class="n mono">5.3e-06</td></tr>
-        <tr><td class="mono">6</td><td class="n mono">2.16&times;</td><td class="n mono bad">2.04&times;</td><td class="n mono">1.7e-06</td><td class="n mono">6.7e-06</td></tr>
-        <tr><td class="mono">7</td><td class="n mono">2.76&times;</td><td class="n mono win">3.29&times;</td><td class="n mono">9.5e-07</td><td class="n mono">2.3e-06</td></tr>
-        <tr><td class="mono">8</td><td class="n mono">1.09&times;</td><td class="n mono win">1.60&times;</td><td class="n mono">3.2e-06</td><td class="n mono">4.1e-05</td></tr>
-        <tr><td class="mono">9</td><td class="n mono">1.26&times;</td><td class="n mono win">1.53&times;</td><td class="n mono">1.4e-06</td><td class="n mono">5.0e-06</td></tr>
-        <tr><td class="mono">10</td><td class="n mono">1.58&times;</td><td class="n mono win">1.87&times;</td><td class="n mono">1.4e-06</td><td class="n mono">5.3e-06</td></tr>
-        <tr><td class="mono">11</td><td class="n mono">3.08&times;</td><td class="n mono win">3.38&times;</td><td class="n mono">1.4e-06</td><td class="n mono">5.1e-06</td></tr>
-        <tr><td class="mono">12</td><td class="n mono">2.09&times;</td><td class="n mono win">2.50&times;</td><td class="n mono">1.2e-06</td><td class="n mono">3.7e-06</td></tr>
-        <tr><td class="mono">13</td><td class="n mono">4.82&times;</td><td class="n mono">4.71&times;</td><td class="n mono">1.4e-06</td><td class="n mono">5.4e-06</td></tr>
-        <tr><td><strong>median</strong></td><td class="n mono">2.300&times;</td><td class="n mono win"><strong>2.499&times;</strong></td><td class="n mono">3.2e-06</td><td class="n mono">4.1e-05</td></tr>
+        <tr><td class="mono">1</td><td class="n mono">2.28&times;</td><td class="n mono win">2.70&times;</td><td class="n mono">1.2e-06</td><td class="n mono">2.0e-06</td></tr>
+        <tr><td class="mono">2</td><td class="n mono">3.83&times;</td><td class="n mono win">4.40&times;</td><td class="n mono">9.5e-07</td><td class="n mono">1.5e-06</td></tr>
+        <tr><td class="mono">3</td><td class="n mono">3.38&times;</td><td class="n mono win">3.65&times;</td><td class="n mono">1.2e-06</td><td class="n mono">1.3e-06</td></tr>
+        <tr><td class="mono">4</td><td class="n mono">2.48&times;</td><td class="n mono win">2.99&times;</td><td class="n mono">1.4e-06</td><td class="n mono">1.9e-06</td></tr>
+        <tr><td class="mono">5</td><td class="n mono">2.30&times;</td><td class="n mono win">2.59&times;</td><td class="n mono">1.4e-06</td><td class="n mono">2.1e-06</td></tr>
+        <tr><td class="mono">6</td><td class="n mono">2.16&times;</td><td class="n mono win">2.49&times;</td><td class="n mono">1.7e-06</td><td class="n mono">2.9e-06</td></tr>
+        <tr><td class="mono">7</td><td class="n mono">2.76&times;</td><td class="n mono win">4.50&times;</td><td class="n mono">9.5e-07</td><td class="n mono">1.7e-06</td></tr>
+        <tr><td class="mono">8</td><td class="n mono">1.09&times;</td><td class="n mono win">1.57&times;</td><td class="n mono">3.2e-06</td><td class="n mono">9.5e-06</td></tr>
+        <tr><td class="mono">9</td><td class="n mono">1.26&times;</td><td class="n mono win">1.86&times;</td><td class="n mono">1.4e-06</td><td class="n mono">2.4e-06</td></tr>
+        <tr><td class="mono">10</td><td class="n mono">1.58&times;</td><td class="n mono win">2.29&times;</td><td class="n mono">1.4e-06</td><td class="n mono">2.9e-06</td></tr>
+        <tr><td class="mono">11</td><td class="n mono">3.08&times;</td><td class="n mono win">3.86&times;</td><td class="n mono">1.4e-06</td><td class="n mono">2.4e-06</td></tr>
+        <tr><td class="mono">12</td><td class="n mono">2.09&times;</td><td class="n mono win">2.83&times;</td><td class="n mono">1.2e-06</td><td class="n mono">1.9e-06</td></tr>
+        <tr><td class="mono">13</td><td class="n mono">4.82&times;</td><td class="n mono win">5.22&times;</td><td class="n mono">1.4e-06</td><td class="n mono">2.4e-06</td></tr>
+        <tr><td><strong>median</strong></td><td class="n mono">2.300&times;</td><td class="n mono win"><strong>2.834&times;</strong></td><td class="n mono">3.2e-06</td><td class="n mono">9.5e-06</td></tr>
       </tbody>
     </table>
   </div>
   <div class="col">
-    <p><strong>What it costs.</strong> 4.1e-05 at K=1024 instead of SGEMM's 3.2e-06 &mdash; 49&times; inside the
-    gate, not a thousand. The CPU emulation of the identical arithmetic lands 1.2e-6, so the residual
-    is the Turing tensor core's truncating accumulator, a bias that grows linearly with K. Split-K
-    with an fp32 reduction outside the tensor core is the known fix; at this gate it is not needed.
-    Two variants lost and are published: a two-GEMM form that was slower than fp32 on shape 8, and a
-    first-forward tuner (<code>T3_LINEAR=auto</code>, 2.299&times; / 2.214&times; over two runs)
-    whose seven-sample verdicts sit at the noise floor on the sub-millisecond shapes.</p>
+    <p><strong>What it costs.</strong> 9.5e-06 at K=1024 instead of SGEMM's 3.2e-06 &mdash; 210&times; inside the
+    gate, not a thousand. The CPU emulation of the identical arithmetic lands ~1.3e-6 at every K, so the
+    residual is the Turing tensor core's truncating accumulator, growing linearly with K; the lo-first
+    order halves it, split-K (<code>T3_X3_SPLITK</code>) halves it again at twice the GEMM cost and stays an
+    option. Four variants lost and are published: a PyTorch-side split, a two-GEMM form, the cuBLAS
+    epilogue, and a first-forward tuner for the fp32/fp16x3 choice (<code>T3_LINEAR=auto</code>,
+    2.299&times; / 2.214&times; over two runs, retired at the noise floor). The fp16 range is
+    guarded: a bound from the weights refuses the path where a LayerNorm or GEMM output could leave it,
+    and the first forward's output is checked once, never inside the timed region.</p>
     <p><strong>A measurement bug, found late.</strong> Earlier versions of every table here were taken with
     <code>torch.compile</code> silently inactive on shapes 6, 8 and 13: the sweep runs all shapes in one
     process, each costs Dynamo two compiled variants, and past eight it stops compiling without a
