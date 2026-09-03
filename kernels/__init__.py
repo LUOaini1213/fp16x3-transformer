@@ -22,6 +22,7 @@ from .fp16x3 import (  # noqa: F401
     HAVE_X3_LINEAR_OP,
     MAX_X3_WIDTH,
     x3_available,
+    x3_selfcheck,
     x3_can_use,
     x3_prepare,
     x3_linear,

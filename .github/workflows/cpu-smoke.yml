@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install CPU torch
-        run: pip install --index-url https://download.pytorch.org/whl/cpu torch
+        run: pip install --index-url https://download.pytorch.org/whl/cpu torch pytest
       - name: Shapes 1-13 + padded fallback (shipped defaults)
         run: python scripts/smoke_cpu.py
       - name: Chunked output path and every opt-in flag still exact
@@ -28,3 +28,6 @@ jobs:
           T3_FUSED_QKV=1 python scripts/smoke_cpu.py
           T3_TRITON=1 T3_ATTN=triton python scripts/smoke_cpu.py
           T3_LINEAR=fp16x3 python scripts/smoke_cpu.py
+          T3_LINEAR=fp32 python scripts/smoke_cpu.py
+      - name: fp16x3 unit tests (exact CPU emulation)
+        run: pytest -q tests/

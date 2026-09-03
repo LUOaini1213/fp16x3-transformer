@@ -47,6 +47,7 @@ CPU correctness test exercises the same arithmetic.
 from __future__ import annotations
 
 import math
+import os
 from typing import Optional
 
 import torch
@@ -63,6 +64,24 @@ except Exception:  # pragma: no cover - triton is absent on CPU-only installs
 MAX_X3_WIDTH = 1024          # row-per-program kernels keep one row in registers
 _X3_MAX_SCALED_W = 1024.0    # put max|s*w| near 2^10 so s*w_lo is a normal fp16
 
+# Operand order along the tripled K. The weight is always [w_hi | w_lo | w_hi];
+# the activation is [a_hi | a_hi | a_lo] ("hhl", shipped) or [a_lo | a_hi | a_hi]
+# ("lhh"). Same three products, different accumulation order: with a
+# truncating accumulator the tiny cross terms lose less when they are summed
+# first, into a small running total. Measured by T3_ONLY=x3k.
+_X3_ORDER = os.environ.get("T3_X3_ORDER", "hhl").strip().lower()
+if _X3_ORDER not in ("hhl", "lhh"):
+    _X3_ORDER = "hhl"
+_X3_LO_FIRST = _X3_ORDER == "lhh"
+# Split the tripled K into this many cuBLAS calls whose partials are combined
+# by the fp32 epilogue (round-to-nearest) instead of inside the tensor core.
+try:
+    _X3_SPLITK = int(os.environ.get("T3_X3_SPLITK", "1"))
+except ValueError:
+    _X3_SPLITK = 1
+if _X3_SPLITK not in (1, 2, 4):
+    _X3_SPLITK = 1
+
 
 if HAVE_TRITON:
 
@@ -71,9 +90,11 @@ if HAVE_TRITON:
         X, R, SUM, OUT, W, B,
         stride_x, stride_out, N, eps,
         HAS_RESIDUAL: tl.constexpr,
+        LO_FIRST: tl.constexpr,
         BLOCK: tl.constexpr,
     ):
-        """LayerNorm(x [+ r]) -> [hi | hi | lo] fp16 row; optionally also x + r."""
+        """LayerNorm(x [+ r]) -> [hi | hi | lo] (or [lo | hi | hi]) fp16 row;
+        optionally also x + r."""
         row = tl.program_id(0)
         cols = tl.arange(0, BLOCK)
         mask = cols < N
@@ -91,17 +112,23 @@ if HAVE_TRITON:
         hi = y.to(tl.float16)
         lo = (y - hi.to(tl.float32)).to(tl.float16)
         base = OUT + row * stride_out
-        tl.store(base + cols, hi, mask=mask)
-        tl.store(base + N + cols, hi, mask=mask)
-        tl.store(base + 2 * N + cols, lo, mask=mask)
+        if LO_FIRST:
+            tl.store(base + cols, lo, mask=mask)
+            tl.store(base + N + cols, hi, mask=mask)
+            tl.store(base + 2 * N + cols, hi, mask=mask)
+        else:
+            tl.store(base + cols, hi, mask=mask)
+            tl.store(base + N + cols, hi, mask=mask)
+            tl.store(base + 2 * N + cols, lo, mask=mask)
 
     @triton.jit
     def _x3_act_split_fwd(
         X, OUT, stride_x, stride_out, N,
         GELU: tl.constexpr,
+        LO_FIRST: tl.constexpr,
         BLOCK: tl.constexpr,
     ):
-        """[gelu](x) -> [hi | hi | lo] fp16 row."""
+        """[gelu](x) -> [hi | hi | lo] (or [lo | hi | hi]) fp16 row."""
         row = tl.program_id(0)
         cols = tl.arange(0, BLOCK)
         mask = cols < N
@@ -112,9 +139,14 @@ if HAVE_TRITON:
         hi = y.to(tl.float16)
         lo = (y - hi.to(tl.float32)).to(tl.float16)
         base = OUT + row * stride_out
-        tl.store(base + cols, hi, mask=mask)
-        tl.store(base + N + cols, hi, mask=mask)
-        tl.store(base + 2 * N + cols, lo, mask=mask)
+        if LO_FIRST:
+            tl.store(base + cols, lo, mask=mask)
+            tl.store(base + N + cols, hi, mask=mask)
+            tl.store(base + 2 * N + cols, hi, mask=mask)
+        else:
+            tl.store(base + cols, hi, mask=mask)
+            tl.store(base + N + cols, hi, mask=mask)
+            tl.store(base + 2 * N + cols, lo, mask=mask)
 
 
 def _x3_next_pow2(n: int) -> int:
@@ -131,7 +163,7 @@ def _x3_launch_ln(flat, r, total, out, weight, bias, n, eps, has_res, kernel):
     kernel[(flat.shape[0],)](
         flat, r, total, out, weight, bias,
         flat.stride(0), out.stride(0), n, eps,
-        HAS_RESIDUAL=has_res, BLOCK=block, num_warps=warps,
+        HAS_RESIDUAL=has_res, LO_FIRST=_X3_LO_FIRST, BLOCK=block, num_warps=warps,
     )
 
 
@@ -139,7 +171,7 @@ def _x3_launch_act(flat, out, n, gelu, kernel):
     block, warps = _x3_geometry(n)
     kernel[(flat.shape[0],)](
         flat, out, flat.stride(0), out.stride(0), n,
-        GELU=gelu, BLOCK=block, num_warps=warps,
+        GELU=gelu, LO_FIRST=_X3_LO_FIRST, BLOCK=block, num_warps=warps,
     )
 
 
@@ -149,6 +181,8 @@ def _x3_launch_act(flat, out, n, gelu, kernel):
 def _x3_split_ref(y: torch.Tensor) -> torch.Tensor:
     hi = y.to(torch.float16)
     lo = (y - hi.to(torch.float32)).to(torch.float16)
+    if _X3_LO_FIRST:
+        return torch.cat([lo, hi, hi], dim=-1)
     return torch.cat([hi, hi, lo], dim=-1)
 
 
@@ -207,13 +241,33 @@ def _x3_probe_cublas(device) -> bool:
 
 
 def _x3_linear_cuda(a3, w3, bias, inv):
+    if _X3_SPLITK == 1:
+        if bias is not None and _X3_ADDMM_BIAS:
+            # alpha and the bias both ride in the cuBLAS epilogue: one call.
+            return torch.addmm(bias, a3, w3.t(), alpha=inv, out_dtype=torch.float32)
+        out = torch.mm(a3, w3.t(), out_dtype=torch.float32)
+        out *= inv
+        if bias is not None:
+            out += bias
+        return out
+    # Split-K over the tripled axis: column slices of a3/w3 are strided views
+    # (lda = 3K) that cuBLAS takes as-is; the partials meet in the fp32
+    # epilogue (beta=1), i.e. round-to-nearest instead of the tensor core's
+    # truncation. Costs one extra read+write of the fp32 output per chunk.
+    k3 = a3.shape[1]
+    ch = k3 // _X3_SPLITK
+    sl = slice(0, ch)
     if bias is not None and _X3_ADDMM_BIAS:
-        # alpha and the bias both ride in the cuBLAS epilogue: one call.
-        return torch.addmm(bias, a3, w3.t(), alpha=inv, out_dtype=torch.float32)
-    out = torch.mm(a3, w3.t(), out_dtype=torch.float32)
-    out *= inv
-    if bias is not None:
-        out += bias
+        out = torch.addmm(bias, a3[:, sl], w3[:, sl].t(), alpha=inv, out_dtype=torch.float32)
+    else:
+        out = torch.mm(a3[:, sl], w3[:, sl].t(), out_dtype=torch.float32)
+        out *= inv
+        if bias is not None:
+            out += bias
+    for c in range(1, _X3_SPLITK):
+        sl = slice(c * ch, (c + 1) * ch if c < _X3_SPLITK - 1 else k3)
+        out = torch.addmm(out, a3[:, sl], w3[:, sl].t(), alpha=inv, beta=1.0,
+                          out_dtype=torch.float32)
     return out
 
 
@@ -329,18 +383,68 @@ def x3_prepare(weight: torch.Tensor, bias: Optional[torch.Tensor]):
     ``w3 = [w_hi | w_lo | w_hi]`` is ``[N, 3K]`` fp16, from the weight scaled
     by the power of two ``s`` that puts its largest entry near 2^10, so the lo
     parts are normal fp16 numbers. Paired with the activation's
-    ``[a_hi | a_hi | a_lo]`` it yields ``s * (a . w)`` in one GEMM; ``1/s`` is
+    ``[a_hi | a_hi | a_lo]`` (or ``[a_lo | a_hi | a_hi]`` under
+    ``T3_X3_ORDER=lhh``) it yields ``s * (a . w)`` in one GEMM; ``1/s`` is
     exact.
     """
     w = weight.detach().to(torch.float32)
     amax = float(w.abs().max().item())
-    s = 2.0 ** math.floor(math.log2(_X3_MAX_SCALED_W / amax)) if amax > 0 else 1.0
+    # A zero, inf or NaN weight gets no scaling: the split then reproduces
+    # whatever the reference would compute (zeros, or NaN) instead of raising.
+    if amax > 0 and math.isfinite(amax):
+        s = 2.0 ** math.floor(math.log2(_X3_MAX_SCALED_W / amax))
+    else:
+        s = 1.0
     ws = w * s
     hi = ws.to(torch.float16)
     lo = (ws - hi.to(torch.float32)).to(torch.float16)
     w3 = torch.cat([hi, lo, hi], dim=1).contiguous()
     b = None if bias is None else bias.detach().to(torch.float32).contiguous()
     return w3, b, 1.0 / s
+
+
+def x3_selfcheck(device, thorough: bool = False) -> bool:
+    """The registered split ops against the PyTorch reference.
+
+    The quick form is what x3_available runs once per device; the thorough
+    form (tests, the T3_ONLY=x3k driver run) adds ragged tiles, the widest row,
+    and the edge rows the reference must reproduce: an all-zero row, a constant
+    row and a row whose lo parts fall in fp16's subnormal range. Returns False
+    instead of raising, so a broken Triton build degrades to the PyTorch split.
+    """
+    dev = torch.device(device)
+    cases = [(64, 96)] if not thorough else [(64, 96), (67, 128), (67, 100), (5, 1024), (3, 32)]
+    tol = 2e-3   # hi halves may differ by one fp16 ulp between implementations
+    try:
+        for (m, n) in cases:
+            x = torch.randn(m, n, device=dev)
+            if thorough and m >= 3:
+                x[0] = 0.0
+                x[1] = 3.0
+                x[2] = torch.randn(n, device=dev) * 1e-6
+            r = torch.randn_like(x)
+            w = torch.rand(n, device=dev) + 0.5
+            b = torch.randn(n, device=dev)
+            a = _x3_ln_split_op(x, w, b, 1e-5)
+            a_ref = _x3_ln_split_ref(x, w, b, 1e-5)
+            s, a2 = _x3_add_ln_split_op(x, r, w, b, 1e-5)
+            s_ref, a2_ref = _x3_add_ln_split_ref(x, r, w, b, 1e-5)
+            g = _x3_act_split_op(x, True)
+            g_ref = _x3_act_split_ref(x, True)
+            p = _x3_act_split_op(x, False)
+            p_ref = _x3_act_split_ref(x, False)
+            for got, ref in ((a, a_ref), (a2, a2_ref), (g, g_ref), (p, p_ref)):
+                if got.shape != ref.shape:
+                    return False
+                if not (got.float() - ref.float()).abs().max().item() < tol:
+                    return False
+            if not (s - s_ref).abs().max().item() < 1e-5:
+                return False
+        if dev.type == "cuda":
+            torch.cuda.synchronize(dev)
+        return True
+    except Exception:
+        return False
 
 
 _X3_AVAILABLE = {}
@@ -363,26 +467,7 @@ def x3_available(device) -> bool:
                 # fp16 GEMMs may otherwise reduce split-K partials in fp16.
                 torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
             if ok and _X3_TRITON_OK and HAVE_X3_TRITON_OP:
-                try:
-                    x = torch.randn(64, 96, device=dev)
-                    r = torch.randn_like(x)
-                    w = torch.rand(96, device=dev) + 0.5
-                    b = torch.randn(96, device=dev)
-                    a = _x3_ln_split_op(x, w, b, 1e-5)
-                    a_ref = _x3_ln_split_ref(x, w, b, 1e-5)
-                    s, a2 = _x3_add_ln_split_op(x, r, w, b, 1e-5)
-                    s_ref, a2_ref = _x3_add_ln_split_ref(x, r, w, b, 1e-5)
-                    g = _x3_act_split_op(x, True)
-                    g_ref = _x3_act_split_ref(x, True)
-                    p = _x3_act_split_op(x, False)
-                    p_ref = _x3_act_split_ref(x, False)
-                    tol = 2e-3   # hi halves differ by one fp16 ulp at most
-                    for got, ref in ((a, a_ref), (a2, a2_ref), (g, g_ref), (p, p_ref)):
-                        assert got.shape == ref.shape
-                        assert (got.float() - ref.float()).abs().max().item() < tol
-                    assert (s - s_ref).abs().max().item() < 1e-5
-                    torch.cuda.synchronize(dev)
-                except Exception:
+                if not x3_selfcheck(dev):
                     _X3_TRITON_OK = False   # cuBLAS path still usable, split via PyTorch
     except Exception:
         ok = False
