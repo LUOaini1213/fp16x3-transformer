@@ -76,7 +76,7 @@ def build_selector(only, extra_env):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="all",
-                    choices=["all", "1-13", "14", "ablation", "triton", "probe", "attn"],
+                    choices=["all", "1-13", "14", "ablation", "triton", "probe", "attn", "profile", "x3"],
                     help="which section of the sweep the kernel runs (default: all)")
     ap.add_argument("--id", default="wenjiluo/track3-bench",
                     help="Kaggle kernel id to push to")
@@ -107,6 +107,8 @@ def main():
     tk = tk.replace("from __future__ import annotations", "")
     ta = read(os.path.join("kernels", "attention.py"))
     ta = ta.replace("from __future__ import annotations", "")
+    tx = read(os.path.join("kernels", "fp16x3.py"))
+    tx = tx.replace("from __future__ import annotations", "")
 
     uo = read("user_optimized.py")
     uo = uo.replace("from __future__ import annotations\n", "")
@@ -127,6 +129,8 @@ def main():
         + tk
         + "\n\n# ============ kernels/attention.py (inlined) ============\n\n"
         + ta
+        + "\n\n# ============ kernels/fp16x3.py (inlined) ============\n\n"
+        + tx
         + "\n\n# ================= user_optimized.py (inlined) =================\n\n"
         + uo
         + "\n\n# ================= sweep driver =================\n\n"

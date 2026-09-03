@@ -26,7 +26,7 @@ ExactSwap — Drop-in GPU Transformer Layer
 ## 3. Elevator pitch（一句话简介，199 字符）
 
 ```
-A drop-in Transformer layer that is 2.29x faster across all 13 graded shapes while staying 1049x inside the tolerance gate — and runs the 100,000-token shape whose reference needs 20.5 TB and cannot.
+A drop-in Transformer layer 2.50x faster on all 13 graded shapes at fp32-class accuracy (error-compensated tensor-core GEMMs); it runs the 100,000-token shape whose reference needs 20.5 TB.
 ```
 
 ---
@@ -118,15 +118,15 @@ No GPU holds that. The baseline does not run *slowly* on shape 14 — it does no
 
 **ExactSwap** is a drop-in replacement for the reference `BaselineTransformer`. It subclasses it, keeps every submodule and parameter name, and rewrites only the forward compute — so the official `copy_model_weights(..., strict=True)` succeeds and the comparison is apples to apples.
 
-**On a free Kaggle Tesla T4 under fp32 grading: 13/13 gradeable shapes PASS, median speedup 2.286× (range 1.088×–4.436×), worst absolute error $1.91\times10^{-6}$.** That is a factor of
+**On a free Kaggle Tesla T4 under fp32 grading: 13/13 gradeable shapes PASS, median speedup 2.499× (range 1.534×–4.707×), worst absolute error $4.09 \times 10^{-5}$ on the K=1024 shape and $6.74 \times 10^{-6}$ on the other twelve.** That is a factor of
 
-$$\frac{0.002}{1.91 \times 10^{-6}} \approx 1049$$
+$$\frac{0.002}{4.09 \times 10^{-5}} \approx 49$$
 
-inside the tolerance gate.
+inside the tolerance gate on the GEMM-bound shape, and about 297× on the other twelve.
 
 **And shape 14 runs.** The full 100,000-token forward completes in **204 s at 15,676 tokens/s, peaking at 14.58 GB** — on a card that only has 15.64 GB in total. Against a reference needing 20.5 TB, the meaningful result is not a ratio; it is the difference between *cannot run* and *runs*.
 
-Three levers, each selectable by environment variable with no code edits, so the ablation and the delivered path are literally the same code:
+Four levers, each selectable by environment variable with no code edits, so the ablation and the delivered path are literally the same code:
 
 1. **`F.scaled_dot_product_attention`** (memory-efficient backend) — $O(S)$ memory instead of the baseline's $O(S^2)$. The score matrix is never built. Causality goes through `is_causal=True`, generated inside the kernel, because a dense $[S,S]$ mask at $S = 10^5$ is $10^{10}$ bytes on its own.
 2. **Self-applied `torch.compile`** — the model compiles itself on the first forward, so the speedup does not depend on the grader passing `--compile-user`. Requires $\text{sm} \ge 7.0$.
@@ -135,6 +135,12 @@ Three levers, each selectable by environment variable with no code edits, so the
 $$n_{\text{chunk}} \;=\; \left\lfloor \frac{0.6\,\bigl(M_{\text{free}} - M_{\text{out}}\bigr)}{b \cdot k \cdot S \cdot \max(D, F)} \right\rfloor$$
 
 with $M_{\text{free}}$ from `cuda.mem_get_info` plus the allocator's reserved-but-unused blocks, $b$ bytes per element, and $k \approx 8$ live intermediates per block. If that estimate is still optimistic, the chunk halves and the pass restarts.
+
+4. **fp16x3 linear layers** — every GEMM on the fp16 tensor cores at fp32-class accuracy. Each operand is an fp16 hi + lo pair, $x = x_{hi} + x_{lo}$ with $x_{lo} = \mathrm{fp16}(x - x_{hi})$ (about $2^{-22}$ relative), and one cuBLAS GEMM with $K$ tripled accumulates the three cross terms in fp32:
+
+$$\mathbf{a}\cdot\mathbf{w} \approx a_{hi} w_{hi} + a_{lo} w_{hi} + a_{hi} w_{lo} = \bigl[a_{hi}\,|\,a_{hi}\,|\,a_{lo}\bigr]\cdot\bigl[w_{hi}\,;\,w_{lo}\,;\,w_{hi}\bigr]^{T}$$
+
+The split is fused into the Triton kernel that produces each activation (LayerNorm, add+LayerNorm, GELU), so it costs no extra pass. Median 2.300× → 2.499×; the GEMM-bound shape 1.09× → 1.60×.
 
 ## How we built it
 
@@ -152,7 +158,7 @@ committed before a single activation. Correctness for shape 14 is therefore esta
 
 **2. The Kaggle API silently gives you the wrong GPU.** `torch.compile` and fp16 tensor cores were both marked "not measured" for most of this project, because the API-allocated card is a Tesla **P100** (`sm_60`) where Triton will not build. The kernels API *does* let you choose — `machine_shape` / `--accelerator` — but the accepted values (`NvidiaTeslaT4`, `NvidiaTeslaP100`, `Tpu1VmV38`) appear only in the SDK docstring for `ApiSaveKernelRequest`, and **anything unrecognised is silently normalised back to a P100**. Our first two guesses looked like successful requests and were not. We confirmed the right one by pushing a throwaway kernel that printed `get_device_name`.
 
-**3. Two GPUs make an accidental ablation.** The same code scores 2.065× on the P100 (SDPA alone) and 2.286× on the T4 (SDPA + first-forward autotune). Worth stating plainly: the T4's *baselines* are **slower** than the P100's — 324.6 ms against 168.6 ms on shape 13 — because the P100 has more fp32 throughput and roughly twice the memory bandwidth. Our ratio improves on the T4 anyway, because the optimized path gains compilation there while the baseline stays bandwidth-bound. A speedup is a ratio, and it matters which side moved. And every T4 number here is the median of three independent runs (run medians 2.286/2.258/2.339), with per-shape spread up to 18% on the smallest shapes — differences below that between configurations are noise, and we call them that. One more correction we owe: earlier drafts credited the T4 with "FlashAttention". We probed every SDPA backend for every dtype and head dimension on both cards, and **flash was never available** — it is fp16-only and needs sm_80+. Every run used the memory-efficient backend, whose $O(S)$ memory is the property shape 14 depends on. Right mechanism, wrong name, now fixed.
+**3. Two GPUs make an accidental ablation.** The same code scores 2.065× on the P100 (SDPA alone, no tensor cores) and 2.499× on the T4 (SDPA + fp16x3 tensor-core GEMMs + first-forward autotune). Worth stating plainly: the T4's *baselines* are **slower** than the P100's — 324.6 ms against 168.6 ms on shape 13 — because the P100 has more fp32 throughput and roughly twice the memory bandwidth. Our ratio improves on the T4 anyway, because the optimized path gains compilation there while the baseline stays bandwidth-bound. A speedup is a ratio, and it matters which side moved. And every T4 number here is the median of three independent runs (run medians 2.442/2.380/2.499), with per-shape spread up to 18% on the smallest shapes — differences below that between configurations are noise, and we call them that. One more correction we owe: earlier drafts credited the T4 with "FlashAttention". We probed every SDPA backend for every dtype and head dimension on both cards, and **flash was never available** — it is fp16-only and needs sm_80+. Every run used the memory-efficient backend, whose $O(S)$ memory is the property shape 14 depends on. Right mechanism, wrong name, now fixed.
 
 **4. We wrote the kernel, and it lost where it counted.** The track is named "implement a GPU kernel", so composing `scaled_dot_product_attention` with `torch.compile` — however well measured — leaves an obvious gap. `kernels/fused_layernorm.py` closes it: a fused **residual-add + LayerNorm** in Triton. The target was picked on purpose. `nn.LayerNorm` alone is already a tuned CUDA kernel and rewriting it is a predictable loss; what eager PyTorch does *not* fuse is the pre-norm pattern a block repeats twice per layer, $x = x + \mathrm{sublayer}(\mathrm{norm}(x))$, where the add and the norm each traverse the full $[B, S, D]$ activation. Fusing them takes four passes down to two.
 
@@ -182,6 +188,10 @@ Five of six against eager, five of six against Inductor, at `max_abs` $\le 1.43\
 End to end: $1.929\times \to 2.190\times$ with registration, against $2.282\times$ with compilation fixed on — still 13/13 PASS. The mechanism was right; composing with the compiler recovered most of the loss. And it still does not win, for two reasons the table makes visible: Inductor's own fusion of these two ops is within $\pm 5\%$ of the hand-written kernel on the memory-bound shapes — the compiler already writes this kernel about as well as we did — and on the small, narrow shapes it wins outright, because it fuses *across* op boundaries where a custom op is an opaque wall, and because registration costs 30–70 µs of dispatch per call that only launch-bound shapes notice.
 
 **We matched the compiler. We did not beat it.** The kernel exists, is correct, composes with `torch.compile`, and ships disabled — with all of those numbers published rather than the flattering one.
+
+<!-- x3-built:begin -->
+**5. GEMMs on the tensor cores at fp32-class accuracy.** A kernel-level profile put fp32 SGEMM at 44–89% of the forward on three shapes, on a card whose fp16 tensor cores are eight times faster and were idle. fp16 *inputs* had already failed the gate; fp16 *arithmetic with compensation* passes it: hi/lo operand pairs, one GEMM with $K$ tripled, fp32 accumulation and output. Two versions lost first — a PyTorch-side split that cost exactly what the faster GEMM saved, and a two-GEMM form whose accumulating pass over the fp32 output made it *slower* than fp32 — before fusing the split into the LayerNorm and GELU kernels made it free. The residual error, $4.1 \times 10^{-5}$ at $K = 1024$ against $1.2\times10^{-6}$ for the same arithmetic emulated on a CPU, is the Turing tensor core's truncating accumulator, and it grows linearly with $K$; at this gate that is still 49× of margin. Along the way we found that our own sweep had been running `torch.compile` silently off from the fifth shape on (Dynamo's recompile limit, two variants per shape), re-measured everything, and shipped the fix in the model.
+<!-- x3-built:end -->
 
 ## Challenges we ran into
 
@@ -226,6 +236,10 @@ over near-zero references — and why a `max_abs` of $2.04\times10^{-3}$ is disq
 - **Measure the compiler too.** The ablation showed `torch.compile` losing on the launch-bound shape, so the shipped model times eager, compiled, and the eager kernels captured into a CUDA graph once per shape, inside warmup, and keeps the fastest. Eager won on four shapes; shape 12 gained 15% ($1.971\times \to 2.271\times$). The median did not move, and that is the point: it stopped being a guess.
 - **A faster operator is not a faster program.** Our kernel beat Inductor's fusion at the operator level and lost end to end twice: first because switching it on switched compilation off, then — after we fixed that — because a custom op is a boundary the compiler cannot fuse across. The unit you benchmark has to be the unit you ship.
 
+<!-- x3-learn:begin -->
+- **The accumulator is part of the arithmetic.** Exact fp16 products with fp32 accumulation should have matched fp32; on Turing they land $4.1 \times 10^{-5}$ instead of $10^{-6}$ at $K=1024$, because the tensor core truncates as it sums. The CPU emulation of the identical formula told us where to look.
+<!-- x3-learn:end -->
+
 ## What's next
 
 Running the split-operand attention kernel on an Ampere-class GPU, where the fp16:fp32 tensor-core ratio makes its three matmuls per product a win instead of a loss — every number here says the accuracy is solved and the speed is the hardware's. The fused bias+GELU epilogue was scoped and dropped, since Inductor already fuses it; a Turing attention kernel with fp16 storage and fp32 accumulation is a multi-day effort we scoped and did not attempt. The padded fallback still materializes a dense $[B,1,S,S]$ bias, giving back exactly the $O(S^2)$ memory SDPA exists to avoid; the graded path never takes it, but making it memory-efficient is unfinished work rather than a solved problem.
@@ -237,6 +251,10 @@ The mixed assignment — fp16 attention, fp32 FFN and LayerNorm — turned out t
 It is also slower: $0.04$—$0.72\times$ fp32 SDPA, median ${med_a:.3f}\times$ against ${med_s:.3f}\times$ shipped. The arithmetic is against the GPU more than the code: a T4's fp16 tensor cores are only ~8\times its fp32 cores, cutlass's fp16 SDPA is just $4.1\times$ its fp32 one, and the kernel does three matmuls per product — even a cutlass-grade kernel tops out near $1.4\times$ on the long shape. It pays where that ratio is $16\times$ or more, on Ampere and later. Not shipped; measured, published, kept behind a flag.
 
 The trap: registered through `triton_op`, the kernel measured **$2.08e-03$ under `torch.compile`** — fp16-level — from code that is $2.98e-06$ eager. Inductor does not emulate intermediate precision casts inside the kernels it fuses, so $x - \mathrm{fp32}(\mathrm{fp16}(x))$ folds to zero and the low halves vanish. An opaque `custom_op` boundary fixes it. Precision tricks and fusing compilers do not mix unless you draw the line yourself.
+
+<!-- x3-next:begin -->
+Split-K for the fp16x3 GEMMs, with the partial sums reduced in IEEE fp32 outside the tensor core, would take the K=1024 error from $4.1 \times 10^{-5}$ back to the $10^{-6}$ the emulation shows is possible, and make the path fp32-class at any width, not only at this gate.
+<!-- x3-next:end -->
 
 ---8<--- 复制到这里为止 ---8<---
 
@@ -263,8 +281,11 @@ The trap: registered through `triton_op`, the kernel measured **$2.08e-03$ under
 
 | 数字 | 来源 |
 |---|---|
-| T4 中位 2.286× / 13-13 PASS(3 次独立运行逐 shape 取中位数) | `results/results_t4.csv`、`results/results_t4_runs.csv`、`results/kaggle_t4_{graph,rep1,rep2}_run.log` |
-| T4 固定开启 compile 的对照 2.282× | `results/results_t4_compile_on.csv`、`results/kaggle_t4_run.log` |
+| T4 中位 2.499× / 13-13 PASS(默认 fp16x3,3 次独立运行逐 shape 取中位数) | `results/results_t4.csv`、`results/results_t4_runs.csv`、`results/kaggle_t4_{x3force2,def2,def3}_run.log` |
+| T4 fp32 SGEMM 对照 2.300×(3 次运行) | `results/results_t4_fp32.csv`、`results/kaggle_t4_{fix1,fp32b,fp32c}_run.log` |
+| T4 `T3_LINEAR=auto` 两次 2.299× / 2.214× | `results/results_t4_x3v4.csv`、`results/results_t4_x3v4b.csv` |
+| fp16x3 算子级对比、误差 | `results/kaggle_t4_x3v3_run.log`;kernel 级 profile `results/kaggle_t4_profile_run.log` |
+| T4 固定开启 compile 的对照 2.282×(修 recompile 上限之前的旧测量) | `results/results_t4_compile_on.csv`、`results/kaggle_t4_run.log` |
 | P100 中位 2.065× | `results/results.csv`、`results/kaggle_p100_run.log` |
 | shape 14：204 s / 15,676 tok/s / 14.58 GB | `results/kaggle_t4_shape14.log` |
 | fp16 中位 4.014×、`max_abs` 2.04e-3 | `results/results_t4_fp16.csv`、`results/kaggle_t4_fp16_run.log` |

@@ -1,0 +1,153 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+sdpa backend probe  (head_dim -> which backends can run, is_causal=True)
+/kaggle/src/script.py:2685: UserWarning: Memory efficient kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:960.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2685: UserWarning: Memory Efficient attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/sdp_utils_cpp.h:552.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2685: UserWarning: Flash attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:962.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2685: UserWarning: Flash attention only supports gpu architectures in the range [sm80, sm121]. Attempting to run on a sm 7.5 gpu. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:339.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2685: UserWarning: cuDNN attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:964.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2685: UserWarning: cuDNN attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:680.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+  PROBE float32  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 256  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 256  flash=no   efficient=yes  math=yes
+  shapes -> head_dim: D=128,H=4 -> 32 | D=32,H=4 -> 8 | D=1024,H=4 -> 256 | D=128,H=1 -> 128 | D=128,H=2 -> 64 | D=128,H=16 -> 8 | shape14 D=1024,H=16 -> 64
+
+##### FP16x3 LINEAR BENCH #####
+x3_available: True | triton ok: True | addmm bias epilogue: True
+shape  1 qkv     M=8192     K=128   N=384   fp32 LN+GEMM    0.562 ms (LN 0.185; err 1.5e-06) | x3    0.472 ms (split 0.195 + GEMM 0.319; err 5.6e-06) | x1.19 | gelu 0.119 vs gelu+split 0.227 ms (err 5.9e-07)
+shape  1 o       M=8192     K=128   N=128   fp32 LN+GEMM    0.351 ms (LN 0.184; err 1.5e-06) | x3    0.315 ms (split 0.197 + GEMM 0.166; err 6.1e-06) | x1.11 | gelu 0.048 vs gelu+split 0.129 ms (err 5.1e-07)
+shape  2 qkv     M=128      K=128   N=384   fp32 LN+GEMM    0.070 ms (LN 0.029; err 5.0e-07) | x3    0.262 ms (split 0.119 + GEMM 0.119; err 4.4e-06) | x0.27 | gelu 0.021 vs gelu+split 0.110 ms (err 3.5e-07)
+shape  2 o       M=128      K=128   N=128   fp32 LN+GEMM    0.065 ms (LN 0.028; err 5.1e-07) | x3    0.262 ms (split 0.122 + GEMM 0.123; err 4.3e-06) | x0.25 | gelu 0.020 vs gelu+split 0.113 ms (err 3.5e-07)
+shape  3 qkv     M=512      K=128   N=384   fp32 LN+GEMM    0.102 ms (LN 0.031; err 1.3e-06) | x3    0.279 ms (split 0.129 + GEMM 0.132; err 2.6e-06) | x0.37 | gelu 0.022 vs gelu+split 0.128 ms (err 3.5e-07)
+shape  3 o       M=512      K=128   N=128   fp32 LN+GEMM    0.076 ms (LN 0.031; err 5.9e-07) | x3    0.269 ms (split 0.129 + GEMM 0.127; err 5.3e-06) | x0.28 | gelu 0.025 vs gelu+split 0.125 ms (err 5.5e-07)
+shape  4 qkv     M=2048     K=128   N=384   fp32 LN+GEMM    0.181 ms (LN 0.061; err 1.4e-06) | x3    0.300 ms (split 0.129 + GEMM 0.156; err 6.0e-06) | x0.60 | gelu 0.037 vs gelu+split 0.115 ms (err 4.5e-07)
+shape  4 o       M=2048     K=128   N=128   fp32 LN+GEMM    0.123 ms (LN 0.060; err 1.2e-06) | x3    0.272 ms (split 0.125 + GEMM 0.117; err 2.7e-06) | x0.45 | gelu 0.021 vs gelu+split 0.114 ms (err 5.3e-07)
+shape  5 qkv     M=16384    K=128   N=384   fp32 LN+GEMM    1.077 ms (LN 0.348; err 2.2e-06) | x3    0.816 ms (split 0.229 + GEMM 0.504; err 7.4e-06) | x1.32 | gelu 0.223 vs gelu+split 0.367 ms (err 5.4e-07)
+shape  5 o       M=16384    K=128   N=128   fp32 LN+GEMM    0.476 ms (LN 0.240; err 1.6e-06) | x3    0.438 ms (split 0.231 + GEMM 0.244; err 6.4e-06) | x1.09 | gelu 0.083 vs gelu+split 0.171 ms (err 6.3e-07)
+Traceback (most recent call last):
+  File "/kaggle/src/script.py", line 2988, in _x3_bench
+    gs = x3_act_split(hact, True).float()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 5.49 GiB. GPU 0 has a total capacity of 14.56 GiB of which 4.59 GiB is free. Including non-PyTorch memory, this process has 9.97 GiB memory in use. Of the allocated memory 9.80 GiB is allocated by PyTorch, and 48.40 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+shape 6 qkv error: CUDA out of memory. Tried to allocate 5.49 GiB. GPU 0 has a total capacity of 14.56 GiB of which 4.59 GiB is free. Including non-PyTorch memory, this process has 9.97 GiB memory in use. Of the allocat
+shape  6 o       M=1280000  K=128   N=128   fp32 LN+GEMM   28.207 ms (LN 13.269; err 2.3e-06) | x3   22.773 ms (split 9.587 + GEMM 12.860; err 7.5e-06) | x1.24 | gelu 5.564 vs gelu+split 7.122 ms (err 6.6e-07)
+shape  7 qkv     M=8192     K=32    N=96    fp32 LN+GEMM    0.137 ms (LN 0.080; err 7.8e-07) | x3    0.315 ms (split 0.158 + GEMM 0.136; err 2.6e-06) | x0.43 | gelu 0.035 vs gelu+split 0.139 ms (err 6.2e-07)
+shape  7 o       M=8192     K=32    N=32    fp32 LN+GEMM    0.108 ms (LN 0.079; err 8.4e-07) | x3    0.283 ms (split 0.137 + GEMM 0.137; err 2.3e-06) | x0.38 | gelu 0.024 vs gelu+split 0.133 ms (err 3.6e-07)
+shape  8 qkv     M=8192     K=1024  N=3072  fp32 LN+GEMM   12.333 ms (LN 0.317; err 4.9e-06) | x3    7.491 ms (split 0.477 + GEMM 7.180; err 3.4e-05) | x1.65 | gelu 0.859 vs gelu+split 5.354 ms (err 9.3e-07)
+shape  8 o       M=8192     K=1024  N=1024  fp32 LN+GEMM    4.768 ms (LN 0.319; err 3.0e-06) | x3    2.903 ms (split 0.465 + GEMM 2.375; err 3.3e-05) | x1.64 | gelu 0.294 vs gelu+split 0.465 ms (err 6.5e-07)
+shape 13 qkv     M=65536    K=128   N=384   fp32 LN+GEMM    2.390 ms (LN 0.629; err 1.8e-06) | x3    2.348 ms (split 0.614 + GEMM 1.759; err 7.1e-06) | x1.02 | gelu 0.856 vs gelu+split 1.200 ms (err 6.1e-07)
+shape 13 o       M=65536    K=128   N=128   fp32 LN+GEMM    1.342 ms (LN 0.578; err 1.8e-06) | x3    1.279 ms (split 0.590 + GEMM 0.737; err 6.9e-06) | x1.05 | gelu 0.295 vs gelu+split 0.451 ms (err 6.2e-07)
+
+##### SHAPE 1 : B=64 D=128 H=4 S=128 L=4 F=128 #####
+W0903 06:56:16.807000 7 torch/_inductor/utils.py:1679] [0/0] Not enough SMs to use max_autotune_gemm mode
+autotune: eager=8.0735ms compiled=3.8262ms graph=4.8292ms -> compiled
+linear autotune: fp32=3.8262ms fp16x3=4.0692ms -> fp32
+PASS max_abs=1.19e-06 max_rel=0.191 | baseline=9.6510ms optimized=5.0820ms | speedup=1.899x
+
+##### SHAPE 2 : B=1 D=128 H=4 S=128 L=4 F=128 #####
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+linear autotune: fp32=infms fp16x3=infms -> fp32
+PASS max_abs=9.54e-07 max_rel=0.0865 | baseline=3.0282ms optimized=1.4533ms | speedup=2.084x
+
+##### SHAPE 3 : B=4 D=128 H=4 S=128 L=4 F=128 #####
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+linear autotune: fp32=infms fp16x3=infms -> fp32
+PASS max_abs=1.19e-06 max_rel=0.0769 | baseline=2.9942ms optimized=1.4460ms | speedup=2.071x
+
+##### SHAPE 4 : B=16 D=128 H=4 S=128 L=4 F=128 #####
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+linear autotune: fp32=infms fp16x3=infms -> fp32
+PASS max_abs=1.19e-06 max_rel=0.658 | baseline=3.9193ms optimized=1.5421ms | speedup=2.541x
+
+##### SHAPE 5 : B=128 D=128 H=4 S=128 L=4 F=128 #####
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+linear autotune: fp32=infms fp16x3=infms -> fp32
+PASS max_abs=1.43e-06 max_rel=4.33 | baseline=18.7489ms optimized=9.8315ms | speedup=1.907x
+
+##### SHAPE 6 : B=10000 D=128 H=4 S=128 L=4 F=128 #####
+linear autotune: fp32=603.7565ms fp16x3=642.0377ms -> fp32
+PASS max_abs=1.67e-06 max_rel=2.84e+05 | baseline=1486.5726ms optimized=661.2405ms | speedup=2.248x
+
+##### SHAPE 7 : B=64 D=32 H=4 S=128 L=4 F=32 #####
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+linear autotune: fp32=infms fp16x3=infms -> fp32
+PASS max_abs=9.54e-07 max_rel=2 | baseline=6.3822ms optimized=2.3634ms | speedup=2.700x
+
+##### SHAPE 8 : B=64 D=1024 H=4 S=128 L=4 F=1024 #####
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+linear autotune: fp32=infms fp16x3=infms -> fp32
+PASS max_abs=1.91e-06 max_rel=4.57 | baseline=139.0495ms optimized=134.6557ms | speedup=1.033x
+
+##### SHAPE 9 : B=64 D=128 H=1 S=128 L=4 F=128 #####
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+linear autotune: fp32=infms fp16x3=infms -> fp32
+PASS max_abs=1.43e-06 max_rel=0.233 | baseline=6.6267ms optimized=5.3003ms | speedup=1.250x
+
+##### SHAPE 10 : B=64 D=128 H=2 S=128 L=4 F=128 #####
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+linear autotune: fp32=infms fp16x3=infms -> fp32
+PASS max_abs=1.43e-06 max_rel=0.667 | baseline=8.0420ms optimized=5.1930ms | speedup=1.549x
+
+##### SHAPE 11 : B=64 D=128 H=16 S=128 L=4 F=128 #####
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+linear autotune: fp32=infms fp16x3=infms -> fp32
+PASS max_abs=1.43e-06 max_rel=0.387 | baseline=22.4785ms optimized=7.4527ms | speedup=3.016x
+
+##### SHAPE 12 : B=64 D=128 H=4 S=32 L=4 F=128 #####
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+[user_optimized] autotune failed (RuntimeError: Expected curr_block->next == nullptr to be true, but got false.  (Could this error message be improved?  If so, please r); keeping the current configuration
+linear autotune: fp32=infms fp16x3=infms -> fp32
+PASS max_abs=1.19e-06 max_rel=0.104 | baseline=3.2194ms optimized=1.8384ms | speedup=1.751x
+
+##### SHAPE 13 : B=64 D=128 H=4 S=1024 L=4 F=128 #####
+linear autotune: fp32=64.8235ms fp16x3=67.0258ms -> fp32
+PASS max_abs=1.43e-06 max_rel=2.4 | baseline=324.0591ms optimized=67.6987ms | speedup=4.787x
+
+##### SHAPE 14 : optimized-only (baseline infeasible ~20.5 TB) #####
+skipped for this T3_ONLY selector
+
+=================== SUMMARY (copy from here) ===================
+shape,pass,max_abs,max_rel,baseline_ms,opt_ms,speedup,note
+1,PASS,1.1920928955078125e-06,0.19148938357830048,9.6510,5.0820,1.899,
+2,PASS,9.5367431640625e-07,0.08653856068849564,3.0282,1.4533,2.084,
+3,PASS,1.1920928955078125e-06,0.0769231989979744,2.9942,1.4460,2.071,
+4,PASS,1.1920928955078125e-06,0.6578947901725769,3.9193,1.5421,2.541,
+5,PASS,1.430511474609375e-06,4.333333969116211,18.7489,9.8315,1.907,
+6,PASS,1.6689300537109375e-06,284324.625,1486.5726,661.2405,2.248,
+7,PASS,9.5367431640625e-07,2.0,6.3822,2.3634,2.700,
+8,PASS,1.9073486328125e-06,4.568181991577148,139.0495,134.6557,1.033,
+9,PASS,1.430511474609375e-06,0.23333340883255005,6.6267,5.3003,1.250,
+10,PASS,1.430511474609375e-06,0.6666666269302368,8.0420,5.1930,1.549,
+11,PASS,1.430511474609375e-06,0.38666680455207825,22.4785,7.4527,3.016,
+12,PASS,1.1920928955078125e-06,0.10396042466163635,3.2194,1.8384,1.751,
+13,PASS,1.430511474609375e-06,2.4000000953674316,324.0591,67.6987,4.787,
+# median_speedup=2.071x min=1.033x max=4.787x over 13 PASS shapes
+=================== END SUMMARY ===================
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 928705 bytes to __results__.html

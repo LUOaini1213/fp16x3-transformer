@@ -394,6 +394,213 @@ def _attn_bench(device):
         print("compile compose FAILED:", str(ex)[:200].replace("\n", " "), flush=True)
 
 
+_SH13 = [
+    (1, 64, 128, 4, 128, 4, 128), (2, 1, 128, 4, 128, 4, 128),
+    (3, 4, 128, 4, 128, 4, 128), (4, 16, 128, 4, 128, 4, 128),
+    (5, 128, 128, 4, 128, 4, 128), (6, 10000, 128, 4, 128, 4, 128),
+    (7, 64, 32, 4, 128, 4, 32), (8, 64, 1024, 4, 128, 4, 1024),
+    (9, 64, 128, 1, 128, 4, 128), (10, 64, 128, 2, 128, 4, 128),
+    (11, 64, 128, 16, 128, 4, 128), (12, 64, 128, 4, 32, 4, 128),
+    (13, 64, 128, 4, 1024, 4, 128),
+]
+
+
+def _profile(device):
+    """Where does the shipped forward spend its time, per graded shape?
+
+    Three views per shape: (a) kernel-level profile of the eager path,
+    (b) SDPA backend micro-bench (memory-efficient vs math) at the shape's
+    (B, H, S, head_dim), (c) the shape's linear layers as fp32 cuBLAS vs an
+    error-compensated fp16 tensor-core GEMM (fp16x3: each fp32 operand as an
+    fp16 hi+lo pair, one GEMM with K tripled, fp32 accumulation, fp32 output)
+    vs plain fp16, with max-abs error against fp64.
+    """
+    import os
+    import math
+    import torch
+    import torch.nn.functional as F
+    from torch.profiler import profile, ProfilerActivity
+    from torch.nn.attention import sdpa_kernel, SDPBackend
+    dtype = torch.float32
+
+    def med(fn, warm=5, iters=20):
+        for _ in range(warm):
+            fn()
+        torch.cuda.synchronize()
+        st = torch.cuda.Event(enable_timing=True); en = torch.cuda.Event(enable_timing=True)
+        t = []
+        for _ in range(iters):
+            st.record(); fn(); en.record(); torch.cuda.synchronize(); t.append(st.elapsed_time(en))
+        t.sort()
+        return t[len(t) // 2]
+
+    try:
+        _a = torch.randn(8, 8, device=device, dtype=torch.float16)
+        torch.mm(_a, _a, out_dtype=torch.float32)
+        has_out_dtype = True
+    except Exception as e:
+        has_out_dtype = False
+        print("mm out_dtype unavailable:", str(e)[:100], flush=True)
+    print(f"mm(out_dtype=fp32) available: {has_out_dtype}", flush=True)
+
+    def split(t):
+        hi = t.half()
+        return hi, (t - hi.float()).half()
+
+    saved = {k: os.environ.get(k) for k in ("T3_COMPILE", "T3_CUDAGRAPH")}
+    for (idx, b, d, h, s, l, f) in _SH13:
+        hd = d // h
+        print(f"\n##### PROFILE SHAPE {idx} : B={b} D={d} H={h} S={s} L={l} F={f} hd={hd} #####", flush=True)
+        cfg = TransformerConfig(batch_size=b, seq_len=s, d_model=d, num_heads=h,
+                                ffn_dim=f, num_layers=l, causal=True)
+        cfg.validate()
+        x, m = generate_random_case(cfg, device, dtype, 1234, 0.0, 1.0)
+        # (a) eager kernel mix
+        os.environ["T3_COMPILE"] = "0"; os.environ["T3_CUDAGRAPH"] = "0"
+        try:
+            baseline = BaselineTransformer(cfg).to(device, dtype).eval()
+            opt = UserOptimizedTransformer(cfg)
+            copy_model_weights(baseline, opt, strict=True)
+            opt = opt.to(device, dtype).eval()
+            with torch.inference_mode():
+                for _ in range(5):
+                    opt(x, m)
+                torch.cuda.synchronize()
+                with profile(activities=[ProfilerActivity.CUDA]) as prof:
+                    for _ in range(5):
+                        opt(x, m)
+                    torch.cuda.synchronize()
+            ka = [e for e in prof.key_averages() if e.self_device_time_total > 0]
+            ka.sort(key=lambda e: -e.self_device_time_total)
+            tot = sum(e.self_device_time_total for e in ka) / 5 / 1000.0
+            print(f"eager forward, GPU time {tot:.3f} ms/iter ({len(ka)} distinct kernels):", flush=True)
+            for e in ka[:10]:
+                ms = e.self_device_time_total / 5 / 1000.0
+                print(f"   {ms:8.3f} ms {100 * ms / tot:5.1f}%  x{e.count // 5:<3d} {e.key[:88]}", flush=True)
+            del baseline, opt
+        except Exception as e:
+            print("profile error:", str(e)[:160], flush=True)
+        finally:
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+        # (b) SDPA backend
+        try:
+            q = torch.randn(b, h, s, hd, device=device, dtype=dtype)
+            k_ = torch.randn_like(q); v_ = torch.randn_like(q)
+            res = {}
+            for name, be in (("efficient", SDPBackend.EFFICIENT_ATTENTION), ("math", SDPBackend.MATH)):
+                with sdpa_kernel(be):
+                    with torch.inference_mode():
+                        res[name] = (med(lambda: F.scaled_dot_product_attention(q, k_, v_, is_causal=True)),
+                                     F.scaled_dot_product_attention(q, k_, v_, is_causal=True))
+            diff = (res["efficient"][1] - res["math"][1]).abs().max().item()
+            print(f"sdpa fp32 causal [{b},{h},{s},{hd}]: efficient {res['efficient'][0]:.3f} ms | math {res['math'][0]:.3f} ms "
+                  f"| math/eff {res['math'][0] / res['efficient'][0]:.2f} | max|diff| {diff:.2e}", flush=True)
+            del q, k_, v_, res
+        except Exception as e:
+            print("sdpa bench error:", str(e)[:160], flush=True)
+        # (c) linear layers: fp32 vs fp16x3 vs fp16
+        M = b * s
+        dims = [(d, d, "q/k/v/o"), (d, f, "ffn_in"), (f, d, "ffn_out")]
+        seen = set()
+        for (K, N, tag) in dims:
+            if (K, N) in seen:
+                continue
+            seen.add((K, N))
+            try:
+                a = F.layer_norm(torch.randn(M, K, device=device), (K,))
+                w = (torch.rand(N, K, device=device) * 2 - 1) / math.sqrt(K)
+                bias = (torch.rand(N, device=device) * 2 - 1) / math.sqrt(K)
+                ref = a.double() @ w.double().t() + bias.double()
+                sc = 2.0 ** math.floor(math.log2(1024.0 / w.abs().max().item()))
+                wh, wl = split(w * sc)
+                W3 = torch.cat([wh, wl, wh], dim=1).contiguous()          # [N, 3K]
+                inv = 1.0 / sc
+                t32 = med(lambda: F.linear(a, w, bias))
+                e32 = (F.linear(a, w, bias).double() - ref).abs().max().item()
+                t16 = med(lambda: F.linear(a.half(), w.half(), bias.half()))
+                e16 = (F.linear(a.half(), w.half(), bias.half()).double() - ref).abs().max().item()
+                line = f"linear {tag:8s} M={M} K={K} N={N}: fp32 {t32:.3f} ms ({e32:.1e}) | fp16 {t16:.3f} ms ({e16:.1e})"
+                if has_out_dtype:
+                    def x3():
+                        ah, al = split(a)
+                        A3 = torch.cat([ah, ah, al], dim=1)
+                        return torch.mm(A3, W3.t(), out_dtype=torch.float32) * inv + bias
+                    tx3 = med(x3)
+                    ex3 = (x3().double() - ref).abs().max().item()
+                    ah, al = split(a); A3 = torch.cat([ah, ah, al], dim=1)
+                    tg = med(lambda: torch.mm(A3, W3.t(), out_dtype=torch.float32))
+                    line += f" | fp16x3 {tx3:.3f} ms ({ex3:.1e}; GEMM alone {tg:.3f} ms) | fp32/fp16x3 {t32 / tx3:.2f}"
+                print(line, flush=True)
+                del a, w, bias, ref, W3
+            except Exception as e:
+                print(f"linear {tag} error:", str(e)[:160], flush=True)
+        torch.cuda.empty_cache()
+
+
+def _x3_bench(device):
+    """Op-level check of the fp16x3 path per graded shape: error against fp64
+    and time against the fp32 LayerNorm + SGEMM it replaces."""
+    import math
+    import torch
+    import torch.nn.functional as F
+    print(f"x3_available: {x3_available(device)} | triton ok: {_X3_TRITON_OK} | "
+          f"addmm bias epilogue: {_X3_ADDMM_BIAS}", flush=True)
+
+    def med(fn, warm=5, iters=20):
+        for _ in range(warm):
+            fn()
+        torch.cuda.synchronize()
+        st = torch.cuda.Event(enable_timing=True); en = torch.cuda.Event(enable_timing=True)
+        t = []
+        for _ in range(iters):
+            st.record(); fn(); en.record(); torch.cuda.synchronize(); t.append(st.elapsed_time(en))
+        t.sort()
+        return t[len(t) // 2]
+
+    seen = set()
+    for (idx, b, d, h, s, l, f) in _SH13:
+        M = b * s
+        for (K, N, tag) in ((d, 3 * d, "qkv"), (d, d, "o"), (d, f, "ffn_in"), (f, d, "ffn_out")):
+            if (M, K, N) in seen:
+                continue
+            seen.add((M, K, N))
+            try:
+                x = torch.randn(M, K, device=device)
+                g = torch.rand(K, device=device) + 0.5
+                be = torch.randn(K, device=device) * 0.1
+                w = (torch.rand(N, K, device=device) * 2 - 1) / math.sqrt(K)
+                bias = (torch.rand(N, device=device) * 2 - 1) / math.sqrt(K)
+                prep = x3_prepare(w, bias)
+                ln = lambda: F.layer_norm(x, (K,), g, be, 1e-5)
+                ref = F.layer_norm(x.double(), (K,), g.double(), be.double(), 1e-5) @ w.double().t() + bias.double()
+                fp32 = lambda: F.linear(ln(), w, bias)
+                x3 = lambda: x3_linear(x3_ln_split(x, g, be, 1e-5), *prep)
+                e32 = (fp32().double() - ref).abs().max().item()
+                ex3 = (x3().double() - ref).abs().max().item()
+                t_ln = med(ln); t32 = med(fp32); tx3 = med(x3)
+                t_split = med(lambda: x3_ln_split(x, g, be, 1e-5))
+                a2 = x3_ln_split(x, g, be, 1e-5)
+                t_gemm = med(lambda: x3_linear(a2, *prep))
+                hact = torch.randn(M, N, device=device)
+                t_gelu = med(lambda: F.gelu(hact, approximate="none"))
+                t_gsplit = med(lambda: x3_act_split(hact, True))
+                gs = x3_act_split(hact, True).float()
+                eg = ((gs[:, :N] + gs[:, 2 * N:]).double() - F.gelu(hact.double(), approximate="none")).abs().max().item()
+                print(f"shape {idx:>2} {tag:7s} M={M:<8d} K={K:<5d} N={N:<5d} "
+                      f"fp32 LN+GEMM {t32:8.3f} ms (LN {t_ln:.3f}; err {e32:.1e}) | "
+                      f"x3 {tx3:8.3f} ms (split {t_split:.3f} + GEMM {t_gemm:.3f}; err {ex3:.1e}) | "
+                      f"x{t32 / tx3:.2f} | gelu {t_gelu:.3f} vs gelu+split {t_gsplit:.3f} ms (err {eg:.1e})", flush=True)
+                del x, w, prep, a2, hact
+            except Exception as e:
+                import traceback; traceback.print_exc()
+                print(f"shape {idx} {tag} error:", str(e)[:200], flush=True)
+        torch.cuda.empty_cache()
+
+
 def _main():
     import os
     import torch
@@ -412,6 +619,15 @@ def _main():
         print("sdpa probe error:", str(e)[:120], flush=True)
     if only == "probe":
         return
+    if only == "profile":
+        _profile(device)
+        return
+    if only == "x3":
+        print("\n##### FP16x3 LINEAR BENCH #####", flush=True)
+        try:
+            _x3_bench(device)
+        except Exception as e:
+            print("X3 BENCH ERROR:", str(e)[:200], flush=True)
     if only == "triton":
         SH_FILTER = []
 
@@ -424,7 +640,7 @@ def _main():
         (11, 64, 128, 16, 128, 4, 128), (12, 64, 128, 4, 32, 4, 128),
         (13, 64, 128, 4, 1024, 4, 128),
     ]
-    for (idx, b, d, h, s, l, f) in (SH if only in ("all", "1-13") else []):
+    for (idx, b, d, h, s, l, f) in (SH if only in ("all", "1-13", "x3") else []):
         print(f"\n##### SHAPE {idx} : B={b} D={d} H={h} S={s} L={l} F={f} #####", flush=True)
         cfg = TransformerConfig(batch_size=b, seq_len=s, d_model=d, num_heads=h,
                                 ffn_dim=f, num_layers=l, causal=True)
@@ -443,6 +659,13 @@ def _main():
                 chosen = ("graph" if getattr(optimized, "_graph", None) is not None
                           else "compiled" if optimized._compiled is not None else "eager")
                 print(f"autotune: {parts} -> {chosen}", flush=True)
+            lr = getattr(optimized, "_linear_result", None)
+            if lr is not None:
+                print("linear autotune: " + " ".join(
+                    f"{'fp16x3' if on else 'fp32'}={ms:.4f}ms" for ms, on in lr)
+                      + f" -> {'fp16x3' if getattr(optimized, '_x3_on', False) else 'fp32'}", flush=True)
+            elif getattr(optimized, "_x3_on", False):
+                print("linear: fp16x3 (forced)", flush=True)
             if ok:
                 xt, mt = generate_random_case(cfg, device, dtype, 101234, 0.0, 1.0)
                 bms = _bench(baseline, xt, mt); oms = _bench(optimized, xt, mt)
@@ -489,7 +712,7 @@ def _main():
 
     print("\n##### SHAPE 14 : optimized-only (baseline infeasible ~20.5 TB) #####", flush=True)
     try:
-        if only in ("1-13", "ablation", "triton"):
+        if only in ("1-13", "ablation", "triton", "x3"):
             raise _Skip
         _shape14(device)
     except _Skip:

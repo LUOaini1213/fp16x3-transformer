@@ -85,7 +85,7 @@ def _next_pow2(n: int) -> int:
     return 1 << (n - 1).bit_length()
 
 
-def _launch(flat, rc, out, total, weight, bias, n, eps, has_res, kernel):
+def _launch_ln(flat, rc, out, total, weight, bias, n, eps, has_res, kernel):
     """One place that knows the launch geometry, shared by both entry points."""
     block = _next_pow2(n)
     # 1024 lanes is where a single row stops fitting comfortably in registers;
@@ -129,7 +129,7 @@ if HAVE_TRITON:
             rc = residual.contiguous().view(-1, n)
             out = torch.empty_like(flat)
             total = torch.empty_like(flat)
-            _launch(flat, rc, out, total, weight.contiguous(), bias.contiguous(),
+            _launch_ln(flat, rc, out, total, weight.contiguous(), bias.contiguous(),
                     n, eps, True, wrap_triton(_fused_add_ln_fwd))
             return out.view(x.shape), total.view(x.shape)
 
@@ -176,7 +176,7 @@ def fused_add_layernorm(x, residual, weight, bias, eps=1e-5):
         assert rc.shape == flat.shape, "residual must match x"
         total, has_res = torch.empty_like(flat), True
 
-    _launch(flat, rc, out, total, weight.contiguous(), bias.contiguous(),
+    _launch_ln(flat, rc, out, total, weight.contiguous(), bias.contiguous(),
             n, eps, has_res, _fused_add_ln_fwd)
     shape = x.shape
     return out.view(shape), (total.view(shape) if has_res else x)

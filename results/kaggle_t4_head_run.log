@@ -1,0 +1,109 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+sdpa backend probe  (head_dim -> which backends can run, is_causal=True)
+/kaggle/src/script.py:2070: UserWarning: Memory efficient kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:960.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2070: UserWarning: Memory Efficient attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/sdp_utils_cpp.h:552.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2070: UserWarning: Flash attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:962.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2070: UserWarning: Flash attention only supports gpu architectures in the range [sm80, sm121]. Attempting to run on a sm 7.5 gpu. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:339.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2070: UserWarning: cuDNN attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:964.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2070: UserWarning: cuDNN attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:680.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+  PROBE float32  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 256  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 256  flash=no   efficient=yes  math=yes
+  shapes -> head_dim: D=128,H=4 -> 32 | D=32,H=4 -> 8 | D=1024,H=4 -> 256 | D=128,H=1 -> 128 | D=128,H=2 -> 64 | D=128,H=16 -> 8 | shape14 D=1024,H=16 -> 64
+
+##### SHAPE 1 : B=64 D=128 H=4 S=128 L=4 F=128 #####
+W0903 07:12:44.182000 7 torch/_inductor/utils.py:1679] [0/0] Not enough SMs to use max_autotune_gemm mode
+autotune: eager=8.0814ms compiled=3.7635ms graph=4.7651ms -> compiled
+PASS max_abs=1.19e-06 max_rel=0.191 | baseline=9.6420ms optimized=4.2207ms | speedup=2.284x
+
+##### SHAPE 2 : B=1 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=1.4868ms compiled=0.8394ms graph=0.7680ms -> graph
+PASS max_abs=9.54e-07 max_rel=0.0865 | baseline=3.1818ms optimized=0.8297ms | speedup=3.835x
+
+##### SHAPE 3 : B=4 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=1.5012ms compiled=1.1325ms graph=1.1182ms -> graph
+PASS max_abs=1.19e-06 max_rel=0.0769 | baseline=3.0375ms optimized=0.9523ms | speedup=3.190x
+
+##### SHAPE 4 : B=16 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=1.7140ms compiled=2.2845ms graph=2.6030ms -> eager
+PASS max_abs=1.19e-06 max_rel=0.658 | baseline=3.1826ms optimized=1.3991ms | speedup=2.275x
+
+##### SHAPE 5 : B=128 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=10.0824ms compiled=8.2149ms graph=9.6489ms -> compiled
+PASS max_abs=1.43e-06 max_rel=4.33 | baseline=18.8138ms optimized=8.2433ms | speedup=2.282x
+
+##### SHAPE 6 : B=10000 D=128 H=4 S=128 L=4 F=128 #####
+W0903 07:15:22.669000 7 torch/_dynamo/convert_frame.py:1676] [0/8] torch._dynamo hit config.recompile_limit (8)
+W0903 07:15:22.669000 7 torch/_dynamo/convert_frame.py:1676] [0/8]    function: '_run_full' (/kaggle/src/script.py:1584)
+W0903 07:15:22.669000 7 torch/_dynamo/convert_frame.py:1676] [0/8]    last reason: 0/7: tensor 'x' dispatch key set mismatch. expected DispatchKeySet(CUDA, BackendSelect), actual DispatchKeySet(CUDA, BackendSelect, ADInplaceOrView)
+W0903 07:15:22.669000 7 torch/_dynamo/convert_frame.py:1676] [0/8] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+W0903 07:15:22.669000 7 torch/_dynamo/convert_frame.py:1676] [0/8] To diagnose recompilation issues, see https://pytorch.org/docs/main/compile/programming_model.recompilation.html
+PASS max_abs=1.67e-06 max_rel=2.84e+05 | baseline=1661.5670ms optimized=911.7982ms | speedup=1.822x
+
+##### SHAPE 7 : B=64 D=32 H=4 S=128 L=4 F=32 #####
+autotune: eager=2.1342ms compiled=2.4073ms graph=2.2246ms -> eager
+PASS max_abs=9.54e-07 max_rel=2 | baseline=6.5846ms optimized=2.3572ms | speedup=2.793x
+
+##### SHAPE 8 : B=64 D=1024 H=4 S=128 L=4 F=1024 #####
+autotune: eager=151.0748ms compiled=150.5956ms graph=151.9248ms -> compiled
+PASS max_abs=1.91e-06 max_rel=4.57 | baseline=163.2680ms optimized=148.6545ms | speedup=1.098x
+
+##### SHAPE 9 : B=64 D=128 H=1 S=128 L=4 F=128 #####
+autotune: eager=4.8577ms compiled=5.7448ms graph=5.3369ms -> eager
+PASS max_abs=1.43e-06 max_rel=0.233 | baseline=6.9724ms optimized=5.5071ms | speedup=1.266x
+
+##### SHAPE 10 : B=64 D=128 H=2 S=128 L=4 F=128 #####
+autotune: eager=5.5115ms compiled=5.6832ms graph=5.0811ms -> graph
+PASS max_abs=1.43e-06 max_rel=0.667 | baseline=8.5483ms optimized=5.6073ms | speedup=1.524x
+
+##### SHAPE 11 : B=64 D=128 H=16 S=128 L=4 F=128 #####
+autotune: eager=7.9060ms compiled=7.7950ms graph=7.7403ms -> graph
+PASS max_abs=1.43e-06 max_rel=0.387 | baseline=23.2804ms optimized=7.8029ms | speedup=2.984x
+
+##### SHAPE 12 : B=64 D=128 H=4 S=32 L=4 F=128 #####
+autotune: eager=1.3500ms compiled=1.4683ms graph=1.3278ms -> graph
+PASS max_abs=1.19e-06 max_rel=0.104 | baseline=3.1456ms optimized=1.5688ms | speedup=2.005x
+
+##### SHAPE 13 : B=64 D=128 H=4 S=1024 L=4 F=128 #####
+PASS max_abs=1.43e-06 max_rel=1.4 | baseline=352.0123ms optimized=78.9987ms | speedup=4.456x
+
+##### SHAPE 14 : optimized-only (baseline infeasible ~20.5 TB) #####
+skipped for this T3_ONLY selector
+
+=================== SUMMARY (copy from here) ===================
+shape,pass,max_abs,max_rel,baseline_ms,opt_ms,speedup,note
+1,PASS,1.1920928955078125e-06,0.19148938357830048,9.6420,4.2207,2.284,
+2,PASS,9.5367431640625e-07,0.08653856068849564,3.1818,0.8297,3.835,
+3,PASS,1.1920928955078125e-06,0.0769231989979744,3.0375,0.9523,3.190,
+4,PASS,1.1920928955078125e-06,0.6578947901725769,3.1826,1.3991,2.275,
+5,PASS,1.430511474609375e-06,4.333333969116211,18.8138,8.2433,2.282,
+6,PASS,1.6689300537109375e-06,284324.625,1661.5670,911.7982,1.822,
+7,PASS,9.5367431640625e-07,2.0,6.5846,2.3572,2.793,
+8,PASS,1.9073486328125e-06,4.568181991577148,163.2680,148.6545,1.098,
+9,PASS,1.430511474609375e-06,0.23333340883255005,6.9724,5.5071,1.266,
+10,PASS,1.430511474609375e-06,0.6666666269302368,8.5483,5.6073,1.524,
+11,PASS,1.430511474609375e-06,0.38666680455207825,23.2804,7.8029,2.984,
+12,PASS,1.1920928955078125e-06,0.10396042466163635,3.1456,1.5688,2.005,
+13,PASS,1.430511474609375e-06,1.399999976158142,352.0123,78.9987,4.456,
+# median_speedup=2.282x min=1.098x max=4.456x over 13 PASS shapes
+=================== END SUMMARY ===================
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 728503 bytes to __results__.html

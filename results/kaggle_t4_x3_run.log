@@ -1,0 +1,147 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+sdpa backend probe  (head_dim -> which backends can run, is_causal=True)
+/kaggle/src/script.py:2661: UserWarning: Memory efficient kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:960.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2661: UserWarning: Memory Efficient attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/sdp_utils_cpp.h:552.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2661: UserWarning: Flash attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:962.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2661: UserWarning: Flash attention only supports gpu architectures in the range [sm80, sm121]. Attempting to run on a sm 7.5 gpu. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:339.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2661: UserWarning: cuDNN attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:964.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:2661: UserWarning: cuDNN attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:680.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+  PROBE float32  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 256  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 256  flash=no   efficient=yes  math=yes
+  shapes -> head_dim: D=128,H=4 -> 32 | D=32,H=4 -> 8 | D=1024,H=4 -> 256 | D=128,H=1 -> 128 | D=128,H=2 -> 64 | D=128,H=16 -> 8 | shape14 D=1024,H=16 -> 64
+
+##### FP16x3 LINEAR BENCH #####
+x3_available: True | triton ok: True | addmm bias epilogue: True
+shape  1 qkv     M=8192     K=128   N=384   fp32 LN+GEMM    0.565 ms (LN 0.187; err 1.5e-06) | x3    0.717 ms (split 0.199 + GEMM 0.553; err 4.5e-06) | x0.79 | gelu 0.120 vs gelu+split 0.199 ms (err 5.9e-07)
+shape  1 o       M=8192     K=128   N=128   fp32 LN+GEMM    0.353 ms (LN 0.188; err 1.5e-06) | x3    0.401 ms (split 0.199 + GEMM 0.252; err 4.7e-06) | x0.88 | gelu 0.049 vs gelu+split 0.139 ms (err 5.1e-07)
+shape  2 qkv     M=128      K=128   N=384   fp32 LN+GEMM    0.074 ms (LN 0.034; err 5.0e-07) | x3    0.379 ms (split 0.135 + GEMM 0.211; err 3.1e-06) | x0.20 | gelu 0.025 vs gelu+split 0.127 ms (err 3.5e-07)
+shape  2 o       M=128      K=128   N=128   fp32 LN+GEMM    0.071 ms (LN 0.033; err 5.1e-07) | x3    0.377 ms (split 0.131 + GEMM 0.209; err 3.4e-06) | x0.19 | gelu 0.025 vs gelu+split 0.127 ms (err 3.5e-07)
+shape  3 qkv     M=512      K=128   N=384   fp32 LN+GEMM    0.111 ms (LN 0.039; err 1.3e-06) | x3    0.399 ms (split 0.143 + GEMM 0.219; err 1.7e-06) | x0.28 | gelu 0.028 vs gelu+split 0.137 ms (err 3.5e-07)
+shape  3 o       M=512      K=128   N=128   fp32 LN+GEMM    0.076 ms (LN 0.034; err 5.9e-07) | x3    0.371 ms (split 0.132 + GEMM 0.215; err 3.7e-06) | x0.20 | gelu 0.024 vs gelu+split 0.129 ms (err 5.5e-07)
+shape  4 qkv     M=2048     K=128   N=384   fp32 LN+GEMM    0.184 ms (LN 0.063; err 1.4e-06) | x3    0.374 ms (split 0.141 + GEMM 0.221; err 4.0e-06) | x0.49 | gelu 0.037 vs gelu+split 0.133 ms (err 4.5e-07)
+shape  4 o       M=2048     K=128   N=128   fp32 LN+GEMM    0.125 ms (LN 0.063; err 1.2e-06) | x3    0.377 ms (split 0.135 + GEMM 0.204; err 2.2e-06) | x0.33 | gelu 0.025 vs gelu+split 0.119 ms (err 5.3e-07)
+shape  5 qkv     M=16384    K=128   N=384   fp32 LN+GEMM    1.083 ms (LN 0.350; err 2.2e-06) | x3    1.231 ms (split 0.294 + GEMM 0.981; err 5.0e-06) | x0.88 | gelu 0.224 vs gelu+split 0.297 ms (err 5.4e-07)
+shape  5 o       M=16384    K=128   N=128   fp32 LN+GEMM    0.635 ms (LN 0.350; err 1.6e-06) | x3    0.700 ms (split 0.298 + GEMM 0.437; err 4.6e-06) | x0.91 | gelu 0.084 vs gelu+split 0.172 ms (err 6.3e-07)
+Traceback (most recent call last):
+  File "/kaggle/src/script.py", line 2964, in _x3_bench
+    eg = (x3_act_split(hact, True).float().view(M, 2, N).sum(1) - F.gelu(hact.double(), approximate="none")).abs().max().item()
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.66 GiB. GPU 0 has a total capacity of 14.56 GiB of which 2.18 GiB is free. Including non-PyTorch memory, this process has 12.38 GiB memory in use. Of the allocated memory 12.22 GiB is allocated by PyTorch, and 32.40 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+shape 6 qkv error: CUDA out of memory. Tried to allocate 3.66 GiB. GPU 0 has a total capacity of 14.56 GiB of which 2.18 GiB is free. Including non-PyTorch memory, this process has 12.38 GiB memory in use. Of the alloca
+shape  6 o       M=1280000  K=128   N=128   fp32 LN+GEMM   27.880 ms (LN 13.081; err 2.3e-06) | x3   32.613 ms (split 8.872 + GEMM 24.130; err 5.1e-06) | x0.85 | gelu 5.609 vs gelu+split 5.425 ms (err 6.6e-07)
+shape  7 qkv     M=8192     K=32    N=96    fp32 LN+GEMM    0.175 ms (LN 0.080; err 7.8e-07) | x3    0.469 ms (split 0.308 + GEMM 0.403; err 2.0e-06) | x0.37 | gelu 0.054 vs gelu+split 0.139 ms (err 6.2e-07)
+shape  7 o       M=8192     K=32    N=32    fp32 LN+GEMM    0.110 ms (LN 0.079; err 8.4e-07) | x3    0.377 ms (split 0.137 + GEMM 0.204; err 1.8e-06) | x0.29 | gelu 0.025 vs gelu+split 0.134 ms (err 3.6e-07)
+shape  8 qkv     M=8192     K=1024  N=3072  fp32 LN+GEMM   12.177 ms (LN 0.316; err 4.9e-06) | x3    8.323 ms (split 0.384 + GEMM 8.108; err 2.2e-05) | x1.46 | gelu 0.857 vs gelu+split 4.915 ms (err 9.3e-07)
+shape  8 o       M=8192     K=1024  N=1024  fp32 LN+GEMM    2.891 ms (LN 0.318; err 3.0e-06) | x3    3.159 ms (split 0.483 + GEMM 3.359; err 2.0e-05) | x0.92 | gelu 0.294 vs gelu+split 0.406 ms (err 6.5e-07)
+shape 13 qkv     M=65536    K=128   N=384   fp32 LN+GEMM    2.591 ms (LN 0.557; err 1.8e-06) | x3    3.895 ms (split 0.560 + GEMM 3.374; err 5.5e-06) | x0.67 | gelu 0.868 vs gelu+split 0.960 ms (err 6.1e-07)
+shape 13 o       M=65536    K=128   N=128   fp32 LN+GEMM    1.292 ms (LN 0.574; err 1.8e-06) | x3    1.858 ms (split 0.573 + GEMM 1.330; err 4.3e-06) | x0.70 | gelu 0.299 vs gelu+split 0.372 ms (err 6.2e-07)
+
+##### SHAPE 1 : B=64 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=7.7005ms compiled=6.7761ms graph=6.3265ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=3.55e-06 max_rel=0.719 | baseline=9.7176ms optimized=5.9044ms | speedup=1.646x
+
+##### SHAPE 2 : B=1 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=5.2476ms compiled=0.9421ms graph=0.8192ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=2.56e-06 max_rel=0.0865 | baseline=3.5774ms optimized=0.9953ms | speedup=3.594x
+
+##### SHAPE 3 : B=4 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=5.4616ms compiled=1.3782ms graph=1.2411ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=2.68e-06 max_rel=0.8 | baseline=3.5525ms optimized=1.2579ms | speedup=2.824x
+
+##### SHAPE 4 : B=16 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=5.4435ms compiled=2.6481ms graph=2.4617ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=2.62e-06 max_rel=0.0921 | baseline=3.6927ms optimized=1.4841ms | speedup=2.488x
+
+##### SHAPE 5 : B=128 D=128 H=4 S=128 L=4 F=128 #####
+autotune: eager=11.6341ms compiled=14.6842ms graph=11.5313ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=3.48e-06 max_rel=3 | baseline=18.8678ms optimized=11.7807ms | speedup=1.602x
+
+##### SHAPE 6 : B=10000 D=128 H=4 S=128 L=4 F=128 #####
+linear: fp16x3 (forced)
+PASS max_abs=4.38e-06 max_rel=2.29e+05 | baseline=1497.3256ms optimized=910.4546ms | speedup=1.645x
+
+##### SHAPE 7 : B=64 D=32 H=4 S=128 L=4 F=32 #####
+autotune: eager=5.6156ms compiled=3.7683ms graph=3.1007ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=1.91e-06 max_rel=2 | baseline=6.4323ms optimized=2.1650ms | speedup=2.971x
+
+##### SHAPE 8 : B=64 D=1024 H=4 S=128 L=4 F=1024 #####
+W0903 06:47:23.973000 7 torch/_dynamo/convert_frame.py:1676] [0/8] torch._dynamo hit config.recompile_limit (8)
+W0903 06:47:23.973000 7 torch/_dynamo/convert_frame.py:1676] [0/8]    function: '_run_full' (/kaggle/src/script.py:2043)
+W0903 06:47:23.973000 7 torch/_dynamo/convert_frame.py:1676] [0/8]    last reason: 0/7: tensor 'x' size mismatch at index 2. expected 32, actual 1024
+W0903 06:47:23.973000 7 torch/_dynamo/convert_frame.py:1676] [0/8] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+W0903 06:47:23.973000 7 torch/_dynamo/convert_frame.py:1676] [0/8] To diagnose recompilation issues, see https://pytorch.org/docs/main/compile/programming_model.recompilation.html
+autotune: eager=90.1366ms compiled=89.4916ms graph=90.2481ms -> compiled
+linear: fp16x3 (forced)
+PASS max_abs=2.53e-05 max_rel=123 | baseline=138.3568ms optimized=95.1824ms | speedup=1.454x
+
+##### SHAPE 9 : B=64 D=128 H=1 S=128 L=4 F=128 #####
+autotune: eager=5.7722ms compiled=5.9658ms graph=5.5651ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=3.58e-06 max_rel=0.394 | baseline=6.6951ms optimized=5.8493ms | speedup=1.145x
+
+##### SHAPE 10 : B=64 D=128 H=2 S=128 L=4 F=128 #####
+autotune: eager=5.7546ms compiled=5.9510ms graph=5.5454ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=3.46e-06 max_rel=1 | baseline=8.3354ms optimized=5.9106ms | speedup=1.410x
+
+##### SHAPE 11 : B=64 D=128 H=16 S=128 L=4 F=128 #####
+autotune: eager=8.3495ms compiled=8.3591ms graph=8.2743ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=3.35e-06 max_rel=3.08 | baseline=23.0277ms optimized=8.3535ms | speedup=2.757x
+
+##### SHAPE 12 : B=64 D=128 H=4 S=32 L=4 F=128 #####
+autotune: eager=5.2224ms compiled=5.5289ms graph=1.1734ms -> graph
+linear: fp16x3 (forced)
+PASS max_abs=2.38e-06 max_rel=0.129 | baseline=3.5200ms optimized=1.6199ms | speedup=2.173x
+
+##### SHAPE 13 : B=64 D=128 H=4 S=1024 L=4 F=128 #####
+linear: fp16x3 (forced)
+PASS max_abs=3.58e-06 max_rel=22.6 | baseline=324.9124ms optimized=80.7477ms | speedup=4.024x
+
+##### SHAPE 14 : optimized-only (baseline infeasible ~20.5 TB) #####
+skipped for this T3_ONLY selector
+
+=================== SUMMARY (copy from here) ===================
+shape,pass,max_abs,max_rel,baseline_ms,opt_ms,speedup,note
+1,PASS,3.546476364135742e-06,0.7187499403953552,9.7176,5.9044,1.646,
+2,PASS,2.555549144744873e-06,0.08653821796178818,3.5774,0.9953,3.594,
+3,PASS,2.682209014892578e-06,0.8000003099441528,3.5525,1.2579,2.824,
+4,PASS,2.6226043701171875e-06,0.09214511513710022,3.6927,1.4841,2.488,
+5,PASS,3.4794211387634277e-06,3.0000007152557373,18.8678,11.7807,1.602,
+6,PASS,4.380941390991211e-06,228521.140625,1497.3256,910.4546,1.645,
+7,PASS,1.9073486328125e-06,2.0,6.4323,2.1650,2.971,
+8,PASS,2.52649188041687e-05,123.29561614990234,138.3568,95.1824,1.454,
+9,PASS,3.5762786865234375e-06,0.39370065927505493,6.6951,5.8493,1.145,
+10,PASS,3.4570693969726562e-06,1.0000003576278687,8.3354,5.9106,1.410,
+11,PASS,3.3532269299030304e-06,3.080000638961792,23.0277,8.3535,2.757,
+12,PASS,2.384185791015625e-06,0.12871304154396057,3.5200,1.6199,2.173,
+13,PASS,3.5762786865234375e-06,22.57143211364746,324.9124,80.7477,4.024,
+# median_speedup=2.173x min=1.145x max=4.024x over 13 PASS shapes
+=================== END SUMMARY ===================
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 924290 bytes to __results__.html

@@ -16,3 +16,16 @@ from .attention import (  # noqa: F401
     attention_raw,
     can_use as can_use_attention,
 )
+
+from .fp16x3 import (  # noqa: F401
+    HAVE_X3_TRITON_OP,
+    HAVE_X3_LINEAR_OP,
+    MAX_X3_WIDTH,
+    x3_available,
+    x3_can_use,
+    x3_prepare,
+    x3_linear,
+    x3_ln_split,
+    x3_add_ln_split,
+    x3_act_split,
+)

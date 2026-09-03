@@ -437,9 +437,12 @@
         <tr><td>P100 <span class="mono">sm_60</span> &mdash; SDPA only</td>
             <td class="n mono">2.065&times;</td><td class="n mono">1.098&ndash;4.001&times;</td>
             <td class="n mono">1.91e-6</td><td class="n mono ok">1049&times;</td></tr>
-        <tr class="hi"><td><strong>T4 <span class="mono">sm_75</span> &mdash; SDPA + first-forward autotune (shipped)</strong></td>
+        <tr class="hi"><td><strong>T4 <span class="mono">sm_75</span> &mdash; SDPA + fp16x3 tensor-core GEMMs + first-forward autotune (shipped)</strong></td>
             <td class="n mono">__MEDIAN__&times;</td><td class="n mono">__RANGE__</td>
-            <td class="n mono">1.91e-6</td><td class="n mono ok">1049&times;</td></tr>
+            <td class="n mono">4.1e-05 (K=1024); 6.7e-06 elsewhere</td><td class="n mono ok">49&times;</td></tr>
+        <tr><td>T4, GEMMs on fp32 SGEMM <span class="mono">(T3_LINEAR=fp32)</span></td>
+            <td class="n mono">2.300&times;</td><td class="n mono">1.095&ndash;4.818&times;</td>
+            <td class="n mono">3.22e-06</td><td class="n mono ok">621&times;</td></tr>
         <tr><td>T4 + fp16 <span class="mono">(opt-in)</span></td>
             <td class="n mono">4.014&times;</td><td class="n mono">1.320&ndash;11.528&times;</td>
             <td class="n mono">2.04e-3</td><td class="n mono bad">0.98&times;</td></tr>
@@ -451,13 +454,13 @@
   </div>
 
   <figure>
-    <img alt="Grouped bar chart of median speedup for shapes 1 through 13, comparing Tesla P100 in blue against Tesla T4 in orange. Most T4 bars are taller. Shape 13 is the tallest pair, and shape 12 is the one shape where the P100 bar exceeds the T4 bar." src="data:image/png;base64,__FIG_SPEEDUPS__">
-    <figcaption>Per-shape median speedup on both cards, fp32 grading. Shape 12, the launch-bound one, is the single case where compilation makes things worse.</figcaption>
+    <img alt="Grouped bar chart of median speedup for shapes 1 through 13, comparing Tesla P100 in blue, the T4 with fp32 SGEMM in grey, and the shipped T4 path in orange. The orange bars are the tallest on most shapes. Shape 13 is the tallest pair, and shape 12 is the one shape where the P100 bar exceeds the T4 bar." src="data:image/png;base64,__FIG_SPEEDUPS__">
+    <figcaption>Per-shape median speedup, fp32 grading, three runs each: P100, T4 with fp32 SGEMM, and the shipped T4 path with fp16x3 tensor-core GEMMs.</figcaption>
   </figure>
 
   <div class="callout">
     <span class="label">A ratio has two sides</span>
-    <p>The T4's <em class="term">baselines</em> are slower than the P100's &mdash; 316.8&nbsp;ms
+    <p>The T4's <em class="term">baselines</em> are slower than the P100's &mdash; 324.0&nbsp;ms
     against 168.6&nbsp;ms on shape 13. The P100 has more fp32 throughput and roughly twice the
     memory bandwidth. Our ratios improve on the T4 anyway, because the optimized path gains compilation there while the baseline stays bandwidth-bound &mdash; the attention kernel is identical on both cards. Worth stating
     which side moved rather than banking the bigger number.</p>
@@ -621,8 +624,63 @@
   </div>
 </section>
 
+<section id="fp16x3">
+  <div class="sec-head"><span class="sec-num">08</span><h2>fp32-accurate GEMMs on the fp16 tensor cores</h2></div>
+  <div class="col">
+    <p>A kernel-level profile of the shipped forward put fp32 cuBLAS SGEMM at 44&ndash;89% of GPU
+    time on shapes 1, 6 and 8. A T4 has no fp32 tensor cores and no TF32; its fp16 tensor cores
+    are eight times faster and were idle. fp16 <em class="term">inputs</em> had already failed the
+    gate (section 05). fp16 <em class="term">arithmetic with compensation</em> passes it: each
+    operand becomes an fp16 hi + lo pair, exact to about 2<sup>-22</sup>, and one cuBLAS GEMM with
+    K tripled &mdash; <code>[a_hi | a_hi | a_lo] &middot; [w_hi ; w_lo ; w_hi]<sup>T</sup></code> &mdash;
+    accumulates the three cross terms in fp32 with an fp32 output. The weight is pre-scaled by a
+    power of two so its lo part is a normal fp16 number; <code>alpha = 1/s</code> in the epilogue
+    undoes it exactly.</p>
+    <p>The split has to be free or it eats the win: a PyTorch-side split cost exactly what the faster
+    GEMM saved. So the Triton kernel that produces each activation &mdash; LayerNorm, add+LayerNorm,
+    GELU &mdash; writes the hi/lo pair directly, registered as <code>triton_op</code>s that Inductor
+    schedules inside its graph.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <caption>Three runs per configuration, per-shape medians. The shipped path wins on shapes 4, 7, 8, 9, 10, 11 and 12.</caption>
+      <thead><tr><th>Shape</th><th class="n">fp32 SGEMM</th><th class="n">fp16x3 (shipped)</th><th class="n">fp32 max_abs</th><th class="n">fp16x3 max_abs</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">1</td><td class="n mono">2.28&times;</td><td class="n mono bad">2.19&times;</td><td class="n mono">1.2e-06</td><td class="n mono">5.5e-06</td></tr>
+        <tr><td class="mono">2</td><td class="n mono">3.83&times;</td><td class="n mono">3.85&times;</td><td class="n mono">9.5e-07</td><td class="n mono">3.9e-06</td></tr>
+        <tr><td class="mono">3</td><td class="n mono">3.38&times;</td><td class="n mono bad">3.24&times;</td><td class="n mono">1.2e-06</td><td class="n mono">4.3e-06</td></tr>
+        <tr><td class="mono">4</td><td class="n mono">2.48&times;</td><td class="n mono win">3.11&times;</td><td class="n mono">1.4e-06</td><td class="n mono">3.2e-06</td></tr>
+        <tr><td class="mono">5</td><td class="n mono">2.30&times;</td><td class="n mono bad">2.19&times;</td><td class="n mono">1.4e-06</td><td class="n mono">5.3e-06</td></tr>
+        <tr><td class="mono">6</td><td class="n mono">2.16&times;</td><td class="n mono bad">2.04&times;</td><td class="n mono">1.7e-06</td><td class="n mono">6.7e-06</td></tr>
+        <tr><td class="mono">7</td><td class="n mono">2.76&times;</td><td class="n mono win">3.29&times;</td><td class="n mono">9.5e-07</td><td class="n mono">2.3e-06</td></tr>
+        <tr><td class="mono">8</td><td class="n mono">1.09&times;</td><td class="n mono win">1.60&times;</td><td class="n mono">3.2e-06</td><td class="n mono">4.1e-05</td></tr>
+        <tr><td class="mono">9</td><td class="n mono">1.26&times;</td><td class="n mono win">1.53&times;</td><td class="n mono">1.4e-06</td><td class="n mono">5.0e-06</td></tr>
+        <tr><td class="mono">10</td><td class="n mono">1.58&times;</td><td class="n mono win">1.87&times;</td><td class="n mono">1.4e-06</td><td class="n mono">5.3e-06</td></tr>
+        <tr><td class="mono">11</td><td class="n mono">3.08&times;</td><td class="n mono win">3.38&times;</td><td class="n mono">1.4e-06</td><td class="n mono">5.1e-06</td></tr>
+        <tr><td class="mono">12</td><td class="n mono">2.09&times;</td><td class="n mono win">2.50&times;</td><td class="n mono">1.2e-06</td><td class="n mono">3.7e-06</td></tr>
+        <tr><td class="mono">13</td><td class="n mono">4.82&times;</td><td class="n mono">4.71&times;</td><td class="n mono">1.4e-06</td><td class="n mono">5.4e-06</td></tr>
+        <tr><td><strong>median</strong></td><td class="n mono">2.300&times;</td><td class="n mono win"><strong>2.499&times;</strong></td><td class="n mono">3.2e-06</td><td class="n mono">4.1e-05</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col">
+    <p><strong>What it costs.</strong> 4.1e-05 at K=1024 instead of SGEMM's 3.2e-06 &mdash; 49&times; inside the
+    gate, not a thousand. The CPU emulation of the identical arithmetic lands 1.2e-6, so the residual
+    is the Turing tensor core's truncating accumulator, a bias that grows linearly with K. Split-K
+    with an fp32 reduction outside the tensor core is the known fix; at this gate it is not needed.
+    Two variants lost and are published: a two-GEMM form that was slower than fp32 on shape 8, and a
+    first-forward tuner (<code>T3_LINEAR=auto</code>, 2.299&times; / 2.214&times; over two runs)
+    whose seven-sample verdicts sit at the noise floor on the sub-millisecond shapes.</p>
+    <p><strong>A measurement bug, found late.</strong> Earlier versions of every table here were taken with
+    <code>torch.compile</code> silently inactive on shapes 6, 8 and 13: the sweep runs all shapes in one
+    process, each costs Dynamo two compiled variants, and past eight it stops compiling without a
+    word. The harness runs one shape per process and never gets there; the model now raises the limit
+    itself, and every number on this page was re-measured after the fix.</p>
+  </div>
+</section>
+
 <section>
-  <div class="sec-head"><span class="sec-num">08</span><h2>Two things that look like defects and are not</h2></div>
+  <div class="sec-head"><span class="sec-num">09</span><h2>Two things that look like defects and are not</h2></div>
   <div class="col">
     <h3><code>--dtype bfloat16</code> fails the gate</h3>
     <p>It does: 6131 of 131072 elements, <code>max_abs 0.047</code>. So does the reference
@@ -643,7 +701,7 @@
 </section>
 
 <section>
-  <div class="sec-head"><span class="sec-num">09</span><h2>Reproducing this</h2></div>
+  <div class="sec-head"><span class="sec-num">10</span><h2>Reproducing this</h2></div>
   <div class="col">
     <p>Development happened on a laptop with an Intel iGPU and no NVIDIA card, so every GPU run
     was pushed headlessly to Kaggle and pulled back. The numbers above come from that path, and

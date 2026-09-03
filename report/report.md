@@ -54,43 +54,64 @@ shape 14 at all; only a memory-efficient (FlashAttention-style) attention with
    seq_len=1e5 OOM. If the estimate is still too optimistic the chunk size halves
    and the pass restarts, so a mis-planned budget degrades instead of failing.
 
+<!-- x3-opt:begin -->
+5. **fp16x3 linear layers (shipped).** Turing has no fp32 tensor cores and no TF32,
+   and SGEMM was 44–89% of the forward on the GEMM-heavy shapes. Each GEMM operand is
+   represented as an fp16 hi + lo pair (\(x = x_{hi} + x_{lo}\), \(x_{lo} = \mathrm{fp16}(x - x_{hi})\),
+   about 2^-22 relative), and one cuBLAS GEMM with K tripled,
+   \([a_{hi}\,|\,a_{hi}\,|\,a_{lo}] \cdot [w_{hi}\,;\,w_{lo}\,;\,w_{hi}]^T\), accumulates the three
+   cross terms in fp32 with an fp32 output; the weight is pre-scaled by a power of two
+   so its lo part is a normal fp16 number, and `alpha = 1/s` in the epilogue undoes it
+   exactly. The split is fused into the Triton kernel that produces each activation
+   (LayerNorm, add+LayerNorm, GELU), so it costs no extra pass. Median 2.300x -> 2.499x,
+   shape 8 1.09x -> 1.60x; worst error 4.1e-05 at K=1024 (49x inside the gate),
+   6.7e-06 elsewhere. `T3_LINEAR=fp32` keeps the SGEMM path.
+
+<!-- x3-opt:end -->
+
 Per-shape dispatch table and the correctness checklist are in the project plan
 and `user_optimized.py`.
 
 ## 5. Results
 
-All 13 gradeable shapes PASS on both cards, with `max_abs ≈ 1e-6` — a faithful
-reproduction of the fp32 reference, ~1049× inside the `atol=0.002` gate.
+All 13 gradeable shapes PASS on both cards. The shipped T4 path lands 6.7e-06 from the fp32
+reference on twelve shapes and 4.1e-05 on the K=1024 one (297× and 49× inside the `atol=0.002`
+gate); the fp32-SGEMM path and the P100 sit at ~1.9e-6, ~1049× inside.
 
 | regime | median | range | worst `max_abs` | margin vs `atol` |
 |---|---|---|---|---|
 | P100, SDPA only | 2.065× | 1.098-4.001× | 1.91e-6 | 1049× |
-| **T4, SDPA + first-forward autotune (shipped)** | **2.286×** | 1.088-4.436× | 1.91e-6 | 1049× |
+| **T4, SDPA + fp16x3 tensor-core GEMMs + first-forward autotune (shipped)** | **2.499×** | 1.534-4.707× | 4.09e-05 (K=1024); 6.74e-06 elsewhere | 49× / 297× |
+| T4, `T3_LINEAR=fp32` (SGEMM) | 2.300× | 1.095-4.818× | 3.22e-06 | 621× |
+| T4, `T3_LINEAR=auto` (two runs) | 2.299× / 2.214× | 1.429-4.967× | as shipped | |
 | T4, + fp16 (`T3_AUTOCAST=fp16`) | 4.014× | 1.320-11.528× | 2.04e-3 | **0.98×** |
 | T4, fp16 attention + fp32 FFN/LN (`T3_FP32_FFN=1`) | 2.953× | 1.467-9.609× | 1.72e-03 | 1.17× |
 
-| # | shape [B,D,H,S] | P100 | T4 | | # | shape [B,D,H,S] | P100 | T4 |
-|---|---|---|---|---|---|---|---|---|
-| 1 | 64,128,4,128 | 1.76× | 2.26× | | 8 | 64,1024,4,128 | 1.10× | 1.09× |
-| 2 | 1,128,4,128 | 2.14× | 4.05× | | 9 | 64,128,1,128 | 1.24× | 1.28× |
-| 3 | 4,128,4,128 | 2.17× | 3.42× | | 10 | 64,128,2,128 | 1.52× | 1.56× |
-| 4 | 16,128,4,128 | 2.29× | 2.71× | | 11 | 64,128,16,128 | 2.56× | 3.03× |
-| 5 | 128,128,4,128 | 1.78× | 2.29× | | 12 | 64,128,4,32 | 2.33× | 2.18× |
-| 6 | 10000,128,4,128 | 1.85× | 1.83× | | 13 | 64,128,4,1024 | **4.00×** | **4.44×** |
-| 7 | 64,32,4,128 | 2.07× | 2.72× | | 14 | 32,1024,16,100000 | infeasible→**runs** | |
+| # | shape [B,D,H,S] | P100 | T4 fp32 | **T4** | | # | shape [B,D,H,S] | P100 | T4 fp32 | **T4** |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 64,128,4,128 | 1.75× | 2.28× | 2.19× | | 8 | 64,1024,4,128 | 1.10× | 1.09× | 1.60× |
+| 2 | 1,128,4,128 | 2.14× | 3.83× | 3.85× | | 9 | 64,128,1,128 | 1.24× | 1.26× | 1.53× |
+| 3 | 4,128,4,128 | 2.17× | 3.38× | 3.24× | | 10 | 64,128,2,128 | 1.52× | 1.58× | 1.87× |
+| 4 | 16,128,4,128 | 2.29× | 2.48× | 3.11× | | 11 | 64,128,16,128 | 2.56× | 3.08× | 3.38× |
+| 5 | 128,128,4,128 | 1.78× | 2.30× | 2.19× | | 12 | 64,128,4,32 | 2.33× | 2.09× | 2.50× |
+| 6 | 10000,128,4,128 | 1.85× | 2.16× | 2.04× | | 13 | 64,128,4,1024 | **4.00×** | 4.82× | **4.71×** |
+| 7 | 64,32,4,128 | 2.06× | 2.76× | 3.29× | | 14 | 32,1024,16,100000 | infeasible→**runs** | | |
 
 **Measurement protocol.** Every T4 cell above is the **median of three independent
-runs** of the shipped configuration (run medians 2.286x / 2.258x /
-2.339x; every run 13/13 PASS), and `max_abs` is the worst of the three. The
-per-shape spread, (max − min) / median, ranges from 0% to 18% — the widest
-on shape 4, where a few-millisecond baseline is at the mercy of a shared cloud GPU.
-Differences smaller than that between two configurations are noise, and the text
-says so wherever it applies. All three runs are in `results/results_t4_runs.csv`.
+runs** — the shipped path (run medians 2.442x / 2.380x / 2.499x) and the fp32-SGEMM
+reference (2.261x / 2.300x / 2.332x), every run 13/13 PASS — and `max_abs` is the worst
+of the three. The per-shape spread, (max − min) / median, reaches 28% on shape
+4; shape 6 drifts by up to 20% between sessions on identical code. Differences smaller
+than that between two configurations are noise, and the text says so wherever it
+applies. All six runs are in `results/results_t4_runs.csv`. One correction: earlier
+versions of this table were measured with `torch.compile` silently inactive on shapes
+6, 8 and 13 (our sweep runs every shape in one process and tripped Dynamo's recompile
+limit; the harness, one shape per process, does not). Fixed in the model, re-measured.
 
 Two things in that table are worth stating rather than glossing:
 
-**The T4's baselines are slower than the P100's** (shape 13: 324.6 ms vs
-168.6 ms; shape 6: 1516.8 ms vs 772.3 ms). The P100 has higher fp32 throughput
+**The T4's baselines are slower than the P100's** (shape 13: 324.0 ms vs
+168.6 ms; shape 6: 1464.7 ms vs 772.3 ms). The P100 has higher fp32 throughput
 and roughly twice the memory bandwidth. Our ratios improve on the T4 anyway,
 because the optimized path gains `torch.compile` there while the baseline stays
 bandwidth-bound — the attention kernel is the same memory-efficient one on both
@@ -156,6 +177,21 @@ wherever they appear; the 13 graded shapes in the table above are all fp32.
 Figures: `figures/memory_wall.png` (the 20.5 TB wall), `figures/speedups.png`
 (per-shape speedup).
 
+<!-- x3-report:begin -->
+### 5.x fp16x3: the kernel that ships
+
+The profile that motivated it, the arithmetic, and the operator-level table are in the
+README; the decision rests on three runs per configuration: median **2.300x -> 2.499x**,
+minimum 1.095x -> 1.534x, wins on shapes 4, 7, 8, 9, 10, 11 and 12, losses of at most a few
+percent on 1, 3, 5 and 6. The cost is accuracy: 4.1e-05 at K=1024 against 3.2e-06 for
+SGEMM — the Turing tensor core's truncating accumulator, growing linearly with K — still
+49x inside the gate. Two variants lost and are published: a two-GEMM form (slower than
+fp32 on shape 8) and a first-forward tuner (`T3_LINEAR=auto`, 2.299x / 2.214x over two runs,
+consistent in its choices but at the noise floor on the sub-millisecond shapes).
+
+
+<!-- x3-report:end -->
+
 ## 6. Limitations & what we'd improve with more time
 
 - fp16 is measured, not assumed: 13/13 PASS at 4.014x median, with `max_abs`
@@ -196,6 +232,12 @@ Figures: `figures/memory_wall.png` (the 20.5 TB wall), `figures/speedups.png`
   ships off; on an Ampere-class card the arithmetic favours it. One finding from
   it applies everywhere: Inductor folds `x - x.half().float()` to zero inside fused
   kernels, so precision tricks must sit behind an opaque op boundary.
+
+<!-- x3-limits:begin -->
+- The fp16x3 GEMM error grows with K (truncating tensor-core accumulation): 6.7e-06 at
+  K=128, 4.1e-05 at K=1024, ~1e-4 expected at K=4096. Split-K with fp32 reduction outside
+  the tensor core would restore fp32-class error at any K; not built.
+<!-- x3-limits:end -->
 
 ## 7. Reproducibility
 

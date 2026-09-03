@@ -44,3 +44,17 @@ logs/
 /track3_sc.py
 !results/kaggle_t4_rep1_run.log
 !results/kaggle_t4_rep2_run.log
+!results/kaggle_t4_profile_run.log
+!results/kaggle_t4_x3_run.log
+!results/kaggle_t4_x3auto_run.log
+!results/kaggle_t4_x3v2_run.log
+!results/kaggle_t4_x3v3_run.log
+!results/kaggle_t4_x3v4_run.log
+!results/kaggle_t4_x3v4b_run.log
+!results/kaggle_t4_fix1_run.log
+!results/kaggle_t4_head_run.log
+!results/kaggle_t4_x3force2_run.log
+!results/kaggle_t4_def2_run.log
+!results/kaggle_t4_def3_run.log
+!results/kaggle_t4_fp32b_run.log
+!results/kaggle_t4_fp32c_run.log

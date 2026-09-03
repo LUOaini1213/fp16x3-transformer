@@ -21,20 +21,21 @@ import matplotlib.pyplot as plt
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CSV_P100 = os.path.join(HERE, "results", "results.csv")
 CSV_T4 = os.path.join(HERE, "results", "results_t4.csv")
+CSV_T4_FP32 = os.path.join(HERE, "results", "results_t4_fp32.csv")
 FIG = os.path.join(HERE, "report", "figures")
 
 # Palette roles. Categorical slots carry series identity; ink carries text; the
 # status red is reserved for the one bar that means "cannot run". Both modes are
 # selected against their own surface, not flipped from each other.
 THEMES = {
-    "light": dict(SERIES_1="#2a78d6", SERIES_2="#eb6834", CRITICAL="#d03b3b",
+    "light": dict(SERIES_1="#2a78d6", SERIES_2="#eb6834", SERIES_3="#b9b7ae", CRITICAL="#d03b3b",
                   SURFACE="#fcfcfb", INK="#0b0b0b", INK_2="#52514e",
                   MUTED="#898781", GRID="#e1e0d9", AXIS="#c3c2b7"),
-    "dark":  dict(SERIES_1="#3987e5", SERIES_2="#d95926", CRITICAL="#e66767",
+    "dark":  dict(SERIES_1="#3987e5", SERIES_2="#d95926", SERIES_3="#6c7280", CRITICAL="#e66767",
                   SURFACE="#12171e", INK="#ffffff", INK_2="#c3c2b7",
                   MUTED="#898781", GRID="#2c323b", AXIS="#3d444e"),
 }
-SERIES_1 = SERIES_2 = CRITICAL = SURFACE = INK = INK_2 = MUTED = GRID = AXIS = None
+SERIES_1 = SERIES_2 = SERIES_3 = CRITICAL = SURFACE = INK = INK_2 = MUTED = GRID = AXIS = None
 
 
 def use_theme(name):
@@ -82,14 +83,19 @@ def median(xs):
 def speedup_chart():
     p100 = read_speedups(CSV_P100)
     t4 = read_speedups(CSV_T4)
+    t4_fp32 = read_speedups(CSV_T4_FP32) if os.path.exists(CSV_T4_FP32) else {}
     ids = sorted(set(p100) | set(t4))
     if not ids:
         print("no PASS speedups yet; skipping speedups.png")
         return
 
-    series = [("Tesla P100 (sm_60) - SDPA only", p100, SERIES_1)]
+    # (label, short name for the title, data, colour); the shipped series is
+    # the saturated one, the fp32-SGEMM reference sits in a muted tone behind it.
+    series = [("Tesla P100 (sm_60) - SDPA only, fp32 SGEMM", "P100", p100, SERIES_1)]
+    if t4_fp32:
+        series.append(("Tesla T4 (sm_75) - fp32 SGEMM (T3_LINEAR=fp32)", "T4 fp32", t4_fp32, SERIES_3))
     if t4:
-        series.append(("Tesla T4 (sm_75) - SDPA + torch.compile", t4, SERIES_2))
+        series.append(("Tesla T4 (sm_75) - shipped: fp16x3 tensor-core GEMMs", "T4 shipped", t4, SERIES_2))
 
     fig, ax = plt.subplots(figsize=(10, 4.2))
     fig.patch.set_facecolor(SURFACE)
@@ -99,7 +105,7 @@ def speedup_chart():
     # 2px-equivalent gap between adjacent bars: total group width < 1 slot.
     group_w = 0.78
     bar_w = group_w / n
-    for si, (label, data, color) in enumerate(series):
+    for si, (label, short, data, color) in enumerate(series):
         xs, ys = [], []
         for k, i in enumerate(ids):
             if i in data:
@@ -108,9 +114,9 @@ def speedup_chart():
         ax.bar(xs, ys, width=bar_w * 0.92, color=color, label=label, zorder=2)
 
     # Selective direct labels only: each series' best shape, never every bar.
-    for label, data, color in series:
-        if not data:
-            continue
+    for label, short, data, color in series:
+        if not data or color == SERIES_3:
+            continue   # the muted reference series carries no direct label
         best = max(data, key=data.get)
         k = ids.index(best)
         si = [s[0] for s in series].index(label)
@@ -129,11 +135,13 @@ def speedup_chart():
     ax.set_ylabel("median speedup vs baseline", color=INK_2, fontsize=10)
 
     med_bits = []
-    for label, data, _ in series:
+    for label, short, data, _ in series:
         if data:
-            med_bits.append(f"{label.split(' (')[0]} median {median(data.values()):.3f}x")
-    ax.set_title("Optimized Transformer speedup, 13/13 shapes PASS  -  "
-                 + " | ".join(med_bits),
+            med_bits.append(f"{short} median {median(data.values()):.3f}x")
+    # Two lines: the medians alone overflow a single title line with three series.
+    # Two lines: three series of medians overflow a single title line.
+    ax.set_title("Optimized Transformer speedup, 13/13 shapes PASS, three runs per cell"
+                 + "\nmedians:  " + "  |  ".join(med_bits),
                  color=INK, fontsize=11, loc="left", pad=12)
     ax.legend(frameon=False, fontsize=9, labelcolor=INK_2, loc="upper left")
 

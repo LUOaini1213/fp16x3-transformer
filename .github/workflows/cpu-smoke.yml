@@ -27,3 +27,4 @@ jobs:
           T3_CHUNK_BS=3 python scripts/smoke_cpu.py
           T3_FUSED_QKV=1 python scripts/smoke_cpu.py
           T3_TRITON=1 T3_ATTN=triton python scripts/smoke_cpu.py
+          T3_LINEAR=fp16x3 python scripts/smoke_cpu.py
