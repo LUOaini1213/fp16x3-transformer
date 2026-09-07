@@ -1,9 +1,18 @@
-# Track 3 — Implement a GPU Kernel for a Transformer Layer
-### TikTok TechJam 2026 · "Build with Joy, Code for Change"
+# fp16x3-transformer
 
-Optimize the runtime of a Transformer forward pass on a GPU while keeping the
-output numerically identical to the reference implementation (per-element
-`abs_err ≤ 0.002` **OR** `rel_err ≤ 0.02`), across 14 official test shapes.
+A Transformer layer whose GEMMs run on fp16 tensor cores at fp32-class accuracy —
+each operand split into an fp16 hi + lo pair by fused Triton kernels, one cuBLAS
+GEMM with K tripled — plus memory-efficient attention and a per-shape autotune.
+2.83x median over the fp32 reference on a free Tesla T4 at ~1e-6 error, and the
+100,000-token shape running in 14 GB where the reference would need 20.5 TB.
+
+Built for **TikTok TechJam 2026, Track 3 — "Implement a GPU Kernel for a Transformer
+Layer"** (the competition has ended; the `submission` branch and the
+`submitted-2026-09-01` tag freeze what was entered, `main` is the maintained
+version). The task: optimize the runtime of a Transformer forward pass on a GPU
+while keeping the output numerically identical to the reference implementation
+(per-element `abs_err ≤ 0.002` **OR** `rel_err ≤ 0.02`), across 14 official test
+shapes.
 
 ## Read this first
 

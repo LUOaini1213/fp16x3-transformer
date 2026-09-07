@@ -34,7 +34,7 @@ A drop-in Transformer layer 2.83x faster on all 13 graded shapes at fp32-class a
 ## 4. Public code repository（公开代码仓库）
 
 ```
-https://github.com/LUOaini1213/tiktok-techjam-2026-track3
+https://github.com/LUOaini1213/fp16x3-transformer
 ```
 
 ---
@@ -50,7 +50,7 @@ https://youtu.be/3aAw-jq1oTM
 ## 6. "Try it out" links（试用链接）
 
 ```
-https://github.com/LUOaini1213/tiktok-techjam-2026-track3
+https://github.com/LUOaini1213/fp16x3-transformer
 ```
 
 ---

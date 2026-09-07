@@ -363,7 +363,7 @@ def s_impact(F, ctx):
 
     panel(d, (140, 876, 1780, 1000))
     d.text((178, 902), "CODE, RAW LOGS, PER-SHAPE DATA", font=F["label"], fill=MUTED)
-    d.text((178, 942), "github.com/LUOaini1213/tiktok-techjam-2026-track3",
+    d.text((178, 942), "github.com/LUOaini1213/fp16x3-transformer",
            font=F["monob"], fill=ACCENT)
     return img
 
