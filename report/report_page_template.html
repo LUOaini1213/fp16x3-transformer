@@ -361,7 +361,7 @@
     <p><strong>Result on a free 16&nbsp;GB P100:</strong> the full-length forward completes in
     293&nbsp;s at 10,907&nbsp;tokens/s, peaking at 14.61&nbsp;GB of a 17.06&nbsp;GB card, with
     <code>chunk_bs=1</code>. On a <strong>T4</strong> &mdash; same memory-efficient backend, but its fp16 tensor cores carry the natively-fp16 matmuls &mdash; the same forward takes <strong>204&nbsp;s at
-    15,676&nbsp;tokens/s</strong> at a 14.58&nbsp;GB peak &mdash; on a card holding only
+    17,402&nbsp;tokens/s</strong> at a 14.17&nbsp;GB peak &mdash; on a card holding only
     15.64&nbsp;GB in total, tighter than the P100, and it still fits.</p>
 
     <p>That run is fp16, and for this shape that is forced rather than chosen: an fp32 input is

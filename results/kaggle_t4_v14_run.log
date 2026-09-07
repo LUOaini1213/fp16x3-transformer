@@ -1,0 +1,46 @@
+=== ENV ===
+gpu Tesla T4 | torch 2.10.0+cu128 | cuda 12.8 | cc (7, 5)
+fingerprint[start]: 300 MHz, 1590 MHz, 405 MHz, 36, 9.86 W, 0x0000000000000001 / 300 MHz, 1590 MHz, 405 MHz, 36, 9.36 W, 0x0000000000000001 | sgemm 4096^2 31.80 ms = 4.3 TFLOPS
+sdpa backend probe  (head_dim -> which backends can run, is_causal=True)
+/kaggle/src/script.py:3214: UserWarning: Memory efficient kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:960.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3214: UserWarning: Memory Efficient attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/sdp_utils_cpp.h:552.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3214: UserWarning: Flash attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:962.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3214: UserWarning: Flash attention only supports gpu architectures in the range [sm80, sm121]. Attempting to run on a sm 7.5 gpu. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:339.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3214: UserWarning: cuDNN attention kernel not used because: (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:964.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+/kaggle/src/script.py:3214: UserWarning: cuDNN attention has been runtime disabled. (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/sdp_utils.cpp:680.)
+  F.scaled_dot_product_attention(q, q, q, is_causal=True)
+  PROBE float32  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float32  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float32  hd= 256  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=   8  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  32  flash=no   efficient=yes  math=yes
+  PROBE float16  hd=  64  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 128  flash=no   efficient=yes  math=yes
+  PROBE float16  hd= 256  flash=no   efficient=yes  math=yes
+  shapes -> head_dim: D=128,H=4 -> 32 | D=32,H=4 -> 8 | D=1024,H=4 -> 256 | D=128,H=1 -> 128 | D=128,H=2 -> 64 | D=128,H=16 -> 8 | shape14 D=1024,H=16 -> 64
+
+##### SHAPE 14 : optimized-only (baseline infeasible ~20.5 TB) #####
+trunc S=2048 correctness: PASS max_abs=5.6e-06 max_rel=3.15
+vram free=15.28/15.64 GB | baseline scores would be 20.5 TB -> infeasible
+[user_optimized] T3_LINEAR: fp16x3 path unavailable on this device/dtype; using fp32
+W0907 01:33:48.121000 7 torch/_inductor/utils.py:1679] [0/1] Not enough SMs to use max_autotune_gemm mode
+full S=100000: median=183884.9 ms | 17,402 tok/s | peak_vram=14.17 GB | chunk_bs=1
+
+=================== SUMMARY (copy from here) ===================
+shape,pass,max_abs,max_rel,baseline_ms,opt_ms,speedup,note
+14,PASS(trunc),5.602836608886719e-06,3.150538206100464,,,,full S=1e5 OK 183885ms 17,402tok/s peak14.2GB chunk1
+=================== END SUMMARY ===================
+fingerprint[end]: 585 MHz, 1590 MHz, 5000 MHz, 74, 33.05 W, 0x0000000000000000 / 300 MHz, 1590 MHz, 405 MHz, 37, 10.36 W, 0x0000000000000001 | sgemm 4096^2 41.68 ms = 3.3 TFLOPS
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 1182989 bytes to __results__.html

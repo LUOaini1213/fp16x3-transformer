@@ -16,7 +16,7 @@ Five results, each traceable to a committed kernel log under `results/`:
    GEMMs on the fp16 tensor cores** (hi/lo operand compensation, fed by our own Triton
    kernels), and a per-shape autotune over eager, `torch.compile` and CUDA-graph replay.
 2. **Shape 14 runs.** Its reference needs ~20.5 TB of attention scores and cannot
-   execute; ours completes the 100,000-token forward in 14.6 GB (204 s on the T4).
+   execute; ours completes the 100,000-token forward in 14.2 GB (184 s on the T4).
 3. **Three precision regimes were measured and two declined.** fp16 *storage* is 4.01x but
    its worst error already crosses the gate (margin 0.98x); fp16-attention/fp32-FFN is
    2.95x at 1.17x. Only fp32-class accuracy has a margin worth the word, so that is what
@@ -248,8 +248,8 @@ full S=100000: median=293376.9 ms | 10,907 tok/s | peak_vram=14.61 GB | chunk_bs
 ```
 
 293 s per forward over 3.2 M tokens, peak 14.6 GB. On a **T4** — same memory-efficient SDPA backend, but its fp16 tensor cores now
-carry the natively-fp16 matmuls — the same forward takes **204 s at 15,676 tok/s**
-with a 14.58 GB peak — on a card that has only 15.64 GB in total, tighter than the
+carry the natively-fp16 matmuls — the same forward takes **184 s at 17,402 tok/s**
+with a 14.17 GB peak — on a card that has only 15.64 GB in total, tighter than the
 P100's 17.06 GB, and it still fits (`results/kaggle_t4_shape14.log`). Correctness is validated at a
 truncated `seq_len` where the baseline *can* run (PASS, `max_abs 1.2e-6`); SDPA's
 math does not depend on `S`, so passing there evidences correctness at 1e5.

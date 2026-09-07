@@ -124,7 +124,7 @@ $$\frac{0.002}{9.54 \times 10^{-6}} \approx 210$$
 
 inside the tolerance gate on the GEMM-bound shape, and about 297× on the other twelve.
 
-**And shape 14 runs.** The full 100,000-token forward completes in **204 s at 15,676 tokens/s, peaking at 14.58 GB** — on a card that only has 15.64 GB in total. Against a reference needing 20.5 TB, the meaningful result is not a ratio; it is the difference between *cannot run* and *runs*.
+**And shape 14 runs.** The full 100,000-token forward completes in **184 s at 17,402 tokens/s, peaking at 14.17 GB** — on a card that only has 15.64 GB in total. Against a reference needing 20.5 TB, the meaningful result is not a ratio; it is the difference between *cannot run* and *runs*.
 
 Four levers, each selectable by environment variable with no code edits, so the ablation and the delivered path are literally the same code:
 
@@ -293,7 +293,7 @@ Split-K for the fp16x3 GEMMs, with the partial sums reduced in IEEE fp32 outside
 | fp16x3 算子级对比、误差 | `results/kaggle_t4_x3v3_run.log`;kernel 级 profile `results/kaggle_t4_profile_run.log` |
 | T4 固定开启 compile 的对照 2.282×(修 recompile 上限之前的旧测量) | `results/results_t4_compile_on.csv`、`results/kaggle_t4_run.log` |
 | P100 中位 2.065× | `results/results.csv`、`results/kaggle_p100_run.log` |
-| shape 14：204 s / 15,676 tok/s / 14.58 GB | `results/kaggle_t4_shape14.log` |
+| shape 14：184 s / 17,402 tok/s / 14.17 GB(最终代码重跑) | `results/kaggle_t4_v14_run.log`(早先 204 s 的运行：`results/kaggle_t4_shape14.log`) |
 | fp16 中位 4.014×、`max_abs` 2.04e-3 | `results/results_t4_fp16.csv`、`results/kaggle_t4_fp16_run.log` |
 | 阶段消融 4 shape × 4 stage | `results/ablation_t4.csv`、`results/kaggle_t4_ablation.log` |
 | 20.5 TB | `32 × 16 × 100000² × 4 B`，图见 `report/figures/memory_wall.png` |

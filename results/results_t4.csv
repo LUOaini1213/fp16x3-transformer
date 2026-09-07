@@ -12,4 +12,4 @@ shape,B,D,H,S,L,F,pass,max_abs,max_rel,baseline_ms,opt_ms,speedup,notes
 11,64,128,16,128,4,128,PASS,2.38419e-06,1.37333,22.6117,5.8627,3.857,shipped: T3_LINEAR=fp16x3; median of 3 runs (A/B/C: 3.831/3.930/3.857)
 12,64,128,4,32,4,128,PASS,1.90735e-06,0.318367,3.1488,1.1105,2.834,shipped: T3_LINEAR=fp16x3; median of 3 runs (A/B/C: 2.828/2.912/2.834)
 13,64,128,4,1024,4,128,PASS,2.38419e-06,10,324.6652,64.5076,5.222,shipped: T3_LINEAR=fp16x3; median of 3 runs (A/B/C: 5.462/5.222/5.033)
-14,32,1024,16,100000,2,1024,PASS(trunc),1.19209e-06,0.430108,,,,"full S=100000: median=204132.3 ms | 15,676 tok/s | peak_vram=14.58 GB | chunk_bs=1"
+14,32,1024,16,100000,2,1024,PASS(trunc),5.60284e-06,3.15054,,,,"full S=100000: median=183884.9 ms | 17,402 tok/s | peak_vram=14.17 GB | chunk_bs=1 (final code, kaggle_t4_v14_run.log)"

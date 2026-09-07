@@ -93,7 +93,7 @@ The only stage with a binary outcome rather than a ratio.
 | baseline (explicit `[B,H,S,S]` scores) | cannot run — needs ~20.5 TB |
 | SDPA + chunks collected into a list + `torch.cat` | **OOM** at the concat: `Tried to allocate 6.10 GiB` |
 | SDPA + chunks written into a preallocated output | **runs**: 293377 ms, 10,907 tok/s, peak 14.61 GB, `chunk_bs=1` (P100) |
-| the same, on a T4 (same backend; fp16 tensor cores for the natively-fp16 matmuls) | **runs faster**: 204132 ms, 15,676 tok/s, peak 14.58 GB — on a card with only 15.64 GB total |
+| the same, on a T4 (same backend; fp16 tensor cores for the natively-fp16 matmuls) | **runs faster**: 183885 ms (re-run on the final code; 204132 ms on the first), 17,402 tok/s, peak 14.17 GB — on a card with only 15.64 GB total |
 
 The concat was the whole difference. Collecting 32 chunks and joining them holds
 the pieces and the `[32,100000,1024]` result at the same time — a second ~6.5 GB
