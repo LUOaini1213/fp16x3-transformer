@@ -19,7 +19,9 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install CPU torch
-        run: pip install --index-url https://download.pytorch.org/whl/cpu torch pytest
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch
+          pip install pytest
       - name: Shapes 1-13 + padded fallback (shipped defaults)
         run: python scripts/smoke_cpu.py
       - name: Chunked output path and every opt-in flag still exact
