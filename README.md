@@ -1,5 +1,10 @@
 # fp16x3-transformer
 
+> **TikTok TechJam 2026 result: this entry did not place.** The competition has
+> concluded and this submission was not among those selected. Everything below is
+> what was built and measured — each number traces to a committed artifact, and
+> none of it was ever a placement claim.
+
 A Transformer layer whose GEMMs run on fp16 tensor cores at fp32-class accuracy —
 each operand split into an fp16 hi + lo pair by fused Triton kernels, one cuBLAS
 GEMM with K tripled — plus memory-efficient attention and a per-shape autotune.
@@ -7,7 +12,8 @@ GEMM with K tripled — plus memory-efficient attention and a per-shape autotune
 100,000-token shape running in 14 GB where the reference would need 20.5 TB.
 
 Built for **TikTok TechJam 2026, Track 3 — "Implement a GPU Kernel for a Transformer
-Layer"** (the competition has ended; the `submission` branch and the
+Layer"** (the competition has ended and this entry did not place; the
+`submission` branch and the
 `submitted-2026-09-01` tag freeze what was entered, `main` is the maintained
 version). The task: optimize the runtime of a Transformer forward pass on a GPU
 while keeping the output numerically identical to the reference implementation
