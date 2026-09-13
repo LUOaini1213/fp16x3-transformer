@@ -389,6 +389,8 @@ def s_memory_wall(F, ctx):
            font=F["mono"], fill=INK_2)
     d.text((178, 896), "= 20.5 TB in fp32.  No GPU holds that.",
            font=F["monob"], fill=CRIT)
+    # 2026-09-01 figures (results/kaggle_t4_shape14.log); the final re-run in
+    # results/kaggle_t4_v14_run.log is 14.17 GB at 17,402 tok/s
     d.text((178, 946), "Ours completes the same forward in 14.6 GB, at 15,676 tok/s.",
            font=F["monob"], fill=GOOD)
     return img
@@ -460,6 +462,9 @@ def render_gallery(F, ctx, outdir):
 
 
 # ------------------------------------------------------------------ timeline
+# The vo= strings are fixed narration written for the 2026-09-01 render and
+# quote that day's figures (median 2.28x, shape 14 at 204 s / 14.58 GB); the
+# current ones are in results/results_t4.csv and results/kaggle_t4_v14_run.log.
 SECTIONS = [
     dict(id="1_problem", start=0, end=15, kind="still", render=s_problem,
          vo="Make a Transformer layer faster on a GPU, without moving the "
