@@ -754,11 +754,19 @@ access.
 
 ## Report
 
-A rendered version of the technical report, with the figures inline:
-**https://claude.ai/code/artifact/80227d3c-9682-42d0-a957-bf5188704088**
-(print to PDF from the browser). Source: [`report/report.md`](report/report.md);
-the page is assembled from the measured CSVs by
-`scripts/build_report_page.py`, so its numbers cannot drift from the data.
+The technical report is [`report/report.md`](report/report.md), which GitHub
+renders in place. [`report/report.html`](report/report.html) is the same report
+as a single self-contained page with the figures inlined as data URIs — clone
+and open it in a browser, or print it to PDF from there. That page is assembled
+from the measured CSVs by `scripts/build_report_page.py`:
+
+```bash
+python scripts/build_report_page.py report/report_page_template.html report/report.html
+```
+
+so its headline speedup cannot drift from `results/results_t4.csv`;
+`tests/test_reported_numbers.py` fails the build if the committed page or this
+README stops matching that file.
 
 ## AI tooling
 

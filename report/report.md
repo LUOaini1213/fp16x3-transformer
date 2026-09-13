@@ -2,7 +2,8 @@
 ### TikTok TechJam 2026
 
 Rendered version (figures inline, print-to-PDF from the browser):
-https://claude.ai/code/artifact/80227d3c-9682-42d0-a957-bf5188704088
+[`report/report.html`](report.html), built from this report and the measured
+CSVs by `scripts/build_report_page.py`.
 
 ## 1. Environment
 
