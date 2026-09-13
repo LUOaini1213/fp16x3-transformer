@@ -16,10 +16,12 @@ happens to run: each section's voice-over is synthesized, the slides inside it
 fill the window exactly, and any section whose narration does not fit is
 reported so the script can be shortened instead of silently drifting.
 
-Everything on screen comes from the committed CSVs and the committed kernel
-logs, so a new sweep produces a video that still agrees with the data. The demo
-block is a replay of the recorded run, labelled as such on screen -- the GPUs
-are in Kaggle, so there is no local screen to capture.
+The results slide and its chart are read from the committed CSVs at render
+time. The narration (SECTIONS) and the terminal replay (DEMO) are fixed text
+transcribed from the committed kernel logs of one recorded run, so a new sweep
+needs those rewritten too before the whole video agrees with the data again.
+The demo block is a replay of that recorded run, labelled as such on screen --
+the GPUs are in Kaggle, so there is no local screen to capture.
 
     python scripts/make_video.py --out build/track3_demo.mp4
 
@@ -232,6 +234,12 @@ def s_architecture(F, ctx):
 
 
 # ------------------------------------------------------------ 0:55 Live demo
+# Transcribed verbatim from the 2026-09-01 sweep (results/kaggle_t4_run.log and
+# results/kaggle_t4_shape14.log): median 2.282x on the fp32-SGEMM path, before
+# the Dynamo recompile-limit fix and before fp16x3 became the default. The
+# current figures live in results/results_t4.csv (median 2.834x) and
+# results/kaggle_t4_v14_run.log (shape 14); rewriting these lines and the
+# SECTIONS narration is what re-dating the video would take.
 DEMO = [
     ("$ python scripts/build_kaggle_selfcontained.py --accelerator NvidiaTeslaT4", ACCENT, True),
     ("wrote .kaggle_upload/kernel_t4/track3_sc.py (50049 chars, 1296 lines)", INK_2, False),
@@ -438,6 +446,7 @@ GALLERY = [
     ("02_memory_wall", lambda F, c: s_memory_wall(F, c)),
     ("03_architecture", lambda F, c: s_architecture(F, c)),
     ("04_precision", lambda F, c: s_precision(F, c)),
+    # caption matches the 2026-09-01 replay above, not results/results_t4.csv
     ("05_demo", lambda F, c: demo_frame(F, c, len(DEMO), "13 / 13 pass · median 2.28×")),
 ]
 

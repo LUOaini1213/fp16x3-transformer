@@ -713,11 +713,24 @@ on the right GPU it is the one we would reach for.
 **Watch it: https://youtu.be/3aAw-jq1oTM**
 
 `build/track3_demo.mp4` (**exactly 3:00**, 1920x1080, subtitles in `.srt`) is
-**generated** from the measured CSVs, not hand-edited:
+rendered by script rather than cut by hand — the results slide and its chart are
+built from `results/results_t4.csv` at render time, while the narration and the
+terminal replay are fixed text transcribed from one recorded run:
 
 ```bash
 python scripts/make_video.py --out build/track3_demo.mp4
 ```
+
+**Which run you are hearing.** The committed `.mp4` and `.srt` were rendered on
+2026-09-01 from that day's sweep (`results/kaggle_t4_run.log`,
+`results/kaggle_t4_shape14.log`), so every number spoken in them is that run's:
+median **2.28x** on the fp32-SGEMM path, shape 13 at 4.44x, shape 14 in 204 s /
+15,676 tok/s / 14.58 GB. Two things landed afterwards — the Dynamo
+recompile-limit fix and fp16x3 becoming the default — and the maintained numbers
+are the ones in the results table above: median **2.834x**, shape 13 at 5.22x,
+shape 14 in 184 s / 17,402 tok/s / 14.17 GB. The cut has not been re-rendered
+against them, so read the table, not the soundtrack, for the current figures —
+[`build/README.md`](build/README.md) puts the two side by side next to the file.
 
 It follows the required submission structure, and the section windows are fixed
 rather than fitted to whatever the narration happens to run to:
