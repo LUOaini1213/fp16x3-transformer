@@ -78,10 +78,15 @@ def read_csv(name):
         return list(csv.DictReader(f))
 
 
+ATOL = 0.002  # the grader's absolute gate
+
+
 def stats(name):
-    sp = sorted(float(r["speedup"]) for r in read_csv(name)
-                if r["pass"] == "PASS" and r["speedup"])
-    return dict(median=sp[len(sp) // 2], lo=sp[0], hi=sp[-1], n=len(sp))
+    rows = [r for r in read_csv(name) if r["pass"] == "PASS" and r["speedup"]]
+    sp = sorted(float(r["speedup"]) for r in rows)
+    worst = max(float(r["max_abs"]) for r in rows)
+    return dict(median=sp[len(sp) // 2], lo=sp[0], hi=sp[-1], n=len(sp),
+                worst_abs=worst, margin=round(ATOL / worst))
 
 
 # ---------------------------------------------------------------- slide parts
@@ -327,11 +332,16 @@ def s_results(F, ctx):
     d.text((880, 740), "MEDIAN", font=F["label"], fill=MUTED)
     d.text((1130, 740), "WORST max_abs", font=F["label"], fill=MUTED)
     d.text((1460, 740), "MARGIN vs atol", font=F["label"], fill=MUTED)
-    rows = [("Tesla P100  \u00b7  SDPA only", "2.065\u00d7", "1.91e-6", "1049\u00d7 inside", GOOD),
-            ("Tesla T4  \u00b7  SDPA + compile   (shipped)", f"{t4['median']:.3f}\u00d7",
-             "1.91e-6", "1049\u00d7 inside", GOOD),
-            ("Tesla T4  \u00b7  + fp16   (measured, not shipped)", "4.014\u00d7", "2.04e-3",
-             "0.98\u00d7 \u2014 past it", CRIT)]
+    # every cell below comes from results/*.csv at render time, so this slide
+    # cannot drift the way the fixed 2026-09-01 narration below deliberately has
+    p100, fp16 = ctx["p100"], ctx["fp16"]
+    rows = [("Tesla P100  \u00b7  SDPA only", f"{p100['median']:.3f}\u00d7",
+             f"{p100['worst_abs']:.2e}", f"{p100['margin']}\u00d7 inside", GOOD),
+            ("Tesla T4  \u00b7  SDPA + fp16x3 GEMMs   (shipped)", f"{t4['median']:.3f}\u00d7",
+             f"{t4['worst_abs']:.2e}", f"{t4['margin']}\u00d7 inside", GOOD),
+            ("Tesla T4  \u00b7  + fp16   (measured, not shipped)", f"{fp16['median']:.3f}\u00d7",
+             f"{fp16['worst_abs']:.2e}",
+             f"{ATOL / fp16['worst_abs']:.2f}\u00d7 \u2014 past it", CRIT)]
     y = 790
     for name, med, mabs, margin, color in rows:
         d.text((178, y), name, font=F["small"], fill=INK)
@@ -399,14 +409,19 @@ def s_memory_wall(F, ctx):
 def s_precision(F, ctx):
     """The fp16 trade, as a margin gauge against the hard gate."""
     img, d = new_slide()
+    t4, fp16 = ctx["t4"], ctx["fp16"]
     eyebrow(d, F, "The decision we had to measure to get right")
-    heading(d, F, "fp16 is twice as fast. We ship fp32.")
+    heading(d, F, f"fp16 is {fp16['median'] / t4['median']:.1f}× faster. "
+                  f"We ship fp32.")
 
+    # the bar widths are illustrative (a 210x margin drawn to scale is invisible
+    # next to a 0.98x one); the labels beside them are read from results/*.csv
     for i, (name, sub, width, color, note) in enumerate([
-        ("fp32  — shipped", "worst max_abs 1.91e-6", 0.33, GOOD,
-         "1049× inside the gate"),
-        ("fp16  — measured, not shipped", "worst max_abs 2.04e-3", 1.00, CRIT,
-         "0.98× — already past it"),
+        ("fp32  — shipped", f"worst max_abs {t4['worst_abs']:.2e}", 0.33, GOOD,
+         f"{t4['margin']}× inside the gate"),
+        ("fp16  — measured, not shipped",
+         f"worst max_abs {fp16['worst_abs']:.2e}", 1.00, CRIT,
+         f"{ATOL / fp16['worst_abs']:.2f}× — already past it"),
     ]):
         y = 330 + i * 160
         d.text((140, y), name, font=F["h3"], fill=INK)
@@ -424,8 +439,8 @@ def s_precision(F, ctx):
     d.text((1600, 640), "atol = 0.002", font=F["small"], fill=MUTED)
 
     body = [
-        ("fp16 passes all 13 shapes at 4.01× median — nearly double the "
-         "shipped path.", INK_2),
+        (f"fp16 passes all 13 shapes at {fp16['median']:.2f}× median — "
+         f"{fp16['median'] / t4['median']:.1f}× the shipped path.", INK_2),
         ("But its worst absolute error has already crossed the gate. It survives "
          "only because the rule is abs OR rel, and that element happened to have "
          "a large reference value.", CRIT),
@@ -584,6 +599,7 @@ def main():
                     "--theme", "dark", "--outdir", figdir], check=True)
 
     ctx = dict(t4=stats("results_t4.csv"), p100=stats("results.csv"),
+               fp16=stats("results_t4_fp16.csv"),
                fig_wall=os.path.join(figdir, "memory_wall.png"),
                fig_speed=os.path.join(figdir, "speedups.png"))
     F = fonts()

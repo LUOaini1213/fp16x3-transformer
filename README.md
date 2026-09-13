@@ -224,12 +224,13 @@ softmax, i.e. the property the shape-14 result actually depends on. The name was
 wrong; the mechanism was not. It also means the T4-over-P100 gain is compilation
 plus hardware, not a different attention kernel.
 
-### fp16 is twice as fast, and we still ship fp32
+### fp16 is 1.4x the shipped path, and we still ship fp32
 
 `T3_AUTOCAST=fp16` passes all 13 shapes at a **median 4.014x**, up to 11.53x on
-shape 13. We ship it **off**. The reason is one number: its worst-case absolute
-error is `max_abs = 0.0020388` on shape 6, which has **already crossed the
-`atol=0.002` gate**. It passes only because the rule is
+shape 13 — 1.4x the shipped 2.834x, and 1.76x the 2.286x fp32-SGEMM path the
+sweep was actually run against. We ship it **off**. The reason is one number:
+its worst-case absolute error is `max_abs = 0.0020388` on shape 6, which has
+**already crossed the `atol=0.002` gate**. It passes only because the rule is
 `abs<=0.002` **OR** `rel<=0.02` and that element's reference value happened to be
 large enough (`|ref| >= 0.102`) for the relative branch to catch it.
 

@@ -48,9 +48,14 @@ def _text(rel):
 T4 = _stats("results_t4.csv")
 T4_FP32 = _stats("results_t4_fp32.csv")
 P100 = _stats("results.csv")
+# the fp32 path the fp16 sweep was actually measured against, before fp16x3
+# became the default -- it is not the shipped path and is not the P100
+T4_GRAPH = _stats("results_t4_graph.csv")
+FP16 = _stats("results_t4_fp16.csv")
 
 README = _text("README.md")
 REPORT = _text("report/report.md")
+ABLATION = _text("results/ablation.md")
 HANDOFF = _text("docs/DEVPOST_HANDOFF.md")
 
 
@@ -115,13 +120,65 @@ def test_worst_error_and_tolerance_margins():
     margins = (round(ATOL / worst), round(ATOL / elsewhere),
                round(ATOL / T4_FP32["worst_abs"]), round(ATOL / P100["worst_abs"]))
     assert margins == (210, 699, 621, 1049)
-    # the shipped path's margin is 210x; 1049x is the P100's and may only be
-    # claimed for it
-    for doc, name in ((README, "README.md"), (REPORT, "report/report.md")):
-        for m in re.finditer(r"1049", doc):
-            window = doc[max(0, m.start() - 200):m.start()]
-            assert "P100" in window or "1.91e-6" in window, \
-                f"{name}: 1049x claimed outside a P100 context"
+
+
+# the four margins above are all real, but only one of them belongs to the
+# shipped path. 1049x is what a worst-case 1.91e-06 buys, and 1.91e-06 was
+# measured on the P100 (results.csv) and on the pre-fp16x3 T4 baseline
+# (results_t4_graph.csv) -- never on the path we ship, whose worst case is
+# 9.54e-06 and whose margin is 210x. An earlier pass fixed three copies of that
+# mix-up and left four alive, in files the scan did not cover, so this scan
+# walks the repository instead of a hand-written list of documents.
+_M1049_ANCHORS = ("P100", "1.91e-6", "1.91e-06", "results_t4_graph.csv")
+_M1049_SUFFIXES = {".md", ".py", ".html", ".yml", ".yaml", ".txt"}
+
+
+def _scannable_files():
+    for p in sorted(ROOT.rglob("*")):
+        if not p.is_file() or p.suffix not in _M1049_SUFFIXES:
+            continue
+        if any(part in (".git", "__pycache__", ".pytest_cache") for part in p.parts):
+            continue
+        if p == Path(__file__).resolve():
+            continue  # the scanner itself quotes the digits it forbids
+        yield p
+
+
+def test_1049x_is_never_attached_to_the_shipped_path():
+    """Every 1049 in the repo, in any prose, slide or template, has to sit next
+    to the measurement it came from -- and must not sit next to the word
+    'shipped'. Raw run logs and CSVs are excluded by suffix; the digits also
+    occur inside timings there (5.428571701049805)."""
+    seen = 0
+    for p in _scannable_files():
+        text = p.read_text(encoding="utf-8", errors="replace")
+        for m in re.finditer(r"1049", text):
+            seen += 1
+            window = text[max(0, m.start() - 120):m.start()]
+            rel = p.relative_to(ROOT).as_posix()
+            assert any(a in window for a in _M1049_ANCHORS), (
+                f"{rel}: 1049x claimed with no P100 / 1.91e-06 anchor within "
+                f"120 characters: ...{window[-90:]!r}")
+            assert "shipped" not in window.lower(), (
+                f"{rel}: 1049x claimed for the shipped path, whose margin is "
+                f"{round(ATOL / T4['worst_abs'])}x: ...{window[-90:]!r}")
+    assert seen >= 4, "the 1049x scan found nothing; did it stop reading files?"
+
+
+def test_ablation_fp16_table_matches_csv():
+    """The README's fp16 paragraph ends 'full numbers in results/ablation.md',
+    so the table it points at has to carry the same three regimes and the same
+    margins the README quotes, each recomputed from its own CSV."""
+    table = ABLATION.split("Here is why we still do not ship it:")[1][:1200]
+    for want in (f"{T4['median']:.3f}x",              # 2.834x, shipped
+                 f"{T4['worst_abs']:.2e}",            # 9.54e-06
+                 f"{round(ATOL / T4['worst_abs'])}x", # 210x
+                 f"{T4_GRAPH['median']:.3f}x",        # 2.286x, the fp16 baseline
+                 f"{FP16['median']:.3f}x"):           # 4.014x
+        assert want in table, f"results/ablation.md fp16 table lost {want!r}"
+    # the two ratios the prose quotes, each against a named path
+    assert f"{FP16['median'] / T4_GRAPH['median']:.2f}x" in ABLATION   # 1.76x
+    assert f"{FP16['median'] / T4['median']:.2f}x" in ABLATION         # 1.42x
 
 
 def test_no_superseded_measurements_in_the_prose():

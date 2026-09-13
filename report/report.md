@@ -123,7 +123,7 @@ bandwidth-bound — the attention kernel is the same memory-efficient one on bot
 cards (see the probe below). A speedup is a ratio and
 it matters which side moved.
 
-**fp16 is nearly twice as fast and we do not ship it.** `T3_AUTOCAST=fp16`
+**fp16 is 1.4× the shipped path and we do not ship it.** `T3_AUTOCAST=fp16`
 passes all 13 shapes at a median 4.014×. But its worst absolute error,
 `max_abs = 0.0020388` on shape 6, has *already crossed* `atol=0.002`; it survives
 only because the gate is `abs<=0.002` **OR** `rel<=0.02` and that element's
