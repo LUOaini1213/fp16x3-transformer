@@ -26,7 +26,7 @@ ExactSwap — Drop-in GPU Transformer Layer
 ## 3. Elevator pitch（一句话简介，199 字符）
 
 ```
-A drop-in Transformer layer 2.83x faster on all 13 graded shapes at fp32-class accuracy (error-compensated tensor-core GEMMs); it runs the 100,000-token shape whose reference needs 20.5 TB.
+A drop-in Transformer layer: 2.83x median over 13 graded shapes (1.57x-5.22x) at fp32-class accuracy from error-compensated tensor-core GEMMs; it runs the 100,000-token shape needing 20.5 TB.
 ```
 
 ---
@@ -282,12 +282,6 @@ Split-K for the fp16x3 GEMMs, with the partial sums reduced in IEEE fp32 outside
 | 数字 | 来源 |
 |---|---|
 | T4 中位 2.834× / 13-13 PASS(默认 fp16x3,3 次独立运行逐 shape 取中位数) | `results/results_t4.csv`、`results/results_t4_runs.csv`、`results/kaggle_t4_{x3force2,def2,def3}_run.log` |
-| T4 fp32 SGEMM 对照 2.300×(3 次运行) | `results/results_t4_fp32.csv`、`results/kaggle_t4_{fix1,fp32b,fp32c}_run.log` |
-| T4 `T3_LINEAR=auto` 两次 2.299× / 2.214× | `results/results_t4_x3v4.csv`、`results/results_t4_x3v4b.csv` |
-| fp16x3 算子级对比、误差 | `results/kaggle_t4_x3v3_run.log`;kernel 级 profile `results/kaggle_t4_profile_run.log` |
-| T4 fp32 SGEMM 对照 2.300×(3 次运行) | `results/results_t4_fp32.csv`、`results/kaggle_t4_{fix1,fp32b,fp32c}_run.log` |
-| T4 `T3_LINEAR=auto` 两次 2.299× / 2.214× | `results/results_t4_x3v4.csv`、`results/results_t4_x3v4b.csv` |
-| fp16x3 算子级对比、误差 | `results/kaggle_t4_x3v3_run.log`;kernel 级 profile `results/kaggle_t4_profile_run.log` |
 | T4 fp32 SGEMM 对照 2.300×(3 次运行) | `results/results_t4_fp32.csv`、`results/kaggle_t4_{fix1,fp32b,fp32c}_run.log` |
 | T4 `T3_LINEAR=auto` 两次 2.299× / 2.214× | `results/results_t4_x3v4.csv`、`results/results_t4_x3v4b.csv` |
 | fp16x3 算子级对比、误差 | `results/kaggle_t4_x3v3_run.log`;kernel 级 profile `results/kaggle_t4_profile_run.log` |
