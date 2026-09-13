@@ -60,7 +60,7 @@ alternative on the same input — not by being ours.
 | Lever | Effect |
 |---|---|
 | **`F.scaled_dot_product_attention` (memory-efficient fused attention)** | Replaces the baseline's `O(S²)` materialized score matrix with an `O(S)` fused kernel. Makes the `seq_len=100000` shape possible at all — the baseline would need **~20.5 TB** just for its attention scores. Measured: the full 100k-token forward completes in **14.6 GB** on a free P100. |
-| **fp16x3 linear layers** (`T3_LINEAR=fp16x3`, **default**) | Every GEMM runs on the fp16 tensor cores at fp32-class accuracy: the kernel that produces each activation (fused LayerNorm, GELU, or a plain split) also writes it as an fp16 hi + lo pair, and one cuBLAS GEMM with K tripled accumulates the three cross terms in fp32. Measured: median 2.30x -> **2.50x**, shape 8 (K=1024) 1.09x -> 1.60x; worst error 4.1e-05 against a 2e-3 gate. `T3_LINEAR=fp32` is the SGEMM path, measured three times too. |
+| **fp16x3 linear layers** (`T3_LINEAR=fp16x3`, **default**) | Every GEMM runs on the fp16 tensor cores at fp32-class accuracy: the kernel that produces each activation (fused LayerNorm, GELU, or a plain split) also writes it as an fp16 hi + lo pair, and one cuBLAS GEMM with K tripled accumulates the three cross terms in fp32. Measured: median 2.30x -> **2.83x**, shape 8 (K=1024) 1.09x -> 1.57x; worst error 9.5e-06 against a 2e-3 gate. `T3_LINEAR=fp32` is the SGEMM path, measured three times too. |
 | **Internal fp16 autocast** (`T3_AUTOCAST=fp16`, **opt-in**) | Lights up the tensor cores and roughly **doubles** the fp32-SGEMM path's median (2.29x -> 4.01x). Shipped **off**: it passes all 13 shapes, but its worst absolute error has already crossed `atol=0.002` and survives on the relative branch alone. Reductions stay in fp32. |
 | **Self-applied `torch.compile`** | Fuses LayerNorm / bias / GELU epilogues into Triton kernels; independent of the grader passing `--compile-user`. Needs sm≥7.0, so it is inactive on a P100. Measured on a T4 it is worth +0.3x on compute-bound shapes and a **net loss** on launch-bound ones — so the model now times eager against compiled once, on the real input, and keeps the winner — with a CUDA graph of the eager kernels as a third candidate (`T3_COMPILE=auto`, `T3_CUDAGRAPH=1`, both default). |
 | **Batch chunking into a preallocated output** (only `seq_len=1e5`) | Keeps activations inside a 16 GB GPU. Chunks are written in place rather than collected and `torch.cat`-ed — the concat holds the pieces *and* the joined result at once, which is what made this shape OOM. |
@@ -235,7 +235,8 @@ large enough (`|ref| >= 0.102`) for the relative branch to catch it.
 
 Nothing makes that repeatable. Put the same error on a near-zero reference and
 the element fails, and one failing element fails the shape and forfeits the
-speed score entirely. The shipped fp32 path sits **1049x inside** the same gate.
+speed score entirely. The shipped path's worst error is 9.5e-06 (K=1024), which sits
+**210x inside** the same gate, and 2.9e-06 — 699x inside — on the other twelve shapes.
 We took the margin. The flag is documented, measured, and yours if you want the
 other side of the trade — full numbers in [`results/ablation.md`](results/ablation.md).
 
@@ -697,7 +698,8 @@ on the right GPU it is the one we would reach for.
   in fp32 — 7603/131072 elements at the identical `max_abs 0.047`. bf16's ulp
   near 1.0 is 0.0078, four times coarser than `atol=0.002`, so no implementation
   that reorders a single operation can hold that gate in bf16. The graded
-  configuration is fp32 (the harness default), where we sit ~1049x inside it.
+  configuration is fp32 (the harness default), where the shipped path sits 210x inside
+  it at worst and 699x on the other twelve shapes.
 - The padded (`padding_ratio > 0`) fallback still materializes a dense
   `[B,1,S,S]` additive bias, i.e. it gives back the `O(S^2)` memory that SDPA
   exists to avoid. The graded path runs `padding_ratio=0`, where masking is

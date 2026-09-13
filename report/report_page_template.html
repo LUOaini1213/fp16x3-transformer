@@ -283,8 +283,8 @@
     </div>
     <div class="kpi">
       <p class="kpi-label">Tolerance margin</p>
-      <p class="kpi-value">1049&times;</p>
-      <p class="kpi-note">inside the <code>atol=0.002</code> gate</p>
+      <p class="kpi-value">210&times;</p>
+      <p class="kpi-note">worst shape, inside the <code>atol=0.002</code> gate &middot; 699&times; on the other twelve</p>
     </div>
     <div class="kpi">
       <p class="kpi-label">Shape 14</p>
@@ -477,12 +477,12 @@
 
   <div class="gauge">
     <div class="gauge-row">
-      <div class="gauge-name">fp32 &mdash; shipped
-        <small>worst <span class="mono">max_abs</span> 1.91e-6</small></div>
+      <div class="gauge-name">fp32-class &mdash; shipped
+        <small>worst <span class="mono">max_abs</span> 9.5e-06</small></div>
       <div class="gauge-track">
         <div class="gauge-fill safe" style="width:33%"></div>
         <div class="gate" style="left:calc(100% - 2px)"></div>
-        <span class="gauge-val">1049&times; inside the gate</span>
+        <span class="gauge-val">210&times; inside the gate</span>
       </div>
     </div>
     <div class="gauge-row">
@@ -510,7 +510,7 @@
     <p>Nothing makes that repeatable. Put the same error on a near-zero reference and the element
     fails &mdash; and one failing element fails the shape and forfeits the speed score entirely.
     The trade is roughly twice the speed for a correctness margin of essentially zero on a hard
-    gate. We took the 2.29&times; that sits 1049&times; inside tolerance and left fp16 as a
+    gate. We took the shipped 2.834&times; that sits 210&times; inside tolerance at worst and left fp16 as a
     documented, measured flag. The apparent middle ground &mdash; fp16 attention with fp32 FFN and
     LayerNorm &mdash; was measured too: 2.953&times; at a worst error of 1.72e-03, a margin of
     1.17&times;. Moving everything after the attention to fp32 recovered almost nothing,

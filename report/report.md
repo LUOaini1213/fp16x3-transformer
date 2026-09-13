@@ -78,9 +78,9 @@ and `user_optimized.py`.
 
 ## 5. Results
 
-All 13 gradeable shapes PASS on both cards. The shipped T4 path lands 6.7e-06 from the fp32
-reference on twelve shapes and 4.1e-05 on the K=1024 one (297× and 49× inside the `atol=0.002`
-gate); the fp32-SGEMM path and the P100 sit at ~1.9e-6, ~1049× inside.
+All 13 gradeable shapes PASS on both cards. The shipped T4 path lands 2.9e-06 from the fp32
+reference on twelve shapes and 9.5e-06 on the K=1024 one (699× and 210× inside the `atol=0.002`
+gate); the `T3_LINEAR=fp32` path sits at 3.2e-06 (621× inside) and the P100 at 1.9e-06 (1049× inside).
 
 | regime | median | range | worst `max_abs` | margin vs `atol` |
 |---|---|---|---|---|
@@ -129,7 +129,7 @@ only because the gate is `abs<=0.002` **OR** `rel<=0.02` and that element's
 reference happened to be large enough (`|ref| >= 0.102`) for the relative branch.
 Move the same error onto a near-zero reference and the element fails -- and one
 failing element fails the shape and forfeits the speed score entirely. We took
-the 2.286× that sits 1049× inside tolerance and left fp16 as a documented,
+the shipped 2.834× that sits 210× inside tolerance at worst and left fp16 as a documented,
 measured flag. This is the one place where our earlier reasoning was wrong: the
 repo previously asserted fp16 "breaks the gate", which measurement disproved --
 the conclusion survived, the justification did not.

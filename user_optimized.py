@@ -167,8 +167,8 @@ class UserOptimizedTransformer(BaselineTransformer):
             self._compile_ok = False
         # fp16x3 linear layers (kernels/fp16x3.py): every GEMM on the fp16
         # tensor cores with hi/lo operand compensation, fp32 accumulation and
-        # fp32 output. Default, measured: median 2.44x against 2.26x for
-        # SGEMM on the T4, worst error 4.1e-5 (K=1024) against a 2e-3 gate.
+        # fp32 output. Default, measured: median 2.834x against 2.300x for
+        # SGEMM on the T4, worst error 9.5e-06 (K=1024) against a 2e-3 gate.
         # A per-shape first-forward tuner ('auto') was measured twice and
         # retired: its seven-sample verdicts sit at the noise floor on the
         # sub-millisecond shapes, and the static default scored higher.
