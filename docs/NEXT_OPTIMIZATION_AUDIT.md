@@ -155,8 +155,30 @@ copied into this repository. A later artifact download succeeded: its
 [original JSON](../results/next/flash-artifact-download/next_flash.json) is
 semantically identical to the recovered payload, and the original build log
 is retained alongside it. Both variants have independent artifact hashes.
-A separate final production-adapter verification is required before attributing
-these results to the maintained interface.
+
+### Final production-adapter integration gate
+
+A second T4 session builds the dependency from the same pinned source and calls
+the actual maintained adapter through `UserOptimizedTransformer`, not the
+isolated subclass. It passes nine interleaved-QKV attention checks (head widths
+64/96/128, three seeds each; max error 0.0004883), rejects non-causal use, and
+then checks full shape 14. All 3,276,800,000 outputs are finite with zero
+native-FP16 SDPA OR-gate failures (max error 0.0078125). The independent original
+FP32 causal prefix passes again (512 tokens, one batch, max error 0.0055175).
+An execution counter records **73 actual production-adapter calls**, including
+the nine probes and 64 layer calls across 32 batch chunks. All nine recorded
+core-source hashes match the maintained implementation.
+
+This final gate is explicitly a **cold pair only**, not another steady-state
+speed measurement: SDPA 188.12 seconds, adapter 120.26 seconds. Its different
+session/setup costs are not pooled with the earlier 138.19 → 77.13 second
+three-round candidate experiment. The paired candidate establishes the
+performance experiment; this independent final-core run establishes integration
+correctness. [Final adapter evidence](../results/next/adapter-final/next_flash.json).
+
+An earlier attempt to attach a prebuilt private artifact found no verifiable
+binary and failed closed; the successful gate rebuilt from the pin instead.
+No unverified artifact was loaded. Default SDPA and FP32 grading are unchanged.
 
 ## Reproduction
 
@@ -188,12 +210,17 @@ CUDA or Kaggle credentials:
 ```bash
 python scripts/verify_next_evidence.py \
   --current-core results/next/final/next_lt_integrated.json
+python scripts/verify_next_evidence.py \
+  --current-core results/next/adapter-final/next_flash.json
 python -m pytest -q tests/
 ```
 
 The evidence test verifies saved file hashes on CI as well as locally. Historical
 driver variants intentionally differ; the optional current-core check covers
 the model, kernels and unchanged official benchmark rather than those drivers.
+Final local checks: **72 passed, one CUDA-only skip**, plus all 12 CPU-feasible
+official shapes and two padded smoke cases. CI uses `python -m pytest` so the
+repository root is on Python's import path on Linux as well as Windows.
 
 ## Sources checked
 

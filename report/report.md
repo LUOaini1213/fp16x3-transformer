@@ -368,6 +368,15 @@ There is no full original-FP32 equivalence claim. Candidate evidence is in
 `results/next/flash-candidate/`; its JSON is recovered from the final printed
 cloud-log payload, with an explicit provenance receipt.
 
+A separate session verifies the actual production adapter on the final core
+source. All 3.277 billion outputs pass native-FP16 SDPA equivalence, the original
+FP32 causal prefix passes, and 73 actual adapter calls are recorded. Nine probes
+cover head widths 64/96/128 and three seeds each. This is a cold verification
+pair only (SDPA 188.12 s, adapter 120.26 s), not another steady-state speedup;
+it is not pooled with the three-round candidate timing. Final local checks are
+72 passed, one CUDA-only skip, plus all CPU-feasible official shapes and two
+padded smoke cases. All recorded final core hashes match the implementation.
+
 Exact methods, raw logs, repaired/invalid trials and primary-source links are in
 [`docs/NEXT_OPTIMIZATION_AUDIT.md`](../docs/NEXT_OPTIMIZATION_AUDIT.md). Earlier
 reported results and the frozen submission are retained unchanged.

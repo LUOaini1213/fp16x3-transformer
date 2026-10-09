@@ -491,6 +491,11 @@ gate. The independent original-FP32 check is a 512-token causal prefix only,
 not a full-length FP32 accuracy claim. Build time and first calls are excluded
 from steady timing. [Candidate evidence](results/next/flash-candidate/next_flash.json).
 
+The actual production adapter also passes a separate full-output integration
+gate on the final source, with 73 confirmed kernel calls. That run is a cold
+verification pair (188.12 → 120.26 seconds), not another steady-state median;
+the two protocols are not pooled. [Final adapter gate](results/next/adapter-final/next_flash.json).
+
 C++ dispatch wrappers and bulk native parameter-key reads were also implemented
 and measured, but did not beat the existing manual CUDA Graph. They remain
 experiments rather than default-path dependencies.
