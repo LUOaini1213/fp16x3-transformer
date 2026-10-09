@@ -61,7 +61,8 @@ def test_real_independent_sessions_are_complete_and_core_matches_usability():
     assert result["comparisons"] == 117
     assert result["median_speedup"] == pytest.approx(2.875157350767779)
     for phase in ("quick", "workspace"):
-        payload = json.loads((root / f"usability-{phase}" / f"next_usability_{phase}.json").read_text(encoding="utf-8"))
+        folder = "usability-workspace-actual" if phase == "workspace" else "usability-quick"
+        payload = json.loads((root / folder / f"next_usability_{phase}.json").read_text(encoding="utf-8"))
         assert core_manifest(payload) == core_manifest(sessions[0])
 
 
@@ -74,7 +75,8 @@ def test_usability_report_is_generated_from_complete_artifacts():
                 for folder in ("release-fp32", "release-repeat-a", "release-repeat-b")]
     assert independent_text(sessions) in report
     for phase, function in (("quick", quick_text), ("workspace", workspace_text)):
-        payload = json.loads((root / f"usability-{phase}" / f"next_usability_{phase}.json").read_text(encoding="utf-8"))
+        folder = "usability-workspace-actual" if phase == "workspace" else "usability-quick"
+        payload = json.loads((root / folder / f"next_usability_{phase}.json").read_text(encoding="utf-8"))
         assert function(payload) in report
         if phase == "quick":
             partial = copy.deepcopy(payload)
@@ -90,3 +92,13 @@ def test_measured_usability_driver_sources_match_current_checkout():
     for name in ("scripts/run.py",):
         actual = hashlib.sha256(Path(name).read_text(encoding="utf-8").encode()).hexdigest()
         assert actual == payload["metadata"]["source_manifest"][name]
+
+
+def test_actual_workspace_driver_is_the_measured_current_source():
+    import hashlib
+    payload = json.loads(Path("results/next/usability-workspace-actual/next_usability_workspace.json").read_text(encoding="utf-8"))
+    for name in ("scripts/benchmark_usability.py", "scripts/workspace_provider.py"):
+        actual = hashlib.sha256(Path(name).read_text(encoding="utf-8").encode()).hexdigest()
+        assert actual == payload["metadata"]["source_manifest"][name]
+    assert "actual selected workspaceSize" in payload["results"]["scratch_policy"]
+    assert not payload["results"]["qualified_candidates"]

@@ -441,10 +441,14 @@ All **78** profile/input comparisons pass; first public forwards are
 0.197/11.85-second first calls and 122.14/82.35-ms steady wall imply an
 approximate 294-call setup crossover under this protocol.
 
-A targeted wide-QKV experiment tries five workspace budgets and includes
-scratch allocation and public-forward overhead. All 21 input/variant checks
-pass; the best research candidate is only 2.57% lower event latency than the
-existing opt-in Lt, below the predeclared 5%-on-both-metrics acceptance gate.
-No workspace provider is promoted. Core files and the frozen submission remain
+A targeted wide-QKV pilot tries five workspace budgets and includes
+scratch allocation and public-forward overhead. It allocated the whole budget,
+not the selected algorithm's actual requirement. Its 2.57% isolated paired
+improvement is retained as a pilot, not used as the final adoption decision.
+A fresh confirmation at commit `c00bc91d711f0c7502883d5693e39f5d0e9cdc17`
+allocates only the actual selected `workspaceSize`: all 21 input/variant checks
+pass, but every experimental budget loses to existing opt-in Lt
+(91.24 ms vs 93.22–97.07 ms event). No provider clears the predeclared
+5%-on-both-metrics gate or is promoted. Core files and the frozen submission remain
 unchanged. See the [generated combined report](../results/next/usability_summary.md)
 and [methods](../docs/RELEASE_VERIFICATION.md).

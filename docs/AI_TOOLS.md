@@ -47,6 +47,10 @@ the lower repeats rather than selecting the original 3.546×. Workspace variants
 pass numerics but fail the predeclared end-to-end adoption threshold and remain
 research-only. Generated tables validate source hashes, round counts and input
 checks; raw evidence includes the losing variants and startup trade-offs.
+A final inspection identified excess scratch allocation in the workspace pilot.
+It was corrected to the selected algorithm's actual requirement and re-run on
+a fresh T4; all numerical checks still pass, but no candidate beats existing
+Lt. Both pilot and corrected confirmation are retained, not silently replaced.
 
 1. **Workload analysis.** The AI extracted the exact grading contract from the
    harness code (tolerances `atol=0.002`/`rtol=0.02`, per-element all-pass rule,

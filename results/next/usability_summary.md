@@ -6,7 +6,7 @@ Generated from complete, source-stamped JSON.
 - [release-repeat-a/next_release_fp32.json](release-repeat-a/next_release_fp32.json) — Git `38e191d9ba1778b7f837b790f79abe941ee98c66`
 - [release-repeat-b/next_release_fp32.json](release-repeat-b/next_release_fp32.json) — Git `38e191d9ba1778b7f837b790f79abe941ee98c66`
 - [usability-quick/next_usability_quick.json](usability-quick/next_usability_quick.json) — Git `b335fb64a0fc76ad4105abf58e23589ef8af80ae`
-- [usability-workspace/next_usability_workspace.json](usability-workspace/next_usability_workspace.json) — Git `b335fb64a0fc76ad4105abf58e23589ef8af80ae`
+- [usability-workspace-actual/next_usability_workspace.json](usability-workspace-actual/next_usability_workspace.json) — Git `c00bc91d711f0c7502883d5693e39f5d0e9cdc17`
 
 ## Three independent T4 sessions
 
@@ -60,22 +60,22 @@ All **78** profile/input checks pass. Maximum absolute error: **9.8347664e-06**.
 
 Original-FP32 gate on three inputs for each of seven variants; all 21 pass. Three rotated paired rounds include public-forward dispatch, input copies, output ownership and per-invocation/current-stream workspace allocations. No production core is changed. Memory records are incremental peaks above seven resident models, not isolated deployment peaks.
 
-Scratch policy: allocation per invocation/current stream; allocations are included in timing/capture.
+Scratch policy: only actual selected workspaceSize allocated per invocation/current stream; allocations included in timing/capture.
 
 Acceptance requires at least 5% lower event AND wall latency than the existing opt-in zero-workspace production Lt provider, followed by independent confirmation before any promotion.
 
 | Variant | Event ms | Wall ms | Event reduction vs existing Lt | Host extension calls |
 |---|---:|---:|---:|---:|
-| default | 83.4304 | 83.2045 | -0.64% | — |
-| production_lt | 82.9036 | 83.1641 | 0.00% | — |
-| ws0 | 80.7705 | 80.6722 | 2.57% | 76 |
-| ws1 | 80.7763 | 80.7827 | 2.57% | 76 |
-| ws4 | 83.5112 | 84.1731 | -0.73% | 76 |
-| ws16 | 84.7251 | 85.4469 | -2.20% | 76 |
-| ws32 | 85.8565 | 86.4982 | -3.56% | 76 |
+| default | 95.2898 | 94.6373 | -4.43% | — |
+| production_lt | 91.2437 | 92.4723 | 0.00% | — |
+| ws0 | 93.2186 | 94.2391 | -2.16% | 76 |
+| ws1 | 93.8322 | 93.2996 | -2.84% | 76 |
+| ws4 | 97.0681 | 96.6930 | -6.38% | 76 |
+| ws16 | 95.9604 | 95.2263 | -5.17% | 76 |
+| ws32 | 94.3291 | 93.8846 | -3.38% | 76 |
 
 Counters include capture-time extension invocations; CUDA graph replays do not increment Python counters.
 
-Experimental extension build: **32.59 s**.
+Experimental extension build: **28.17 s**.
 
 Candidates clearing the first gate: **none; retain the existing backend**.

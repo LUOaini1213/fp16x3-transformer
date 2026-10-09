@@ -212,20 +212,27 @@ is **122.14 / 82.35 ms**; estimated setup crossover is about **294 calls**.
 This is a startup/throughput trade, not faster steady compute. The exact samples
 and all thirteen crossover estimates are in the generated report.
 
-The same pinned revision's separate shape-8 workspace job keeps production
-files unchanged. It derives an experimental CPP module with an explicit
-0/1/4/16/32 MiB budget in each plan key and scratch allocated per invocation
-on the current stream, preventing a shared-scratch race across streams. Search
-and builds occur before capture; allocation/copy/ownership costs are included
-in the whole public-forward timing. All **21** checks pass. Budget winners
-select zero-workspace algorithms in this session; larger allocations buy no
-corresponding selected algorithm benefit. Experimental build takes **32.59 s**.
-Best experimental event timing is **80.77 ms**, versus existing opt-in Lt
-**82.90 ms** (2.57%); synchronized wall is **80.67 / 83.16 ms**. No candidate
-clears at least 5% reduction on both metrics, so there is no promotion or
-additional confirmation campaign. Default Torch and existing narrow Lt remain
-unchanged. Host-extension counters include capture but do not count graph
+The same pinned revision's shape-8 workspace pilot keeps production files
+unchanged. It derives a separate CPP module with an explicit 0/1/4/16/32 MiB
+budget in each plan key and scratch per invocation/current stream. All 21
+checks pass, with best event 80.77 ms versus existing Lt 82.90 ms (2.57%). It
+allocated the whole budget even when the selected algorithm required zero
+scratch; this unnecessarily penalizes larger budgets. That pilot and its
+32.59-second build remain under `results/next/usability-workspace/`, not pooled
+with the corrected confirmation or used as the final adoption decision.
+
+A fresh session at `c00bc91d711f0c7502883d5693e39f5d0e9cdc17` allocates only
+the chosen algorithm's actual `workspaceSize` per invocation, not the budget
+ceiling. Each call owns scratch on its current stream, preventing a persistent
+shared-scratch race; searches/builds occur before capture. Allocation/copy and
+output ownership costs remain inside public-forward timing. All **21** checks
+pass; all five budget winners select zero-workspace algorithms. Build takes
+**28.17 s**. Existing opt-in Lt is **91.24 ms** event / **92.47 ms** wall;
+the best research candidate is **93.22 / 94.24 ms**, and every experimental
+budget loses. None clears 5% on both metrics, so default Torch and existing
+narrow Lt remain unchanged. Host-extension counters include capture, not graph
 replays; incremental shared-process memory is not isolated deployment memory.
+Corrected evidence is in `results/next/usability-workspace-actual/`.
 
 [Generated evidence and exact source links](../results/next/usability_summary.md)
 retain all independent sessions and all losing workspace variants. Primary
@@ -237,15 +244,15 @@ python -m scripts.summarize_usability \
     results/next/release-repeat-a/next_release_fp32.json \
     results/next/release-repeat-b/next_release_fp32.json \
   --quick results/next/usability-quick/next_usability_quick.json \
-  --workspace results/next/usability-workspace/next_usability_workspace.json \
+  --workspace results/next/usability-workspace-actual/next_usability_workspace.json \
   --output results/next/usability_summary.md
 python scripts/verify_next_evidence.py \
   --current-core results/next/usability-quick/next_usability_quick.json
 python -m pytest -q tests/
 ```
 
-Final local verification for this pass: **114 passed, one CUDA-only skip**,
-**184 artifact hashes** and **nine unchanged current core hashes**. The official
+Final local verification for this pass: **115 passed, one CUDA-only skip**,
+**187 artifact hashes** and **nine unchanged current core hashes**. The official
 benchmark still has no diff against its original revision. Evidence JSON/logs
 and launcher bytes are preserved across Windows/Linux checkouts; generated
 report tables use portable LF endings.
