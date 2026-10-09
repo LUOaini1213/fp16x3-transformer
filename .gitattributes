@@ -2,3 +2,4 @@
 # and hashes, including Windows CRLF and tool-generated end-of-line whitespace.
 results/next/**/cloud_script.py -text whitespace=-blank-at-eol,cr-at-eol linguist-generated=true
 results/next/**/*.log -text whitespace=-blank-at-eol,cr-at-eol linguist-generated=true
+results/next/clean_release_summary.md text eol=lf
