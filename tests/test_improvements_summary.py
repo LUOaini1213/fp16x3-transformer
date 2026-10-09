@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.summarize_improvements import generate, render, sweep_metrics
+from scripts.summarize_portfolio_runtime import generate, render, sweep_metrics
 
 
 ROOT = Path("results/next")
@@ -21,7 +21,7 @@ def evidence():
 
 
 def test_committed_report_matches_current_source_and_complete_gpu_artifacts():
-    report = ROOT / "improvements_summary.md"
+    report = ROOT / "portfolio_runtime_summary.md"
     assert b"\r" not in report.read_bytes()
     assert report.read_text(encoding="utf-8") == generate()
     metrics = sweep_metrics(evidence()[0], range(1, 14))

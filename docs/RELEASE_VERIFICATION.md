@@ -256,3 +256,99 @@ Final local verification for this pass: **115 passed, one CUDA-only skip**,
 benchmark still has no diff against its original revision. Evidence JSON/logs
 and launcher bytes are preserved across Windows/Linux checkouts; generated
 report tables use portable LF endings.
+
+## Balanced, dispatch recovery/cache and FFN fusion (completed)
+
+The next implementation is tested at exact commit
+`c8fe1cf7807d5633a1b75773d2ab03461318cb22`, through clean clones and normal
+imports on T4 / Torch 2.11.0+cu128. The new model and two research/cache kernels
+have **11** current core-source hashes. Earlier results refer to their original
+revision; the pre-change runner/model are preserved as source snapshots.
+Neither the frozen submission nor the official reference is modified.
+
+Private jobs `wenjiluo/track3-balanced-pilot-1009` and
+`wenjiluo/track3-balanced-full-1009` compare quick/balanced/steady. The full
+13-shape sweep has **234 passing profile/input checks**: three seeds per
+profile in separate cold workers and in a paired process. Balanced skips
+Inductor but retains compensated fp16x3 and optional manual graphs. Separate
+empty per-mode compiler directories give first public-forward costs of
+**3.707–6.404 s** versus steady **10.609–34.542 s**. These exclude process
+startup, imports, model/input creation and CUDA context probes, not Triton JIT
+or graph setup. Rotated paired event/wall rounds include public-forward costs.
+
+The predeclared lower-first-forward and <=2%-regression-on-both-metrics gate
+clears **12/13** shapes. Shape 2 has -0.41% event change but **+6.95% wall**.
+A separate T4 job, `wenjiluo/track3-balanced-shape2-repeat-1009`, runs three
+fresh interpreter workers sharing compiler caches, each with three paired
+rounds of 200 calls and three correctness seeds. All **27** additional input
+checks pass; **2/3** workers meet the steady gate, while one has **+3.63% event
+time**. This is one GPU session, not three independent GPU repeats or another
+cold-start audit. Original misses remain published, and no default is changed.
+The full sweep's single-session 3.402x balanced median is not pooled with the
+historical three-session 2.875x cohort.
+
+Both pilot and full jobs verify real graph capture, changed inputs, weight
+mutation followed by one re-selection, stable weights without a tuning loop,
+mutable normal/inference masks, owned outputs and sequential alternate-stream
+use. Concurrent calls on one mutable graph instance are not supported by this
+test. Cache producer, cache hit and uncached control are fresh workers; hit and
+control share warmed compiler directories. Observed first-forward savings are
+23.5 / 71.4 ms, not a general SLA or steady-throughput win. Only environment/
+source/layout-keyed JSON eager/graph choices persist; a hit recaptures the graph
+and must match fresh eager output bitwise. Corrupt/foreign files cause a miss
+without being overwritten.
+
+`wenjiluo/track3-ffn-fusion-1009` profiles the current shape-6 implementation
+and tests four compensated FFN GEMM + exact-erf GELU + split epilogues. All
+**15** input/variant checks pass, but all candidates lose: baseline **647.95 ms**
+event versus candidates **1117.71–4631.51 ms**. None clears 3% reduction in
+both event and wall, so the experimental module is never imported by production.
+Fresh profiling attributes device-event sums to attention 39.03%, GEMM 35.82%,
+LayerNorm/residual split 16.14%, activation split 9.00%; these are not fractions
+of end-to-end latency or promises of optimization headroom.
+
+Exact launchers, logs, immutable JSON and artifact manifests are retained under
+`results/next/balanced-pilot/`, `balanced-full/`, `balanced-shape2-repeat/` and
+`ffn-fusion/`. The targeted repeat's launcher explicitly changes only the
+repetition count; it imports the same pinned driver normally. Reproduce full
+or fusion jobs with `scripts/build_clean_kaggle.py --ref c8fe1cf7807d5633a1b75773d2ab03461318cb22
+--phase full` (or `fusion`), plus the account-specific `--id` and `--out`.
+The [generated combined report](../results/next/improvements_summary.md)
+preserves the failed gates and is checked against the source JSON.
+
+```bash
+python -m scripts.summarize_improvements \
+  --profiles results/next/balanced-full/next_improvements_full.json \
+  --cache results/next/balanced-full/next_improvements_cache.json \
+  --contracts results/next/balanced-full/next_improvements_contracts.json \
+  --fusion results/next/ffn-fusion/next_improvements_fusion.json \
+  --shape2-repeat results/next/balanced-shape2-repeat/next_improvements_shape2_repeat.json \
+  --output results/next/improvements_summary.md
+python scripts/verify_next_evidence.py \
+  --current-core results/next/balanced-full/next_improvements_full.json
+python -m pytest -q tests/
+```
+
+Final local verification of this improvement pass: **153 passed, two CUDA-only
+skips**, **219 artifact hashes** and **11 matching current core-source hashes**.
+CPU tests check the complete generated reports, rejected performance gates,
+cache-file safeguards and source snapshots; the cloud artifacts provide the
+actual CUDA evidence. These counts do not replace earlier cohort counts.
+
+## Separate portfolio-full session
+
+`wenjiluo/track3-portfolio-full-1009` independently measures the same
+`c8fe1cf7807d5633a1b75773d2ab03461318cb22` sources on a fresh T4 checkout.
+All 234 profile/input checks and 13/13 startup/paired steady gates pass in that
+session. Balanced/steady first public forwards are 3.998–8.016 / 11.220–37.740 s,
+with the same setup exclusions. Its cache controls and real CUDA recovery
+contracts are preserved in a [separate generated report](../results/next/portfolio_runtime_summary.md).
+This successful session does not replace balanced-full's 12/13 result or the
+shape-2 repeat's 2/3 worker comparisons. The immutable raw collections and
+historical speedups remain separate; no default is promoted.
+
+`python -m scripts.verify_next_evidence --maintained-runtime` performs an
+offline, read-only audit of both full sessions, the retained pilots, fusion and
+the targeted repeat. It requires their complete receipts/files/raw logs, source
+hashes and all generated reports, and reports performance gates per session.
+Missing evidence and optimized Python are refused with exit code 2.

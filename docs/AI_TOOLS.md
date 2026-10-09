@@ -52,6 +52,19 @@ It was corrected to the selected algorithm's actual requirement and re-run on
 a fresh T4; all numerical checks still pass, but no candidate beats existing
 Lt. Both pilot and corrected confirmation are retained, not silently replaced.
 
+The next maintenance pass implements balanced startup, weight-change dispatch
+recovery and opt-in JSON-only eager/graph hints with fresh-output validation.
+It runs source-pinned pilot/full T4 jobs and a separate shape-6 FFN-fusion
+experiment. All 234 full-sweep profile/input checks pass, but the strict
+performance gate clears only 12/13 shapes. A targeted shape-2 repeat uses
+three fresh processes in one new GPU session, 200 calls per paired round and
+27 additional accuracy checks: only 2/3 comparisons meet the steady gate.
+No default is promoted, and both misses are kept in the generated report.
+Real graph/cache/mutation contracts pass; four accurate fusion candidates lose
+on speed and remain research-only. Tests regenerate the report from immutable
+artifacts and verify the current core/driver hashes rather than treating AI
+proposals or an isolated best timing as evidence.
+
 1. **Workload analysis.** The AI extracted the exact grading contract from the
    harness code (tolerances `atol=0.002`/`rtol=0.02`, per-element all-pass rule,
    `strict=True` weight copy, fp32 softmax reference, `padding_ratio=0` hot path)

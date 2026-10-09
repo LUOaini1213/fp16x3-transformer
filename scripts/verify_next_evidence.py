@@ -18,6 +18,14 @@ MAINTAINED_ARTIFACTS = {
                            "next_improvements_cache.json", "next_improvements_contracts.json",
                            *(f"next_improvements_pair_{i}.json" for i in (2, 8, 13))},
     "improvements-fusion": {"cloud_script.py", "next_improvements_fusion.json"},
+    "balanced-full": {"cloud_script.py", "next_improvements_full.json",
+                      "next_improvements_cache.json", "next_improvements_contracts.json",
+                      *(f"next_improvements_pair_{i}.json" for i in range(1, 14))},
+    "balanced-pilot": {"cloud_script.py", "next_improvements_pilot.json",
+                       "next_improvements_cache.json", "next_improvements_contracts.json",
+                       *(f"next_improvements_pair_{i}.json" for i in (2, 8, 13))},
+    "balanced-shape2-repeat": {"cloud_script.py", "next_improvements_shape2_repeat.json"},
+    "ffn-fusion": {"cloud_script.py", "next_improvements_fusion.json"},
 }
 
 
@@ -110,21 +118,51 @@ def verify_maintained_runtime(root, repository=ROOT):
     hashes = verify_artifacts(root, required_artifacts=MAINTAINED_ARTIFACTS)
     full_path = root / "improvements-full/next_improvements_full.json"
     core = verify_current_core(full_path, repository)
-    from scripts.summarize_improvements import load, render, sweep_metrics
+    from scripts.summarize_portfolio_runtime import (CONTRACTS, check_metadata, load,
+                                                     render, sweep_metrics)
+    from scripts.summarize_improvements import render as render_main, repeat_metrics
     full = load(full_path)
     expected = render(full, load(root / "improvements-pilot/next_improvements_pilot.json"),
                       load(root / "improvements-full/next_improvements_cache.json"),
                       load(root / "improvements-full/next_improvements_contracts.json"),
                       load(root / "improvements-fusion/next_improvements_fusion.json"))
-    report = root / "improvements_summary.md"
-    if not report.is_file():
-        raise ValueError("missing maintained-runtime report: improvements_summary.md")
-    if report.read_text(encoding="utf-8") != expected:
-        raise ValueError("maintained-runtime report differs from verified measurements")
+    def check_report(name, expected_text):
+        report = root / name
+        if not report.is_file():
+            raise ValueError(f"missing maintained-runtime report: {name}")
+        if report.read_text(encoding="utf-8") != expected_text:
+            raise ValueError(f"maintained-runtime report differs from verified measurements: {name}")
+
+    check_report("portfolio_runtime_summary.md", expected)
     metrics = sweep_metrics(full, range(1, 14))
+    main_paths = [root / name for name in (
+        "balanced-full/next_improvements_full.json", "balanced-full/next_improvements_cache.json",
+        "balanced-full/next_improvements_contracts.json", "ffn-fusion/next_improvements_fusion.json",
+        "balanced-shape2-repeat/next_improvements_shape2_repeat.json")]
+    main_payloads = [load(path) for path in main_paths]
+    pilot_paths = [root / name for name in (
+        "balanced-pilot/next_improvements_pilot.json", "balanced-pilot/next_improvements_cache.json",
+        "balanced-pilot/next_improvements_contracts.json", "ffn-fusion/next_improvements_fusion.json")]
+    pilot_payloads = [load(path) for path in pilot_paths]
+    for payload in (*main_payloads, *pilot_payloads):
+        check_metadata(payload)
+    # Apply the same complete source/seed/cache/contract checks to the other full
+    # session; a failed performance gate is reported rather than an integrity error.
+    render(main_payloads[0], pilot_payloads[0], *main_payloads[1:4])
+    for payload in (main_payloads[2], pilot_payloads[2]):
+        if payload["results"]["status"] != "PASS" or set(payload["results"]["checks"]) != CONTRACTS:
+            raise ValueError("incomplete recovery contracts in balanced-full/pilot")
+    check_report("improvements_summary.md", render_main(main_payloads, main_paths))
+    check_report("improvements_pilot_summary.md", render_main(pilot_payloads, pilot_paths, pilot=True))
+    main_metrics = sweep_metrics(main_payloads[0], range(1, 14))
+    repeat = repeat_metrics(main_payloads[4])
     return {"artifact_hashes": hashes, "core_source_hashes": core,
-            "profile_input_checks": metrics["checks"], "shapes": len(metrics["gates"]),
-            "balanced_gates_passed": sum(g["passed"] for g in metrics["gates"]),
+            "cohorts": [{"name": name, "profile_input_checks": value["checks"],
+                         "shapes": len(value["gates"]),
+                         "balanced_gates_passed": sum(g["passed"] for g in value["gates"])}
+                        for name, value in (("balanced-full", main_metrics), ("portfolio-full", metrics))],
+            "shape2_repeat_passed": sum(row["within_2_percent"] for row in repeat),
+            "shape2_repeat_workers": len(repeat),
             "measured_git": full["metadata"]["git_commit"]}
 
 
@@ -133,15 +171,19 @@ def main():
     parser.add_argument("--current-core", type=Path,
                         help="optional source-stamped final result to check against this checkout")
     parser.add_argument("--maintained-runtime", action="store_true",
-                        help="strict full/pilot/fusion inventory, hashes, current sources and report audit")
+                        help="strict inventories, hashes, current sources and both session reports")
     args = parser.parse_args()
     try:
         if args.maintained_runtime:
             result = verify_maintained_runtime(ROOT / "results/next")
-            print(f"PASS: {result['artifact_hashes']} artifact hashes; complete full/pilot/fusion receipts")
-            print(f"PASS: {result['core_source_hashes']} current core-source hashes and generated report")
-            print(f"Measured Git: {result['measured_git']}; {result['profile_input_checks']} profile/input checks; "
-                  f"{result['balanced_gates_passed']}/{result['shapes']} balanced gates")
+            print(f"PASS: {result['artifact_hashes']} artifact hashes; complete maintained-runtime receipts")
+            print(f"PASS: {result['core_source_hashes']} current core-source hashes and all generated reports")
+            print(f"Measured Git: {result['measured_git']}")
+            for cohort in result["cohorts"]:
+                print(f"{cohort['name']}: {cohort['profile_input_checks']} profile/input checks; "
+                      f"{cohort['balanced_gates_passed']}/{cohort['shapes']} balanced gates")
+            print(f"shape-2 repeat: {result['shape2_repeat_passed']}/{result['shape2_repeat_workers']} "
+                  "steady comparisons within 2%; original miss retained")
         else:
             print(f"PASS: {verify_artifacts(ROOT / 'results/next')} artifact hashes")
         if args.current_core:

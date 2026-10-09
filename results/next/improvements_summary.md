@@ -1,70 +1,82 @@
-# Maintained runtime: balanced, cache and recovery validation
+# Balanced profiles, dispatch hints/recovery, and FFN fusion
 
-Generated with `python -m scripts.summarize_improvements` from committed Kaggle artifacts.
+Generated from complete source-stamped cloud artifacts. This report does not replace older cohorts.
 
-Measured Git: `c8fe1cf7807d5633a1b75773d2ab03461318cb22`. Linux / Tesla T4 / Torch 2.11.0+cu128 / CUDA 12.8.
+Exact tested Git commit: `c8fe1cf7807d5633a1b75773d2ab03461318cb22`.
 
-A three-shape pilot and a separate fresh-checkout full sweep use the same source hashes. This validates the new runtime; the historical three-session 2.875× result remains separate.
+- [next_improvements_full.json](balanced-full/next_improvements_full.json)
+- [next_improvements_cache.json](balanced-full/next_improvements_cache.json)
+- [next_improvements_contracts.json](balanced-full/next_improvements_contracts.json)
+- [next_improvements_fusion.json](ffn-fusion/next_improvements_fusion.json)
+- [next_improvements_shape2_repeat.json](balanced-shape2-repeat/next_improvements_shape2_repeat.json)
 
-**All 234 full-sweep profile/input checks pass** (13 shapes × 3 profiles × 3 seeds, both separate cold workers and paired workers); maximum absolute error 9.8347664e-06. Each profile's returned-output ownership is checked.
+## Balanced versus steady
 
-## Balanced acceptance
+Separate first-forward workers use empty per-mode compiler directories. First public forward excludes process/import/model/input/context setup. Steady timings come from a different, rotated paired process with identical weights/input. These are not total application cold starts or confidence intervals.
 
-Gate per shape: lower first-public-forward cost than steady, and no more than 2% event AND wall regression. Paired timing uses three rotated rounds and reported medians. Every cold profile uses a separate empty compiler directory. Startup excludes process/import, model/input setup and CUDA-context probes. Shared-process paired models are not isolated memory measurements.
-
-| Shape | Quick / balanced / steady first s | Balanced / steady event ms | Balanced / steady wall ms | Event / wall delta % | Gate |
+| Shape | Balanced / steady first s | Balanced / steady event ms | Event regression | Wall regression | First gate |
 |---:|---:|---:|---:|---:|---|
-| 1 | 0.374 / 8.016 / 17.470 | 3.5240 / 3.5818 | 3.5951 / 3.6039 | -1.61 / -0.25 | PASS |
-| 2 | 0.059 / 3.998 / 11.220 | 0.4024 / 0.4027 | 0.4112 / 0.4111 | -0.06 / +0.02 | PASS |
-| 3 | 0.059 / 4.119 / 11.262 | 0.4319 / 0.4299 | 0.4414 / 0.4389 | +0.46 / +0.57 | PASS |
-| 4 | 0.060 / 4.037 / 11.391 | 0.9266 / 0.9658 | 0.9476 / 0.9820 | -4.06 / -3.50 | PASS |
-| 5 | 0.072 / 4.322 / 11.800 | 7.7286 / 7.7392 | 7.7599 / 7.8144 | -0.14 / -0.70 | PASS |
-| 6 | 0.894 / 4.259 / 37.740 | 667.9045 / 668.6889 | 668.4501 / 668.6709 | -0.12 / -0.03 | PASS |
-| 7 | 0.064 / 4.046 / 11.342 | 1.1812 / 1.3254 | 1.2594 / 1.3255 | -10.88 / -4.98 | PASS |
-| 8 | 0.205 / 7.224 / 15.246 | 97.5813 / 96.4516 | 96.6608 / 96.0301 | +1.17 / +0.66 | PASS |
-| 9 | 0.064 / 4.111 / 11.557 | 3.3786 / 3.6244 | 3.6364 / 3.6193 | -6.78 / +0.47 | PASS |
-| 10 | 0.068 / 4.093 / 11.512 | 3.4351 / 3.7272 | 3.7155 / 3.7585 | -7.84 / -1.14 | PASS |
-| 11 | 0.070 / 4.242 / 11.537 | 6.1752 / 6.0888 | 6.1250 / 6.1151 | +1.42 / +0.16 | PASS |
-| 12 | 0.061 / 4.175 / 11.505 | 0.9072 / 1.0301 | 0.9614 / 1.0499 | -11.93 / -8.42 | PASS |
-| 13 | 0.156 / 4.031 / 13.320 | 65.0121 / 64.9567 | 64.8560 / 64.8705 | +0.09 / -0.02 | PASS |
+| 1 | 5.8545 / 15.1749 | 3.4417 / 3.4858 | -1.27% | -0.43% | pass |
+| 2 | 3.8833 / 10.6812 | 0.3760 / 0.3775 | -0.41% | +6.95% | not cleared |
+| 3 | 3.7992 / 10.7239 | 0.4868 / 0.4840 | +0.59% | -0.86% | pass |
+| 4 | 3.8777 / 10.8181 | 0.8783 / 0.9163 | -4.15% | -2.83% | pass |
+| 5 | 3.9867 / 11.2622 | 7.3172 / 7.3266 | -0.13% | +0.26% | pass |
+| 6 | 4.0844 / 34.5421 | 602.3126 / 602.8912 | -0.10% | -0.22% | pass |
+| 7 | 3.8599 / 10.6088 | 1.1450 / 1.2439 | -7.95% | -2.29% | pass |
+| 8 | 6.4040 / 14.3853 | 89.1208 / 87.6653 | +1.66% | +0.86% | pass |
+| 9 | 3.9051 / 11.0975 | 3.1891 / 3.3114 | -3.69% | +1.07% | pass |
+| 10 | 3.8315 / 10.7872 | 3.2809 / 3.3729 | -2.73% | +0.27% | pass |
+| 11 | 3.9294 / 10.7203 | 5.6147 / 5.6995 | -1.49% | -0.10% | pass |
+| 12 | 3.8505 / 10.6872 | 0.9197 / 0.9628 | -4.48% | -4.43% | pass |
+| 13 | 3.7070 / 12.4735 | 62.2191 / 62.0214 | +0.32% | +0.29% | pass |
 
-All shapes clear the measured gate. **Defaults are unchanged; balanced remains an explicit CLI choice.** One full session and the limited pilot are not a universal performance guarantee.
+Lower first-forward cost AND <=2% event/wall regression: **12/13 shapes**, [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].
+All **234** profile/input checks pass (three profiles, three seeds, both cold and paired workers).
+No model or CLI default is promoted by this single session.
+Single-session balanced median paired event speedup over original FP32: **3.402x**. Not pooled with the historical three-session 2.875x cohort.
 
-## Dispatch-cache control
+## Shape 2: targeted repeat (original miss retained)
 
-Shape 2 runs in fresh processes. Cache-hit and uncached controls share warmed compiler directories; only JSON dispatch hints persist. Graph hits recapture and compare against fresh eager output bitwise.
+One new T4 session, three fresh interpreter workers with shared compiler caches. Each uses three rotated paired rounds of 200 calls per variant, the original timing helpers, three accuracy seeds and output-ownership checks. This is not three independent GPU sessions, an isolated cold-start repeat, or a replacement for the original +6.95% wall result.
 
-| Run | First public forward s | Steady wall ms | Cache status |
-|---|---:|---:|---|
-| producer | 4.0890 | 0.7139 | stored-graph |
-| hit | 1.4812 | 0.6998 | hit-validated-graph |
-| warm_uncached | 1.5356 | 0.6941 | disabled |
+| Worker | Balanced / steady event ms | Balanced / steady wall ms | Event regression | Wall regression | Within 2% on both |
+|---:|---:|---:|---:|---:|---|
+| 1 | 0.2316 / 0.2328 | 0.2200 / 0.2572 | -0.51% | -14.47% | yes |
+| 2 | 0.2373 / 0.2373 | 0.2214 / 0.2217 | -0.02% | -0.12% | yes |
+| 3 | 0.2374 / 0.2291 | 0.2217 / 0.2219 | +3.63% | -0.09% | no |
 
-These are single unpaired workers: the table proves hit validation and retains the warmed uncached control, but does not establish a statistically reliable cache speedup.
+Fresh-worker steady comparisons within 2% on both metrics: **2/3**. All 27 additional profile/input checks pass. The original sweep's 12/13 gate and opt-in defaults remain unchanged.
 
-## GPU runtime contracts
 
-All recorded checks pass: owned output; changed input; mutable normal mask; mutable inference mask; weight change re-selects once; stable weights do not retune; sequential alternate stream.
-Sequential alternate-stream use is tested; concurrent calls on one mutable graph instance are not.
+## Dispatch cache and weight recovery
 
-## FFN fusion experiment
+Three fresh workers share warmed compiler directories; compare the cache hit with the uncached warm control, not with the initial compiler-cold producer. Only JSON hints persist; graph pointers and outputs do not.
 
-Shape 6 compares four compensated GEMM + exact-GELU + split epilogues against balanced. Each timed variant passes three original-reference checks. Promotion requires at least 3% event AND wall reduction and independent confirmation; no research backend is installed by this report.
+- Producer: stored-graph. Hit: hit-validated-graph.
+- First public forward: hit **1.3805 s**, warm uncached **1.4519 s**.
+- Ten-sample synchronized wall medians: hit **0.6973 ms**, control **0.6959 ms**.
+- This is one cache trial, not a universal startup/throughput guarantee.
 
-| Variant | Event ms | Wall ms |
-|---|---:|---:|
-| balanced | 647.9456 | 648.9020 |
-| m32k32 | 1254.6770 | 1257.1611 |
-| m64k32 | 1134.7774 | 1134.1378 |
-| m64k64 | 4631.5088 | 4632.8729 |
-| m128k32 | 1117.7051 | 1127.4760 |
+Real CUDA graph contracts: **PASS**, including one re-selection after weight change, mutable masks, owned outputs and sequential alternate-stream use. Concurrent use of one mutable graph instance is not claimed.
 
-Qualified candidates: **none**. Losing variants are retained as evidence; production remains unchanged.
+## Shape 6: GEMM + exact GELU + split fusion
 
-## Evidence and reproduction
+The research candidate removes the materialized FP32 FFN-in result. Production is unchanged. All retained variants pass three original-FP32 seeds and owned-output checks. Three rotated paired event/wall rounds include normal public-forward costs.
 
-- [Full sweep](improvements-full/next_improvements_full.json), [cache](improvements-full/next_improvements_cache.json), [contracts](improvements-full/next_improvements_contracts.json).
-- [Pilot](improvements-pilot/next_improvements_pilot.json) and [fusion](improvements-fusion/next_improvements_fusion.json).
-- Each folder retains the source-pinned cloud launcher, raw log, round-level JSON and SHA-256 receipt.
-- Build a fresh private T4 job with `scripts/build_clean_kaggle.py --ref c8fe1cf7807d5633a1b75773d2ab03461318cb22 --phase full --id ACCOUNT/UNIQUE_KERNEL --out .kaggle_upload/repeat-full`; push using `kaggle kernels push -p .kaggle_upload/repeat-full --accelerator NvidiaTeslaT4`.
-- Use `--phase pilot` for shapes 2/8/13 or `--phase fusion` for the isolated shape-6 experiment.
+| Variant | Event ms | Wall ms | Event change vs balanced | First gate |
+|---|---:|---:|---:|---|
+| balanced | 647.9456 | 648.9020 | +0.00% | retain baseline |
+| m32k32 | 1254.6770 | 1257.1611 | +93.64% | reject |
+| m64k32 | 1134.7774 | 1134.1378 | +75.13% | reject |
+| m64k64 | 4631.5088 | 4632.8729 | +614.80% | reject |
+| m128k32 | 1117.7051 | 1127.4760 | +72.50% | reject |
+
+Candidates clearing >=3% event AND wall reduction: **none**.
+Any winner still requires an independent confirmation before promotion.
+
+Fresh source-stamped baseline profiling (sum of device events across three forwards, not end-to-end fractions):
+- Attention: 39.03%.
+- GEMM: 35.82%.
+- LayerNorm/residual + split: 16.14%.
+- Activation + split: 9.00%.
+

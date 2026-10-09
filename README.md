@@ -13,6 +13,7 @@ submission is frozen on `submission` / `submitted-2026-09-01`; `main` is maintai
 
 [Quickstart](docs/QUICKSTART.md) · [Measured results](results/next/usability_summary.md) ·
 [Runtime validation](results/next/improvements_summary.md) ·
+[Independent runtime session](results/next/portfolio_runtime_summary.md) ·
 [Technical report](report/report.md) · [Full experiment history](docs/EXPERIMENT_HISTORY.md)
 
 ## What the measurements support
@@ -22,13 +23,17 @@ submission is frozen on `submission` / `submitted-2026-09-01`; `main` is maintai
 | **2.875× median speedup** | Three independent Tesla T4 sessions, 13 official FP32 shapes, same production-core hashes; paired original reference / optimized runs. Median paired ratio per shape over sessions, then unweighted median over shapes. Session medians are 3.546×, 2.801× and 2.875×. |
 | **117/117 FP32 accuracy checks pass** | Three input seeds per shape per session; maximum absolute error 9.83e-6. Official per-element gate: absolute error ≤ 0.002 **OR** relative error ≤ 0.02; non-finite outputs fail. |
 | **100,000-token shape runs within a 16 GB T4** | The original materialized-score reference would need about 20.5 TB. Extreme-shape timing uses native FP16, with separately stated equivalence and restricted FP32-prefix checks; it is not part of the FP32 speedup above. |
-| **Balanced passes all 13 runtime-validation gates** | Maintained revision `c8fe1cf`: 234/234 checks pass. Separate cold workers measure first public forwards at **4.0–8.0 s** for balanced versus **11.2–37.7 s** for steady; each shape passes the ≤2% paired event/wall regression gate. Imports, input/model setup and CUDA-context probes are excluded. |
+| **Balanced reduces setup, with session-dependent steady gates** | Two independent full T4 sessions at `c8fe1cf` each pass 234/234 accuracy checks. The balanced-full session clears **12/13** startup/steady gates (shape 2: **+6.95% wall**); portfolio-full clears **13/13**. A separate shape-2 repeat clears **2/3** worker comparisons (one: **+3.63% event**). All measurements and misses remain published; balanced stays opt-in. |
 
 These tables measure Linux / T4 / Torch 2.11.0+cu128 and exact recorded revisions.
 The three-session speedup belongs to the pre-cache/recovery production revision.
-The [new profile/cache/recovery report](results/next/improvements_summary.md)
-validates the maintained runtime separately; old throughput is not attributed to
-new code. The reference is the unchanged competition implementation, so the
+The [balanced-full report](results/next/improvements_summary.md) and separate
+[portfolio-full report](results/next/portfolio_runtime_summary.md) validate the
+maintained runtime; the latter does not erase the former's failed gate.
+Balanced/steady first public forwards span **3.7–6.4 / 10.6–34.5 s** and
+**4.0–8.0 / 11.2–37.7 s**, respectively. Imports, input/model setup and
+CUDA-context probes are excluded. Old throughput is not attributed to new code.
+The reference is the unchanged competition implementation, so the
 headline does not claim an advantage over every modern Transformer library.
 
 ## The engineering contribution
@@ -90,15 +95,16 @@ measurement files unchanged:
 python -m scripts.verify_next_evidence --maintained-runtime
 ```
 
-It checks full/pilot/fusion receipts and required files, artifact hashes,
-current core sources and the generated report. Missing receipts, unlisted or
+It checks both full-session collections, pilots, fusion and targeted-repeat
+receipts, artifact hashes, current core sources and all generated reports.
+It reports each session's gates separately. Missing receipts, unlisted or
 changed measurements, and stale reports fail with exit code 2 and file names.
 It verifies the recorded run; it does not rerun or certify a new GPU benchmark.
 
 ```bash
 python -m pip install pytest
 python -m pytest -q tests
-python -m scripts.summarize_improvements
+python -m scripts.summarize_portfolio_runtime --check
 ```
 
 CPU CI checks the reference math, runtime contracts, evidence integrity and
