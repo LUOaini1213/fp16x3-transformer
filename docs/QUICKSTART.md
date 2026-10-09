@@ -9,6 +9,7 @@ runtime; the maintained evidence uses Linux, a Tesla T4, and Torch 2.11.0+cu128.
 ```bash
 python -m scripts.run --check-only
 python -m scripts.run --mode quick --shape 2
+python -m scripts.run --mode balanced --device cuda --shape 2
 python -m scripts.run --mode steady --device cuda --shape 2
 ```
 
@@ -21,9 +22,10 @@ installation, downgrade, package upgrade, or login.
 | Profile | Compute | Startup work | Intended use |
 |---|---|---|---|
 | `quick` | FP32 GEMMs + memory-efficient SDPA | No Inductor, manual graphs, Triton launches, or native builds | Trying the model, short-lived inference |
+| `balanced` | Same compensated fp16x3 + SDPA as steady | No Inductor; Triton JIT and eager/manual-graph selection remain | Candidate for repeated inference with less setup; T4 performance pending |
 | `steady` | Shipped compensated fp16x3 + SDPA | First-forward compile/eager/manual-graph selection | Many repeated forwards |
 
-Quick mode is not FP16 autocast or a lower-accuracy shortcut. Both profiles keep
+Quick mode is not FP16 autocast or a lower-accuracy shortcut. All profiles keep
 FP32 input/output, exact-erf GELU, strict reference weight names and the original
 per-element correctness rule: absolute error ≤ 0.002 **OR** relative error ≤ 0.02;
 non-finite outputs fail. Every run checks three deterministic input seeds before
@@ -36,11 +38,62 @@ experiment settings to make its named profiles deterministic; use the original
 entry points for custom ablation switches. Profile selection belongs at process
 startup, not midway through an already imported, live model's execution.
 
+### Balanced mode: avoid rejected Inductor candidates
+
+`balanced` sets `T3_LINEAR=fp16x3`, `T3_COMPILE=0`, `T3_CUDAGRAPH=1`.
+It keeps steady's compensated arithmetic, FP32 attention, and static/first-call
+precision guards. Manual graphs remain an optional candidate on supported,
+all-valid small/medium shapes; they are not forced. Large or padded shapes and
+unsupported devices retain the existing eager/fallback policies. Triton kernels
+can still JIT-compile, and graph warmup/capture/selection still take time: this
+is not a zero-setup or no-compilation-at-all mode.
+
+The three historical T4 sessions selected no compiled path in their 39 final
+configurations. This motivates a separate profile, not a blanket claim that
+Inductor is slower on every environment. The CLI still defaults to `quick` and
+direct model imports retain the shipped automatic policy.
+
+Balanced is new and has no measured T4 startup/throughput result yet. The old
+quick/steady numbers and 2.875x aggregate must not be presented as balanced
+measurements. The exact earlier runner is preserved in
+`results/next/usability-quick/run.py.snapshot` and checked against its recorded
+source hash; it is historical evidence, not an executable entry point.
+
+### Optional safe dispatch hints
+
+```bash
+python -m scripts.run --mode balanced --device cuda --shape 2 --tune-cache results/local_dispatch.json
+```
+
+The file contains only JSON eager/graph choices, keyed by model/kernel source,
+GPU identity/capability, Torch/CUDA/Triton versions, dtype/strides/shape, model
+configuration and math/precision settings. Compiled functions, graph pointers,
+inputs and outputs are never serialized. A graph hit creates a new capture and
+must match fresh eager output bitwise; otherwise normal tuning/fallback applies.
+Current weight bounds, mask checks and output ownership remain active.
+
+The cache is opt-in, primarily for graph-eligible small/medium shapes. CPU runs
+do not write it; large shapes have no manual-graph candidate. Corrupt, foreign,
+unreadable or oversized files cause a safe miss and are not overwritten. It is
+a performance hint, not a guarantee of the best choice on a busy GPU. JSON
+reports the actual hit/miss/storage status. Use separate cache files for
+unrelated deployments; concurrent writers may lose a hint, never a tensor.
+
+Weight/norm changes now invalidate dispatch and permit one new eager/graph
+selection. Rejecting a slower graph in the normal tuner does not reset that
+selection, so stable weights cannot trigger a tuning loop.
+
+The older model source is also preserved in
+`results/next/usability-quick/user_optimized.py.snapshot`. New runtime changes
+need their own cloud source stamp; the historical 2.875x result is not a test
+of cache or recovery behavior.
+
 ## Sweep and inspect results
 
 ```bash
 python -m scripts.run --mode steady --device cuda --shapes 1-13 --output results/local_run.json
 python -m scripts.run --mode quick --device cuda --shapes 2,8,13 --output results/local_run_quick.json
+python -m scripts.run --mode balanced --device cuda --shapes 1-13 --output results/local_run_balanced.json
 ```
 
 Each shape runs in a fresh child process. JSON reports the effective profile,
@@ -49,6 +102,12 @@ forward, and steady-wall samples. First-forward timing excludes Python process
 startup/imports, model/input creation and the environment's CUDA context probe;
 it must not be called total application cold-start latency. Compiler caches can
 already be warm when using the same runtime for several shapes.
+
+Before promoting balanced, require all 13 shapes and all three correctness
+seeds to pass, measure lower first-public-forward cost, and confirm no more than
+2% steady event **and** wall regression against steady in rotated paired rounds
+on the same T4/software stack. The CLI sweep alone is unpaired correctness and
+timing evidence, not that adoption gate or a new speedup headline.
 
 Shape 6 is intentionally refused on CPU to avoid the large reference allocation.
 Shape 14 is not exposed here: the unchanged full FP32 reference needs about
@@ -60,7 +119,7 @@ explicitly restricted correctness protocol.
 The fallback/API dependency floor is `torch>=2.1`; this is not a claim that every
 version, OS, or GPU reaches the measured speed. Older Torch, missing Triton or
 unsupported GPUs may use the correct FP32 path without compensated tensor-core
-speed. `steady` results record which dispatch actually ran. Current CPU CI checks
+speed. All profile results record which dispatch actually ran. Current CPU CI checks
 correctness; T4 performance evidence is recorded separately.
 
 Use an existing compatible Colab/Kaggle T4 runtime without reinstalling Torch.
@@ -80,6 +139,13 @@ research experiment. The latter builds a separate experimental extension; it
 does not alter the production provider or defaults. Cloud kernels are private.
 Kaggle's two-concurrent-GPU-session limit requires waiting for a slot; a rejected
 push is not a queued task.
+
+The new `--phase pilot` (shapes 2/8/13) and `--phase full` (all 13) run paired
+quick/balanced/steady comparisons, separate cold workers, cache-hit controls and
+real graph/weight/mask/output contracts. `--phase fusion` profiles shape 6 and
+tests four experimental compensated GEMM + exact-GELU + split epilogues. The
+fusion must pass all three original accuracy gates and win at least 3% in both
+event and wall timing, then be independently confirmed before any promotion.
 
 The [generated usability report](../results/next/usability_summary.md) includes
 independent-session ranges, startup/steady trade-offs, and losing workspace

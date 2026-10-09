@@ -85,13 +85,28 @@ def test_usability_report_is_generated_from_complete_artifacts():
                 function(partial)
 
 
-def test_measured_usability_driver_sources_match_current_checkout():
+def test_historical_quick_driver_snapshot_matches_measured_source():
     import hashlib
     payload = json.loads(Path("results/next/usability-quick/next_usability_quick.json").read_text(encoding="utf-8"))
-    # A later workspace experiment does not execute/change the quick runner.
-    for name in ("scripts/run.py",):
-        actual = hashlib.sha256(Path(name).read_text(encoding="utf-8").encode()).hexdigest()
-        assert actual == payload["metadata"]["source_manifest"][name]
+    # The old audit measured two profiles. Preserve that exact runner rather
+    # than attributing its GPU numbers to the newly added balanced profile.
+    snapshot = Path("results/next/usability-quick/run.py.snapshot")
+    actual = hashlib.sha256(snapshot.read_text(encoding="utf-8").encode()).hexdigest()
+    assert actual == payload["metadata"]["source_manifest"]["scripts/run.py"]
+    from scripts.run import COMMON, PROFILES
+    for row in payload["results"]:
+        assert set(row["profiles"]) == {"quick", "steady"}
+        for name, result in row["profiles"].items():
+            assert result["profile"] == {**COMMON, **PROFILES[name]}
+
+
+def test_historical_usability_core_is_preserved_by_source_or_snapshot():
+    import hashlib
+    payload = json.loads(Path("results/next/usability-quick/next_usability_quick.json").read_text(encoding="utf-8"))
+    for name, measured in core_manifest(payload).items():
+        source = Path("results/next/usability-quick/user_optimized.py.snapshot") if name == "user_optimized.py" else Path(name)
+        actual = hashlib.sha256(source.read_text(encoding="utf-8").encode()).hexdigest()
+        assert actual == measured
 
 
 def test_actual_workspace_driver_is_the_measured_current_source():

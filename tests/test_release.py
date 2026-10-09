@@ -17,6 +17,15 @@ def test_clean_launcher_pins_git_and_uses_normal_imports():
     assert "pip" not in source and "class UserOptimizedTransformer" not in source
 
 
+@pytest.mark.parametrize("phase", ["pilot", "full", "fusion"])
+def test_improvement_launcher_uses_source_pinned_normal_imports(phase):
+    source = launcher("b" * 40, phase)
+    ast.parse(source)
+    assert "scripts.benchmark_improvements" in source
+    assert "--detach" in source and "pip" not in source
+    ast.parse(Path("scripts/benchmark_improvements.py").read_text(encoding="utf-8"))
+
+
 @pytest.mark.parametrize("revision,phase", [("HEAD", "fp32"), ("a" * 40, "oops")])
 def test_clean_launcher_rejects_unpinned_inputs(revision, phase):
     with pytest.raises(ValueError):

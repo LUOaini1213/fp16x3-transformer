@@ -33,9 +33,6 @@ Ablation / robustness toggles via environment variables (see README):
                                                   once, on the real input, keep the winner)
   T3_CUDAGRAPH  = 1 | 0                          (default 1; the eager path captured into a
                                                   CUDA graph is a third autotune candidate)
-  T3_TUNE_CACHE = <JSON path>                    (opt-in eager/graph hints; keyed by source,
-                                                  environment and layout; fresh capture and
-                                                  validation, never cached model outputs)
   T3_COMPILE_MODE = default | reduce-overhead | max-autotune  (override)
   T3_FP32_FFN   = 1 | 0                          (default 0; force FFN+LN fp32)
   T3_CHUNK_BS   = <int>                          (override batch chunk size)
@@ -142,10 +139,6 @@ class UserOptimizedTransformer(BaselineTransformer):
         self._compile_ok = self._compile_policy != "off"
         self._tuned = False          # T3_COMPILE=auto: decided once, first forward
         self._tune_result = None     # (eager_ms, compiled_ms[, graph_ms]) when it ran
-        self._tune_cache_path = os.environ.get("T3_TUNE_CACHE") or None
-        self._tune_cache_attempted = False
-        self._tune_cache_context = None
-        self._tune_cache_status = "disabled" if self._tune_cache_path is None else "not-used"
         # Manual CUDA-graph capture of the *eager* path. For launch-bound shapes
         # the remaining cost is CPU launch overhead; a captured graph replays the
         # same kernels with none of it, and without the Inductor guard/dispatch
@@ -378,7 +371,7 @@ class UserOptimizedTransformer(BaselineTransformer):
                                else torch.cat([m.bias for m in parts], dim=0))
             attn._qkv_key = key
             # A captured graph replays the old tensors by address.
-            self._invalidate_dispatch()
+            self._drop_graph()
 
     def _x3_static_bound(self) -> float:
         """Largest value any split activation can take, from the weights alone.
@@ -412,7 +405,7 @@ class UserOptimizedTransformer(BaselineTransformer):
         print(f"[user_optimized] fp16x3 GEMMs off: {why}; using fp32 SGEMM")
         self._x3_on = False
         self._linear_policy = "fp32"
-        self._invalidate_dispatch()
+        self._drop_graph()
 
     def _refresh_x3(self) -> None:
         """(Re)build the split fp16 weights for the fp16x3 path if they changed.
@@ -455,7 +448,7 @@ class UserOptimizedTransformer(BaselineTransformer):
                     lin._x3_key = key
                     changed = True
         if changed:
-            self._invalidate_dispatch()
+            self._drop_graph()
             self._x3_checked = False
             if self._x3_guard != "off":
                 self._x3_bound = self._x3_static_bound()
@@ -721,21 +714,6 @@ class UserOptimizedTransformer(BaselineTransformer):
             return self._check_x3_output(
                 out, lambda: self._forward_padded(x, valid_token_mask, causal, ad))
 
-        def _invoke(fn, xin, m, av):
-            if ad is not None:
-                with torch.autocast("cuda", dtype=ad):
-                    return fn(xin, m, causal, av)
-            return fn(xin, m, causal, av)
-
-        # Hints only affect dispatch, after current weights/precision guards
-        # were refreshed. They never bypass mask or mutable-parameter checks.
-        if (not self._tuned and not self._tune_cache_attempted and self._tune_cache_path
-                and x.device.type == "cuda" and all_valid
-                and b * x.shape[1] <= 16384 and self._cudagraph
-                and self._compile_policy in ("off", "auto")
-                and (self._chunk_bs is None or self._chunk_bs >= b)):
-            self._try_cached_dispatch(x, valid_token_mask, all_valid, _invoke)
-
         # Lazily build the compiled callable on the first CUDA forward.
         if (self._compiled is None and self._compile_ok and self._can_compile):
             try:
@@ -766,6 +744,12 @@ class UserOptimizedTransformer(BaselineTransformer):
             except Exception:
                 self._compile_ok = False
                 self._compiled = None
+
+        def _invoke(fn, xin, m, av):
+            if ad is not None:
+                with torch.autocast("cuda", dtype=ad):
+                    return fn(xin, m, causal, av)
+            return fn(xin, m, causal, av)
 
         # First-forward autotune (T3_COMPILE=auto). The stage ablation showed
         # compilation *losing* on the launch-bound shape -- 2.29x eager against
@@ -836,60 +820,6 @@ class UserOptimizedTransformer(BaselineTransformer):
         self._g_x = self._g_m = self._g_out = None
         self._g_key = None
 
-    def _invalidate_dispatch(self):
-        """Retune once after rebuilt weights, not after ordinary graph rejection."""
-        self._drop_graph()
-        self._tuned = False
-        self._tune_result = None
-        self._tune_cache_attempted = False
-        self._tune_cache_context = None
-        self._tune_cache_status = "disabled" if self._tune_cache_path is None else "invalidated"
-
-    def _try_cached_dispatch(self, x, mask, all_valid, invoke):
-        self._tune_cache_attempted = True
-        try:
-            from kernels.dispatch_cache import context, lookup
-            self._tune_cache_context = context(self, x, all_valid)
-            choice = lookup(self._tune_cache_path, self._tune_cache_context)
-            self._tune_cache_status = "miss"
-            if choice is None:
-                return
-            with torch.no_grad():
-                reference = invoke(self._run_full, x, mask, all_valid)
-                valid = bool(torch.isfinite(reference).all())
-                if choice == "graph":
-                    if not self._capture_graph(x, mask, invoke):
-                        self._tune_cache_status = "rejected"
-                        return
-                    candidate = self._replay(x, mask)
-                    # Same eager kernels: require bitwise equality, not a new
-                    # approximate accuracy shortcut against an internal oracle.
-                    valid = valid and torch.equal(reference, candidate)
-                    del candidate
-                del reference
-            if not valid:
-                self._drop_graph()
-                self._tune_cache_status = "rejected"
-                return
-            self._compiled = None
-            self._compile_ok = False
-            self._graph_output = False
-            self._tuned = True
-            self._tune_cache_status = "hit-validated-" + choice
-        except Exception:
-            self._drop_graph()
-            self._tune_cache_status = "unavailable"
-
-    def _remember_dispatch(self, choice):
-        if self._tune_cache_context is None or not self._tune_cache_path:
-            return
-        try:
-            from kernels.dispatch_cache import remember
-            stored = remember(self._tune_cache_path, self._tune_cache_context, choice)
-            self._tune_cache_status = "stored-" + choice if stored else "not-stored"
-        except Exception:
-            self._tune_cache_status = "unavailable"
-
     def _pick_faster(self, x, mask, all_valid, invoke, warm=6, iters=7):
         """Keep the fastest of eager / compiled / captured-eager on this input.
 
@@ -950,14 +880,12 @@ class UserOptimizedTransformer(BaselineTransformer):
             self._compiled = None
             self._compile_ok = False
             self._graph_output = False
-            self._remember_dispatch("graph")
         else:
             self._drop_graph()
             if eager_ms < compiled_ms:
                 self._compiled = None
                 self._compile_ok = False
                 self._graph_output = False
-                self._remember_dispatch("eager")
 
     def _capture_graph(self, x, mask, invoke):
         """Record the eager forward into a CUDA graph over static input copies.

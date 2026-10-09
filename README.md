@@ -22,6 +22,10 @@ shapes.
 
 ## Current maintained version: independent reproduction and quick startup (2026-10-09)
 
+The numerical tables in this section describe the pre-cache/recovery revision,
+preserved by exact Git commits and source snapshots. New balanced/cache/recovery
+code is being validated separately; no old speedup is attributed to that revision.
+
 Two additional independent T4 sessions reproduce the same nine production-core
 hashes as the first clean audit. Their median shape speedups are **2.801×** and
 **2.875×**, versus **3.546×** in the original session. Taking the median paired
@@ -42,6 +46,11 @@ An isolated wide-QKV workspace search tests 0/1/4/16/32 MiB budgets. All 21
 whole-model checks pass, but no candidate clears the predeclared 5% event **and**
 wall improvement over existing opt-in Lt; no backend is promoted.
 [Generated combined evidence](results/next/usability_summary.md).
+
+An additional opt-in `balanced` CLI profile now keeps fp16x3 and manual CUDA
+graph selection while skipping Inductor. It does not change the model defaults
+or the old measurements; balanced T4 performance remains unmeasured. It still
+incurs Triton JIT and graph setup costs where applicable.
 
 ### Original single-session clean audit
 
@@ -159,6 +168,7 @@ upgrades Torch/CUDA and ignores inherited experimental `T3_*` switches.
 ```bash
 python -m scripts.run --check-only
 python -m scripts.run --mode quick --shape 2
+python -m scripts.run --mode balanced --device cuda --shape 2
 python -m scripts.run --mode steady --device cuda --shape 2
 python -m scripts.run --mode steady --device cuda --shapes 1-13 --output results/local_run.json
 ```
@@ -169,6 +179,15 @@ use and short-lived inference, **not the 3.546× throughput claim**. `steady`
 uses the unchanged shipped fp16x3 + automatic compile/graph policy; its setup
 cost can be worthwhile for many repeated forwards. These are explicit CLI
 profiles; `submission.py` and direct model imports retain their existing defaults.
+`balanced` keeps steady's compensated arithmetic and guards but skips Inductor,
+retaining eager/manual-graph selection. Its T4 startup and steady performance
+are pending validation, so no existing speedup is attributed to it.
+
+An optional `--tune-cache results/local_dispatch.json` stores environment/source/
+layout-keyed eager/graph hints. It never stores outputs or graph pointers, and a
+graph hint is recaptured and compared bitwise with eager before use. Changed
+weights trigger one new selection without repeatedly retrying a rejected graph.
+The FFN GEMM/GELU/split fusion is research-only and does not replace production.
 
 Without a CUDA GPU, the command defaults to CPU and labels the result as a
 correctness check, not GPU speed evidence. `--device cuda` instead fails with

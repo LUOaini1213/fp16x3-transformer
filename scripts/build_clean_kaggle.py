@@ -11,9 +11,10 @@ REPOSITORY = "https://github.com/LUOaini1213/fp16x3-transformer.git"
 def launcher(revision, phase):
     if len(revision) != 40 or any(c not in "0123456789abcdef" for c in revision):
         raise ValueError("an exact lowercase Git commit SHA is required")
-    if phase not in ("fp32", "flash", "attention", "quick", "workspace"):
+    if phase not in ("fp32", "flash", "attention", "quick", "workspace", "pilot", "full", "fusion"):
         raise ValueError("unsupported release phase")
-    module = "scripts.benchmark_usability" if phase in ("quick", "workspace") else "scripts.benchmark_release"
+    module = ("scripts.benchmark_improvements" if phase in ("pilot", "full", "fusion")
+              else "scripts.benchmark_usability" if phase in ("quick", "workspace") else "scripts.benchmark_release")
     return f'''# Generated launcher: no model code is inlined.
 import os, pathlib, subprocess, sys, tempfile
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
@@ -41,7 +42,7 @@ subprocess.run([sys.executable, "-m", {module!r}, "--phase", {phase!r},
 def main():
     ap = argparse.ArgumentParser(__doc__)
     ap.add_argument("--ref", default="HEAD")
-    ap.add_argument("--phase", choices=("fp32", "flash", "attention", "quick", "workspace"), required=True)
+    ap.add_argument("--phase", choices=("fp32", "flash", "attention", "quick", "workspace", "pilot", "full", "fusion"), required=True)
     ap.add_argument("--id", required=True)
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()

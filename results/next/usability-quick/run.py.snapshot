@@ -1,7 +1,6 @@
-"""One-command, accuracy-checked quick/balanced/steady inference (no automatic installs).
+"""One-command, accuracy-checked quick/steady inference (no automatic installs).
 
 python -m scripts.run --mode quick --shape 2
-python -m scripts.run --mode balanced --device cuda --shapes 1-13
 python -m scripts.run --mode steady --device cuda --shapes 1-13
 python -m scripts.run --check-only
 """
@@ -23,10 +22,6 @@ PROFILES = {
     # No Inductor, CUDA graph capture, native extension build, or Triton kernels.
     # FP32 GEMMs deliberately trade steady throughput for cheap first use.
     "quick": {"T3_COMPILE": "0", "T3_CUDAGRAPH": "0", "T3_LINEAR": "fp32"},
-    # Same compensated arithmetic as steady, without trying Inductor first.
-    # Triton JIT and eager/manual-graph selection still have a setup cost;
-    # graphs are candidates, not forced, and unsupported devices may fall back.
-    "balanced": {"T3_COMPILE": "0", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"},
     "steady": {"T3_COMPILE": "auto", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"},
 }
 COMMON = {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch",
@@ -35,7 +30,7 @@ COMMON = {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch",
           "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1"}
 
 
-def configure(mode, tune_cache=None):
+def configure(mode):
     """Explicit CLI profiles ignore inherited experimental T3_* toggles."""
     if mode not in PROFILES:
         raise ValueError(f"unknown mode: {mode}")
@@ -43,10 +38,7 @@ def configure(mode, tune_cache=None):
         if name.startswith("T3_"):
             del os.environ[name]
     os.environ.update(COMMON, **PROFILES[mode])
-    if tune_cache is not None:
-        os.environ["T3_TUNE_CACHE"] = str(Path(tune_cache).resolve())
-    return {**COMMON, **PROFILES[mode],
-            **({"T3_TUNE_CACHE": os.environ["T3_TUNE_CACHE"]} if tune_cache is not None else {})}
+    return {**COMMON, **PROFILES[mode]}
 
 
 def parse_shapes(value):
@@ -94,7 +86,7 @@ def environment_report(requested="auto"):
             report["fp16_to_fp32_mm"] = False
             report["warnings"].append(f"Compensated GEMM unavailable; model can fall back: {type(exc).__name__}")
         if not report["triton_installed"]:
-            report["warnings"].append("Triton is absent; accelerated fp16x3 kernels may fall back.")
+            report["warnings"].append("Triton is absent; accelerated steady kernels may fall back.")
         if not str(torch.__version__).startswith("2.11."):
             report["warnings"].append("Not the pinned T4 validation version; this run validates its own outputs only.")
     else:
@@ -107,8 +99,8 @@ def sync(torch, device):
         torch.cuda.synchronize(device)
 
 
-def run_case(shape, mode, device_name, repeats=10, tune_cache=None):
-    profile = configure(mode, tune_cache)  # before importing import-time experimental flags
+def run_case(shape, mode, device_name, repeats=10):
+    profile = configure(mode)  # before importing import-time experimental flags
     import torch
     import torch_transformer_benchmark as official
     from scripts.benchmark_release import config
@@ -165,7 +157,6 @@ def run_case(shape, mode, device_name, repeats=10, tune_cache=None):
             "failed": 0, "max_abs": max(c["max_abs"] for c in checks)}, "accuracy_trials": checks,
             "dispatch": {"x3": model._x3_on, "compiled": model._compiled is not None,
                          "graph": model._graph is not None},
-            "tune_cache": {"enabled": tune_cache is not None, "status": model._tune_cache_status},
             "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}
 
 
@@ -183,14 +174,13 @@ def main():
     group.add_argument("--shapes", help="fresh worker per shape, e.g. 1-13 or 2,8")
     ap.add_argument("--check-only", action="store_true")
     ap.add_argument("--repeats", type=int, default=10)
-    ap.add_argument("--tune-cache", type=Path, help="opt-in JSON dispatch hints; no cached outputs or graph pointers")
     ap.add_argument("--output", type=Path, default=Path("results/local_run.json"))
     ap.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args()
     try:
         if args.repeats < 1:
             raise ValueError("--repeats must be positive")
-        configure(args.mode, args.tune_cache)
+        configure(args.mode)
         env = environment_report(args.device)
         print(json.dumps(env, indent=2), flush=True)
         if args.check_only:
@@ -200,16 +190,13 @@ def main():
             rows = []
             for shape in parse_shapes(args.shapes):
                 child = args.output.with_name(args.output.stem + f"_shape{shape}.json")
-                command = [sys.executable, "-m", "scripts.run", "--worker", "--mode", args.mode,
+                subprocess.run([sys.executable, "-m", "scripts.run", "--worker", "--mode", args.mode,
                                 "--device", env["device"], "--shape", str(shape), "--repeats", str(args.repeats),
-                                "--output", str(child)]
-                if args.tune_cache is not None:
-                    command += ["--tune-cache", str(args.tune_cache.resolve())]
-                subprocess.run(command, check=True)
+                                "--output", str(child)], check=True)
                 rows += json.loads(child.read_text(encoding="utf-8"))["results"]
                 write_json(args.output, {"environment": env, "results": rows})
         else:
-            row = run_case(args.shape, args.mode, env["device"], args.repeats, args.tune_cache)
+            row = run_case(args.shape, args.mode, env["device"], args.repeats)
             write_json(args.output, {"environment": env, "results": [row]})
             print(json.dumps(row, indent=2), flush=True)
         return 0
