@@ -4,6 +4,33 @@ Run commands from the repository root. No NVIDIA GPU is needed for authoring
 or the small CPU correctness check. GPU measurements need a compatible CUDA
 runtime; the maintained evidence uses Linux, a Tesla T4, and Torch 2.11.0+cu128.
 
+## Audit the committed evidence first
+
+This offline command uses only Python's standard library. It works before
+installing Torch, requires no GPU or model downloads, and does not modify the
+measurements or regenerate their receipts/report:
+
+```bash
+python -m scripts.verify_next_evidence --maintained-runtime
+```
+
+Success reports 216 artifact hashes, 11 current core-source hashes, 234 recorded
+profile/input checks and 13/13 balanced gates. It requires the full, pilot and
+fusion receipts, every required JSON/launcher file and the raw execution logs;
+all measured JSON/log files in those folders must be listed in their receipts.
+It also verifies the current sources and the generated runtime report.
+
+A partial checkout cannot pass by silently skipping its missing receipt. Missing
+files/entries, altered bytes, different current core sources and stale reports
+produce an actionable error and exit code 2. Restore the original committed
+files or use the measured revision; recalculating a receipt is not a substitute
+for the missing GPU run. This audits published evidence rather than executing
+new inference or establishing performance on your machine.
+
+The original optional check remains available for historical subsets:
+`python -m scripts.verify_next_evidence --current-core PATH_TO_RESULT_JSON`.
+Use `--maintained-runtime` to require the complete maintained-profile evidence.
+
 ## Choose a runtime profile
 
 ```bash

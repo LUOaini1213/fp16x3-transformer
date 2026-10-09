@@ -82,6 +82,19 @@ establish Linux/CUDA performance.
 
 ## Verify and reproduce
 
+Check the committed GPU evidence before installing Torch. This audit uses only
+Python's standard library, requires no GPU or model download, and leaves the
+measurement files unchanged:
+
+```bash
+python -m scripts.verify_next_evidence --maintained-runtime
+```
+
+It checks full/pilot/fusion receipts and required files, artifact hashes,
+current core sources and the generated report. Missing receipts, unlisted or
+changed measurements, and stale reports fail with exit code 2 and file names.
+It verifies the recorded run; it does not rerun or certify a new GPU benchmark.
+
 ```bash
 python -m pip install pytest
 python -m pytest -q tests
