@@ -380,3 +380,25 @@ padded smoke cases. All recorded final core hashes match the implementation.
 Exact methods, raw logs, repaired/invalid trials and primary-source links are in
 [`docs/NEXT_OPTIMIZATION_AUDIT.md`](../docs/NEXT_OPTIMIZATION_AUDIT.md). Earlier
 reported results and the frozen submission are retained unchanged.
+
+## 11. Clean repository release verification (2026-10-09)
+
+A fresh T4 session clones an exact GitHub commit and normally imports the real
+benchmark/model/kernel modules. The current FP32 baseline/default sweep passes
+all 13 shapes on three inputs each, maximum absolute error 9.8348e-6. Three
+rotated steady rounds give an unweighted median shape speedup of **3.546×**.
+First public-forward costs and cold/steady memory peaks are separate; memory
+workers isolate one model per process rather than retaining comparison models.
+These results are not pooled with the September headline.
+
+The normal-import wide-QKV Lt gate confirms **91.77 → 86.12 ms** event latency,
+**91.97 → 86.42 ms** synchronized wall, zero original-reference failures and a
+36.80-second first call. Its dependency/setup cost and narrow geometry keep it
+opt-in. Seven FP32 attention layout/dispatch candidates all pass accuracy but
+lose end-to-end: current 66.53 ms, alternatives 67.48–70.94 ms in the paired
+eager experiment. No new layout becomes a default.
+
+Exact protocols and failed-instrumentation repairs are documented in
+[`docs/RELEASE_VERIFICATION.md`](../docs/RELEASE_VERIFICATION.md). JSON, exact
+launchers, raw normalized logs and independent file hashes are retained in
+`results/next/release-fp32/` and `results/next/release-attention/`.

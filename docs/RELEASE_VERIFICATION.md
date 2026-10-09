@@ -60,6 +60,33 @@ installer builds upstream revision
 Upstream has no top-level LICENSE at that pin; no upstream source or binary is
 vendored into this public repository.
 
+## Completed FP32 and attention gates
+
+The FP32 session measures commit `62bb64c05ce55c27cbe10d034087939c9f1d7fed`:
+all 13 shapes pass three original-reference comparisons, maximum absolute error
+9.8347664e-6, unweighted median shape speedup **3.546×**. Each variant's memory
+worker is a separate process. The opt-in Lt shape-8 event pair is
+91.7719 → 86.1248 ms (6.15% reduction); synchronized wall latency is
+91.9687 → 86.4221 ms. Its first public call costs 36.80 seconds.
+[Source-stamped aggregate](../results/next/release-fp32/next_release_fp32.json).
+
+The attention session measures commit `23d070f64df8c293e27de87a83dea4b829c51e39`.
+All seven layouts pass three FP32 end-to-end comparisons. Existing packed-QKV
+SDPA records 66.5319 ms event / 66.8282 ms wall. Every alternative loses:
+67.4755–70.9448 ms event, 67.8371–71.2319 ms wall. Consequently no layout is
+accepted and no normal-dispatch promotion test is needed. These eager paired
+numbers are not substituted for the default-dispatch FP32 table.
+[Full candidate evidence](../results/next/release-attention/next_release_attention.json).
+
+Two harness mistakes are retained transparently as failed runs, not benchmark
+evidence: a same-named package function shadowed the Turing submodule's counter,
+and constructing candidate parameters inside an outer inference-mode context
+removed their version counters. Explicit module lookup and normal-context model
+construction repair the instrumentation; regression tests cover both. The model
+and all nine core-source hashes remain unchanged. Failure logs are in
+`results/next/release-flash-import-failure/` and
+`results/next/release-attention-construction-failure/`.
+
 `scripts/import_next_results.py` retains exact launcher snapshots, result JSON,
 normalized logs and SHA-256 manifests. `scripts/summarize_release.py` produces
 the table only after all thirteen shapes and all three long-sequence rounds

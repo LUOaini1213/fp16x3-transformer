@@ -25,6 +25,14 @@ losing variants and repaired experiment mistakes remain in
 `docs/NEXT_OPTIMIZATION_AUDIT.md` and `results/next/`. AI-generated proposals
 are not treated as benchmark results.
 
+The clean release audit additionally clones exact GitHub commits on fresh T4
+sessions and imports the real modules, separates first-call cost from paired
+steady timing, measures each variant's memory in an isolated process, and tests
+seven FP32 attention layouts end-to-end. Two harness mistakes exposed by normal
+imports/construction were repaired with regression tests; their failure logs
+remain archived. The original benchmark and production core are unchanged.
+See `docs/RELEASE_VERIFICATION.md` for this separate protocol.
+
 1. **Workload analysis.** The AI extracted the exact grading contract from the
    harness code (tolerances `atol=0.002`/`rtol=0.02`, per-element all-pass rule,
    `strict=True` weight copy, fp32 softmax reference, `padding_ratio=0` hot path)

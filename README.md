@@ -8,7 +8,7 @@
 A Transformer layer whose GEMMs run on fp16 tensor cores at fp32-class accuracy —
 each operand split into an fp16 hi + lo pair by fused Triton kernels, one cuBLAS
 GEMM with K tripled — plus memory-efficient attention and a per-shape autotune.
-2.83x median over the fp32 reference on a free Tesla T4 at ~1e-6 error, and the
+Historical three-session result: 2.83x median over the fp32 reference on a free Tesla T4 at ~1e-6 error, and the
 100,000-token shape running in 14 GB where the reference would need 20.5 TB.
 
 Built for **TikTok TechJam 2026, Track 3 — "Implement a GPU Kernel for a Transformer
@@ -20,7 +20,30 @@ while keeping the output numerically identical to the reference implementation
 (per-element `abs_err ≤ 0.002` **OR** `rel_err ≤ 0.02`), across 14 official test
 shapes.
 
-## Read this first
+## Current maintained version: clean GitHub/T4 audit (2026-10-09)
+
+Fresh sessions clone exact Git commits and use normal repository imports, not
+inlined model snapshots. The current FP32 sweep passes **all 13 shapes × three
+inputs**, maximum absolute error **9.83e-6**, with an unweighted median shape
+speedup of **3.546×** over the unchanged original FP32 baseline. This is one
+paired session with three rotated rounds, not the September three-session
+headline. First-forward costs and isolated cold/steady memory peaks are retained.
+[Complete FP32 evidence](results/next/release-fp32/next_release_fp32.json).
+
+Shape 8's opt-in cuBLASLt provider executes through normal imports and records
+**91.77 → 86.12 ms** event latency (-6.15%), **91.97 → 86.42 ms** wall latency.
+Its first call costs **36.80 s**, including native setup/search and model planning.
+The narrow workload scope and toolchain dependency keep it opt-in.
+
+Seven FP32 attention layout/dispatch candidates are checked on shape 13. All
+pass accuracy, but none beats existing end-to-end SDPA: current **66.53 ms**,
+alternatives **67.48–70.94 ms** in the paired eager comparison. The default is
+unchanged. [Candidate evidence](results/next/release-attention/next_release_attention.json).
+
+Methods, exact reproduction and dependency decisions:
+[clean release verification](docs/RELEASE_VERIFICATION.md).
+
+## September submission and historical summary
 
 Five results, each traceable to a committed kernel log under `results/`:
 
