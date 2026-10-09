@@ -418,3 +418,33 @@ autotuned-native-SDPA comparison or a separate CUDA-event series.
 
 The [unified generated table](../results/next/clean_release_summary.md) includes
 all successful release results and is checked against the source JSON by tests.
+
+## 12. Reproducibility, startup cost and focused workspace audit
+
+Two additional normal-import T4 sessions at exact commit `38e191d9ba1778b7f837b790f79abe941ee98c66`
+match all nine production-core hashes. Session median speedups are
+3.546× / 2.801× / 2.875×. The median of per-shape paired ratios over all three,
+then the median over shapes, is **2.875×**. All **117** original-FP32 checks pass,
+max error 9.8348e-6. Observed session ranges are published rather than using the
+best session as a reproducibility claim. Historical Torch 2.10 results are not
+pooled with this Torch 2.11 protocol.
+
+The new explicit `quick` CLI profile uses eager FP32 GEMMs + SDPA with no
+Inductor/manual-graph/native-build/Triton startup; `steady` retains the shipped
+dispatch. Each verifies strict weight compatibility and three deterministic
+inputs. Fresh-child profile measurements separate first public forward from
+steady-wall latency and estimate how many forwards amortize setup. Process
+imports and environment CUDA initialization are excluded from first-forward
+timing. The one-command runner never upgrades or installs dependencies.
+All **78** profile/input comparisons pass; first public forwards are
+**0.054–0.826 s** for quick versus **6.75–30.23 s** for steady. Shape 8's
+0.197/11.85-second first calls and 122.14/82.35-ms steady wall imply an
+approximate 294-call setup crossover under this protocol.
+
+A targeted wide-QKV experiment tries five workspace budgets and includes
+scratch allocation and public-forward overhead. All 21 input/variant checks
+pass; the best research candidate is only 2.57% lower event latency than the
+existing opt-in Lt, below the predeclared 5%-on-both-metrics acceptance gate.
+No workspace provider is promoted. Core files and the frozen submission remain
+unchanged. See the [generated combined report](../results/next/usability_summary.md)
+and [methods](../docs/RELEASE_VERIFICATION.md).

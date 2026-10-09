@@ -171,3 +171,81 @@ the full score matrix but does not change the quadratic attention arithmetic.
 The version-matched [CUDA implementation](https://github.com/pytorch/pytorch/blob/v2.11.0/aten/src/ATen/native/transformers/cuda/attention.cu)
 passes explicit batch/token/head strides to its memory-efficient kernel; making
 packed QKV contiguous is therefore a measured candidate, not a required fix.
+
+## Independent repeats and explicit startup profiles
+
+Two further private T4 jobs, `wenjiluo/track3-release-repeat-a` and
+`wenjiluo/track3-release-repeat-b`, clone exact commit
+`38e191d9ba1778b7f837b790f79abe941ee98c66`. They use the same normal-import
+FP32 protocol and the same nine production-core hashes as the first audit.
+All 13 shapes and all isolated memory workers finish in each session. The
+original session and repeats have distinct fresh checkout paths/caches.
+
+The respective session median shape speedups are **3.546× / 2.801× / 2.875×**.
+The combined summary takes each shape's median paired ratio over those three
+sessions, then the unweighted median across shapes: **2.875×**. All **117**
+original-FP32 input checks pass (maximum error 9.8347664e-6). Three-session
+ranges are retained. The original 3.546× remains a valid single-session result,
+not a stability promise; no code regression or new optimization is inferred
+from the differing aggregate alone. These are not pooled with September's
+different Torch/protocol.
+
+`python -m scripts.run` adds `quick` (eager FP32 + SDPA) and `steady` (unchanged
+shipped fp16x3 dispatch) profiles, an environment probe, strict weight copy and
+three original-input checks. CPU timings are labeled non-GPU evidence and an
+explicit CUDA request fails when no CUDA GPU is available. No package installs
+or source modifications occur. See [Quickstart](QUICKSTART.md).
+
+The source-pinned usability job at
+`b335fb64a0fc76ad4105abf58e23589ef8af80ae` compares profiles with a fresh child
+per mode/shape, first public-forward cost and ten synchronized wall samples.
+Import/model/input setup and environment CUDA probes are excluded from first
+forward; compiler caches are shared only within that cloud job. Approximate
+amortization crossovers are computed from these costs, not claimed as measured
+deployment SLAs. Its generated results remain a separate protocol from the
+three-session paired throughput audit.
+
+All **78** profile/input checks pass (maximum error 9.8347664e-6). Quick first
+public forwards span **0.054–0.826 s**, versus steady **6.75–30.23 s** in that
+job. For shape 8, quick/steady first cost is **0.197 / 11.85 s**, steady wall
+is **122.14 / 82.35 ms**; estimated setup crossover is about **294 calls**.
+This is a startup/throughput trade, not faster steady compute. The exact samples
+and all thirteen crossover estimates are in the generated report.
+
+The same pinned revision's separate shape-8 workspace job keeps production
+files unchanged. It derives an experimental CPP module with an explicit
+0/1/4/16/32 MiB budget in each plan key and scratch allocated per invocation
+on the current stream, preventing a shared-scratch race across streams. Search
+and builds occur before capture; allocation/copy/ownership costs are included
+in the whole public-forward timing. All **21** checks pass. Budget winners
+select zero-workspace algorithms in this session; larger allocations buy no
+corresponding selected algorithm benefit. Experimental build takes **32.59 s**.
+Best experimental event timing is **80.77 ms**, versus existing opt-in Lt
+**82.90 ms** (2.57%); synchronized wall is **80.67 / 83.16 ms**. No candidate
+clears at least 5% reduction on both metrics, so there is no promotion or
+additional confirmation campaign. Default Torch and existing narrow Lt remain
+unchanged. Host-extension counters include capture but do not count graph
+replays; incremental shared-process memory is not isolated deployment memory.
+
+[Generated evidence and exact source links](../results/next/usability_summary.md)
+retain all independent sessions and all losing workspace variants. Primary
+workspace API reference: [cuBLASLt workspace preferences](https://docs.nvidia.com/cuda/archive/12.8.1/cublas/index.html).
+
+```bash
+python -m scripts.summarize_usability \
+  --sessions results/next/release-fp32/next_release_fp32.json \
+    results/next/release-repeat-a/next_release_fp32.json \
+    results/next/release-repeat-b/next_release_fp32.json \
+  --quick results/next/usability-quick/next_usability_quick.json \
+  --workspace results/next/usability-workspace/next_usability_workspace.json \
+  --output results/next/usability_summary.md
+python scripts/verify_next_evidence.py \
+  --current-core results/next/usability-quick/next_usability_quick.json
+python -m pytest -q tests/
+```
+
+Final local verification for this pass: **114 passed, one CUDA-only skip**,
+**184 artifact hashes** and **nine unchanged current core hashes**. The official
+benchmark still has no diff against its original revision. Evidence JSON/logs
+and launcher bytes are preserved across Windows/Linux checkouts; generated
+report tables use portable LF endings.

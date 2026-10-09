@@ -20,7 +20,30 @@ while keeping the output numerically identical to the reference implementation
 (per-element `abs_err ≤ 0.002` **OR** `rel_err ≤ 0.02`), across 14 official test
 shapes.
 
-## Current maintained version: clean GitHub/T4 audit (2026-10-09)
+## Current maintained version: independent reproduction and quick startup (2026-10-09)
+
+Two additional independent T4 sessions reproduce the same nine production-core
+hashes as the first clean audit. Their median shape speedups are **2.801×** and
+**2.875×**, versus **3.546×** in the original session. Taking the median paired
+ratio per shape over all three sessions, then the unweighted median over shapes,
+gives **2.875×**; all **117** original-FP32 input checks pass (max error 9.83e-6).
+Observed variability is retained, not replaced by the best session. These are
+Torch 2.11 measurements, not directly comparable to September's Torch 2.10 table.
+
+The new [one-command entry point](docs/QUICKSTART.md) offers explicit eager-FP32
+`quick` and shipped `steady` profiles without changing the model defaults.
+On all 13 shapes, quick first public forwards take **0.054–0.826 s** versus
+**6.75–30.23 s** for steady in the fresh-child profile audit; all **78**
+profile/input checks pass. These exclude process/import/model/input setup and
+CUDA context probes, and quick trades away steady throughput rather than
+claiming the paired headline speedup. Per-shape amortization estimates are
+included in the report.
+An isolated wide-QKV workspace search tests 0/1/4/16/32 MiB budgets. All 21
+whole-model checks pass, but no candidate clears the predeclared 5% event **and**
+wall improvement over existing opt-in Lt; no backend is promoted.
+[Generated combined evidence](results/next/usability_summary.md).
+
+### Original single-session clean audit
 
 Fresh sessions clone exact Git commits and use normal repository imports, not
 inlined model snapshots. The current FP32 sweep passes **all 13 shapes × three

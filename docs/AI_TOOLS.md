@@ -39,6 +39,15 @@ The unified Markdown table is generated from JSON and regression-checked
 against those immutable artifacts; AI-written prose cannot silently change its
 numbers. Default decisions retain the existing FP32 path and explicit opt-ins.
 
+The subsequent usability pass adds an environment-checking, accuracy-gated
+quick/steady command without changing production compute, repeats the exact
+protocol in two independent T4 sessions, and tests shape-8 workspace budgets
+in a separate extension. Three-session speedup is reported as 2.875×, including
+the lower repeats rather than selecting the original 3.546×. Workspace variants
+pass numerics but fail the predeclared end-to-end adoption threshold and remain
+research-only. Generated tables validate source hashes, round counts and input
+checks; raw evidence includes the losing variants and startup trade-offs.
+
 1. **Workload analysis.** The AI extracted the exact grading contract from the
    harness code (tolerances `atol=0.002`/`rtol=0.02`, per-element all-pass rule,
    `strict=True` weight copy, fp32 softmax reference, `padding_ratio=0` hot path)

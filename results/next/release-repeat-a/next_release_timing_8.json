@@ -1,0 +1,224 @@
+{
+  "metadata": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "capability": [
+      7,
+      5
+    ],
+    "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]",
+    "git_commit": "38e191d9ba1778b7f837b790f79abe941ee98c66",
+    "source_manifest": {
+      "user_optimized.py": "d5523d070a97391544e2d01e88bc07b6dabce892f74387be83cbb58e5ceac6ff",
+      "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e",
+      "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8",
+      "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01",
+      "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304",
+      "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32",
+      "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983",
+      "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360",
+      "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee",
+      "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb",
+      "scripts/build_clean_kaggle.py": "0ade4cbd97752db08f3c56b9024064274a71bad7630913acdddee78e02541da4",
+      "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23",
+      "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d"
+    },
+    "normal_imports": {
+      "official": "/tmp/track3-clean-30sr4adr/repository/torch_transformer_benchmark.py",
+      "production": "/tmp/track3-clean-30sr4adr/repository/user_optimized.py"
+    },
+    "protocol": "FP32/attention: three rotated paired CUDA-event and separate synchronized-wall rounds; flash: complete synchronized-wall forwards; memory: isolated single-model child peaks; same paired weights/input",
+    "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold"
+  },
+  "results": {
+    "shape": 8,
+    "dims": [
+      8,
+      64,
+      1024,
+      4,
+      128,
+      4,
+      1024
+    ],
+    "cold_seconds": {
+      "baseline": 0.3399723009999889,
+      "default": 12.31391944699999,
+      "lt": 34.45294198599993
+    },
+    "accuracy": [
+      {
+        "seed": 0,
+        "variant": "default",
+        "max_abs": 9.834766387939453e-06,
+        "failed": 0,
+        "elements": 8388608,
+        "passed": true
+      },
+      {
+        "seed": 0,
+        "variant": "lt",
+        "max_abs": 9.834766387939453e-06,
+        "failed": 0,
+        "elements": 8388608,
+        "passed": true
+      },
+      {
+        "seed": 1,
+        "variant": "default",
+        "max_abs": 8.821487426757812e-06,
+        "failed": 0,
+        "elements": 8388608,
+        "passed": true
+      },
+      {
+        "seed": 1,
+        "variant": "lt",
+        "max_abs": 8.821487426757812e-06,
+        "failed": 0,
+        "elements": 8388608,
+        "passed": true
+      },
+      {
+        "seed": 2,
+        "variant": "default",
+        "max_abs": 8.556991815567017e-06,
+        "failed": 0,
+        "elements": 8388608,
+        "passed": true
+      },
+      {
+        "seed": 2,
+        "variant": "lt",
+        "max_abs": 8.556991815567017e-06,
+        "failed": 0,
+        "elements": 8388608,
+        "passed": true
+      }
+    ],
+    "output_ownership": "PASS",
+    "timing": {
+      "baseline": {
+        "event_round_ms": [
+          130.52406311035156,
+          132.89940643310547,
+          129.46145629882812
+        ],
+        "wall_round_ms": [
+          131.56096394999963,
+          131.57658129999845,
+          128.94844654999815
+        ],
+        "event_ms": 130.52406311035156,
+        "wall_ms": 131.56096394999963
+      },
+      "default": {
+        "event_round_ms": [
+          81.60505676269531,
+          83.81232070922852,
+          79.86771011352539
+        ],
+        "wall_round_ms": [
+          82.43499079999879,
+          83.88630965000061,
+          80.4634668999995
+        ],
+        "event_ms": 81.60505676269531,
+        "wall_ms": 82.43499079999879
+      },
+      "lt": {
+        "event_round_ms": [
+          79.55718612670898,
+          78.76030349731445,
+          77.32783889770508
+        ],
+        "wall_round_ms": [
+          80.00701464999906,
+          79.80305794999936,
+          76.0642144999963
+        ],
+        "event_ms": 78.76030349731445,
+        "wall_ms": 79.80305794999936
+      }
+    },
+    "mode": {
+      "default": {
+        "graph": true,
+        "compiled": false,
+        "x3": true
+      },
+      "lt": {
+        "graph": true,
+        "compiled": false,
+        "x3": true
+      }
+    },
+    "lt_search": [
+      {
+        "key": "(0, (8192, 3104), (3072, 3104), 3104, 3104)",
+        "round_ms": {
+          "torch": [
+            8.325031916300455,
+            8.405501047770182,
+            8.409429550170898
+          ],
+          "0": [
+            7.811754862467448,
+            7.836333592732747,
+            7.91273307800293
+          ],
+          "1": [
+            8.008448282877604,
+            8.0048828125,
+            8.479359944661459
+          ],
+          "2": [
+            8.356807708740234,
+            8.30839729309082,
+            8.24293327331543
+          ]
+        },
+        "median_ms": {
+          "torch": 8.405501047770182,
+          "0": 7.836333592732747,
+          "1": 8.008448282877604,
+          "2": 8.30839729309082
+        },
+        "selected": 0,
+        "descriptors": [
+          [
+            0,
+            0,
+            5,
+            23,
+            1,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            5,
+            20,
+            1,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            5,
+            23,
+            1,
+            0,
+            0,
+            7
+          ]
+        ]
+      }
+    ]
+  }
+}
