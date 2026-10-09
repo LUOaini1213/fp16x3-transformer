@@ -102,7 +102,9 @@ def test_generated_summary_matches_complete_evidence_and_rejects_partial_flash()
     import copy
     import json
     from scripts.summarize_release import fp32_table, flash_text, attention_text
-    summary = Path("results/next/clean_release_summary.md").read_text(encoding="utf-8")
+    report = Path("results/next/clean_release_summary.md")
+    assert b"\r" not in report.read_bytes(), "generated Markdown must use portable LF endings"
+    summary = report.read_text(encoding="utf-8")
     functions = {"fp32": fp32_table, "flash": flash_text, "attention": attention_text}
     for name, function in functions.items():
         payload = json.loads(Path(f"results/next/release-{name}/next_release_{name}.json").read_text(encoding="utf-8"))

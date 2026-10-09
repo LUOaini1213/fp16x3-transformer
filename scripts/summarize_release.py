@@ -130,7 +130,7 @@ def main():
             for name, path in zip(("FP32", "flash", "attention"), (args.fp32, args.flash, args.attention))) + ".\n\n"
     body += "\n\n".join(fn(p) for fn, p in zip((fp32_table, flash_text, attention_text), payloads)) + "\n"
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(body, encoding="utf-8")
+    args.output.write_text(body, encoding="utf-8", newline="\n")
     print(args.output)
 
 
