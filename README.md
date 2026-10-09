@@ -217,12 +217,15 @@ the T4 and the P100:
 | fp16 | 8 / 32 / 64 / 128 / 256 | **no** | yes | yes |
 
 PyTorch's flash backend is fp16/bf16-only and, in current releases, needs sm_80+;
-the graded path is fp32 on sm_60 / sm_75 cards. **No run in this project used
-FlashAttention.** Every `scaled_dot_product_attention` call went through the
+the graded path is fp32 on sm_60 / sm_75 cards. **None of these historical runs used
+FlashAttention.** Their `scaled_dot_product_attention` calls went through the
 memory-efficient backend — which is the kernel with `O(S)` memory and a fused
 softmax, i.e. the property the shape-14 result actually depends on. The name was
 wrong; the mechanism was not. It also means the T4-over-P100 gain is compilation
 plus hardware, not a different attention kernel.
+
+The later optional third-party Turing backend is a separate implementation,
+not PyTorch's built-in flash backend; see the follow-up audit below.
 
 ### fp16 is twice as fast, and we still ship fp32
 
@@ -447,10 +450,48 @@ The PyTorch [inference tensor contract](https://docs.pytorch.org/docs/stable/gen
 and [CUDA graph storage requirements](https://docs.pytorch.org/docs/stable/notes/cuda.html#cuda-graphs)
 explain the cache exclusions and static-buffer copies above.
 
+## Follow-up: algorithm search and Turing attention (2026-10-09)
+
+The current workload was profiled again, and candidates were tested on T4
+rather than inferred from newer-GPU marketing. Full procedures, accepted and
+rejected candidates, source-stamped JSON and raw logs are in
+[the follow-up audit](docs/NEXT_OPTIMIZATION_AUDIT.md).
+
+Two **opt-in** backends are available; defaults remain unchanged:
+
+- `T3_X3_BLAS=lt`: zero-workspace cuBLASLt algorithm search for the measured
+  wide QKV GEMM. It preserves the compensated FP16 operands and FP32
+  accumulation/output, caches configurations rather than outputs, and falls
+  back to the existing GEMM on other shapes/devices or a failed build. It
+  requires a CUDA development toolchain only when this path is requested.
+- `T3_ATTN=turing`: a guarded adapter for the pinned third-party Turing
+  attention extension. Native-FP16 causal inference only, sequence length
+  at least 8192, head width 64/96/128, default stream, no graph capture.
+  FP32 grading is never silently downcast. Unsupported cases or a missing
+  extension use SDPA. `python scripts/install_turing_attention.py` explicitly
+  builds the pinned optional dependency without upgrading torch; upstream
+  source/binaries are not vendored here.
+
+The first integrated cuBLASLt test records **71.74 → 67.07 ms** CUDA-event
+latency on shape 8, with both candidates using owned-output CUDA Graphs;
+synchronized wall latency is **72.07 → 67.26 ms**. This is one paired T4
+session (three rotated rounds), not an all-shape speedup. The opt-in path
+passes all 13 FP32 shapes on three inputs each, worst error **1.17e-5**.
+See [source-stamped results](results/next/integrated/next_lt_integrated.json)
+and [the regression gate](results/next/integrated/next_regression.json).
+
+An independent final-code session confirms **77.71 → 72.10 ms** event latency
+(-7.2%) and **78.63 → 72.43 ms** wall latency (-7.9%); all 13 FP32 shapes pass
+again. [Final paired evidence](results/next/final/next_lt_integrated.json).
+
+C++ dispatch wrappers and bulk native parameter-key reads were also implemented
+and measured, but did not beat the existing manual CUDA Graph. They remain
+experiments rather than default-path dependencies.
+
 <!-- x3-section:begin -->
 ## fp16x3: fp32-accurate GEMMs on the fp16 tensor cores (shipped)
 
-`kernels/fp16x3.py`. A kernel-level profile of the shipped forward
+`kernels/fp16x3.py`. A kernel-level profile of the pre-fp16x3 forward
 (`results/kaggle_t4_profile_run.log`) put fp32 cuBLAS SGEMM at **44–89% of GPU time**
 on shapes 1, 6 and 8 — a T4 has no fp32 tensor cores and no TF32, so its `volta_sgemm`
 kernels run on the SIMT units while the fp16 tensor cores, eight times faster, sit idle.

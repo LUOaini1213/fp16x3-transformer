@@ -319,3 +319,40 @@ and this single cold timing is not comparable to the historical steady median.
 Local regression tests: 51 passed, 1 CUDA-only test skipped. CPU smoke checks
 also pass the 12 CPU-feasible official shapes and two padded cases. The cloud
 audit separately validates graph ownership and mutation/invalidation contracts.
+
+## 10. Follow-up kernel audit (2026-10-09)
+
+The next experiment series refreshes profiling of the actual compensated-GEMM
+path. Shape 8 is 80.2% GEMM time; shape 13 is 69.8% attention time. The previous
+SGEMM profile is not used to infer these current shares.
+
+An opt-in, zero-workspace cuBLASLt algorithm search preserves FP32 accumulation
+and output. Its first public-forward integration reduces shape-8 event latency
+from 71.74 to 67.07 ms, with both models using owned-output CUDA Graphs; wall
+latency confirms 72.07 to 67.26 ms. All 13 FP32 shapes pass three input trials,
+worst absolute error 1.17e-5. This is a paired per-shape result, not an extra
+all-shape multiplier. Default dispatch remains PyTorch; building a native
+extension and tuning its algorithms are explicit opt-in setup costs.
+
+An independent final-code T4 session confirms 77.71 → 72.10 ms CUDA-event
+latency and 78.63 → 72.43 ms synchronized wall latency, with three rotated
+paired rounds. All 13 FP32 shapes pass three inputs again, worst error 1.17e-5.
+Every recorded core-source hash matches the implementation.
+
+Inductor's C++ wrapper was built after repairing Kaggle's missing development
+linker name in a private directory, without changing system libraries. It
+beats the compiler's Python wrapper but not the established manual graph.
+Bulk native parameter metadata reads also lose once traversal, binding and
+key reconstruction are included. Neither becomes a default dependency.
+
+A separate guarded adapter tests a pinned third-party Turing attention backend
+only for native-FP16 causal inference. It checks dtype, shape, device,
+head-width and stream assumptions, makes packed QKV views fully contiguous,
+and falls back on unsupported cases. The FP32 grading path is not downcast.
+Full native-FP16 backend agreement, feasible original-FP32 causal-prefix checks,
+and full-length timings are separate evidence categories, not interchangeable
+accuracy claims.
+
+Exact methods, raw logs, repaired/invalid trials and primary-source links are in
+[`docs/NEXT_OPTIMIZATION_AUDIT.md`](../docs/NEXT_OPTIMIZATION_AUDIT.md). Earlier
+reported results and the frozen submission are retained unchanged.

@@ -16,6 +16,15 @@ honestly.
 
 ## How AI shaped the technical decisions
 
+The October follow-up additionally checked current primary documentation and
+upstream source, refreshed profiling of the actual fp16x3 path, built an
+algorithm-level cuBLASLt search and guarded optional Turing attention adapter,
+and tested C++ dispatch and native metadata batching. Candidate decisions are
+based on GPU output comparisons, paired timings and ownership/mutation checks;
+losing variants and repaired experiment mistakes remain in
+`docs/NEXT_OPTIMIZATION_AUDIT.md` and `results/next/`. AI-generated proposals
+are not treated as benchmark results.
+
 1. **Workload analysis.** The AI extracted the exact grading contract from the
    harness code (tolerances `atol=0.002`/`rtol=0.02`, per-element all-pass rule,
    `strict=True` weight copy, fp32 softmax reference, `padding_ratio=0` hot path)

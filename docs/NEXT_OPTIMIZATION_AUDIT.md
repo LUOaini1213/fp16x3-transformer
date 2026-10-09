@@ -1,0 +1,154 @@
+# October 9: follow-up optimization audit
+
+This is a new experiment series against maintained revision
+`46154d19ceeba0c50af2588a0247ce43b56c0465`. It does not replace the September
+three-session headline. The reference benchmark is unchanged. Candidate kernels
+are not enabled in the submitted model merely because an isolated test wins.
+
+## What the current profiler actually says
+
+The profiler uses PyTorch 2.11.0+cu128 on a Tesla T4. Percentages sum device
+kernel events, not nested CPU operator times. Three warmed public forwards were
+recorded; these shares are diagnostic, not unprofiled speed measurements.
+
+| Official shape | Attention share | GEMM share | Interpretation |
+|---|---:|---:|---|
+| 6: large batch | 38.6% | 35.7% | Mixed attention, GEMM and split/normalization traffic |
+| 8: wide model | 10.4% | 80.2% | GEMM remains the main target |
+| 13: long sequence | 69.8% | 16.2% | Attention is now the main target |
+
+Evidence: [profile JSON](../results/next/initial-profile/next_profile.json).
+Unlike the old SGEMM profile, this records the shipped fp16x3 tensor-core GEMMs.
+Small shapes also measure public forward, owned-output graph replay, eager inner
+compute, and replay alone. Replay alone is **not** a valid model interface: it
+omits input copying, mutation checks, and ownership of returned output.
+
+## Candidates and acceptance rules
+
+1. **Algorithm-level cuBLASLt search.** Query up to 64 heuristics with a 32 MiB
+   workspace allowance for the actual fp16x3 operands, including padded leading
+   dimensions and the tail-free strided view. Keep FP32 accumulation and FP32
+   output. Check against the original GEMM and a small FP64 oracle before timing.
+   A microbenchmark win needs an end-to-end win, then repeat confirmation.
+2. **C++ dispatch wrapper.** Compare Inductor Python/C++ wrappers against the
+   existing manual CUDA Graph with weight/mask checks and output ownership kept.
+   Distinct entry code objects prevent Dynamo reusing the first candidate's
+   wrapper. A private linker path repairs Kaggle's missing `libcuda.so` name;
+   system libraries and the installed PyTorch version are not changed.
+3. **Bulk native metadata reads.** Test whether reading parameter identity,
+   mutation version, storage pointer, device and dtype in one native call is
+   worthwhile. Parameter lists are re-read, and same-version replacement, mask
+   mutation and owned outputs must still pass. Lower CPU checking time alone
+   does not establish lower end-to-end latency.
+4. **Turing-specific attention.** Fetch an exact upstream revision for a private
+   experiment, build against the actual cloud environment, and test supported
+   head widths and strided packed-QKV input. Only native FP16 is eligible; FP32
+   grading is not silently cast to half. Unsupported widths, non-default streams
+   and CUDA graph capture fall back. Full shape-14 checks distinguish native-FP16
+   backend equivalence from the original FP32 oracle's feasible causal prefix.
+
+The shared timing protocol is three rotated paired rounds, with both the
+official CUDA-event loop and synchronized host-inclusive timing. Full shape 14
+uses complete forwards, with first-call cost separated from timed rounds.
+
+## Evidence integrity and known discarded trials
+
+Each artifact records model/kernel/driver hashes and the cloud environment.
+`cloud_script.py` beside the JSON is the exact generated script used, so earlier
+driver variants remain recoverable after repairs. An artifact manifest also
+hashes the imported files. Logs are normalized from Kaggle's JSON event stream
+without changing their text.
+
+- `initial-profile/next_cpp.json` is **not valid C++ wrapper evidence**: the
+  initial variant did not isolate Dynamo code-object caches. Use the isolated,
+  repaired follow-up instead.
+- `cpp-link-failure/` records the genuine isolated build failure before the
+  private driver-link repair; it is not a performance verdict.
+- `gemm-initial/` retains an oversized validation allocation on shape 6. That
+  comparison itself ran out of memory; it is not a model-capacity failure or a
+  reason to rule out those algorithms. The repaired driver compares bounded
+  tiles and re-runs the search.
+
+## Integrated GEMM and dispatch findings
+
+The first public-forward cuBLASLt integration runs with the normal runtime
+selection, not an eager-only substitute. Both candidates choose manual CUDA
+Graphs. Shape 8 changes from 71.74 to 67.07 ms in the official event loop and
+72.07 to 67.26 ms synchronized wall latency (three rotated paired rounds).
+All 13 FP32 shapes pass three inputs each, worst absolute error 1.17e-5.
+[Integrated result](../results/next/integrated/next_lt_integrated.json),
+[regression gate](../results/next/integrated/next_regression.json).
+
+A second independent T4 session on the final integrated core confirms the
+gain: **77.71 → 72.10 ms** event latency (-7.2%) and **78.63 → 72.43 ms** wall
+latency (-7.9%), again with three rotated rounds and both models choosing
+owned-output graphs. Its 13-shape, three-input regression gate also passes with
+worst absolute error 1.17e-5. All recorded core-source hashes match the working
+implementation, and the official benchmark remains unchanged.
+[Final paired result](../results/next/final/next_lt_integrated.json),
+[final regression gate](../results/next/final/next_regression.json).
+
+The optional `T3_X3_BLAS=lt` backend restricts its production search to this
+measured wide-QKV geometry and zero-workspace algorithms. Unsupported shapes,
+devices and failed builds retain the established GEMM. Thread-local choices
+match native handle ownership, and no activation/output tensors are cached.
+It is not enabled by default: a local C++/CUDA build and first-use search are
+real setup costs, excluded from steady-state timing.
+
+The broader eager-only search did not establish a useful end-to-end gain for
+shapes 6 or 13. In the repaired search, shape 13 selects a faster isolated small
+GEMM but whole-model wall latency is flat (64.75 vs 64.83 ms). Therefore that
+geometry is not added to production selection.
+
+The isolated, linker-repaired C++ wrapper works and preserves accuracy/owned
+outputs, but on B=1 it takes 1.184 ms versus 0.326 ms for the existing graph.
+It beats the 1.977 ms Python compiler wrapper, which is not the default winner.
+[C++ result](../results/next/followup/next_cpp.json).
+
+Native metadata batching was re-tested after explicitly recapturing graphs
+following mutation tests. On B=1 its host checks take 283 us versus 119 us,
+and whole-model wall latency is 0.393 versus 0.243 ms. Traversal, binding and
+Python key reconstruction erase the proposed benefit. It is rejected, without
+removing any safety checks from the real model.
+[Corrected graph comparison](../results/next/integrated/next_native_keys.json).
+
+## Reproduction
+
+```bash
+python scripts/build_kaggle_selfcontained.py --only next \
+  --env T3_NEXT_PHASE=profile_cpp --accelerator NvidiaTeslaT4 \
+  --id YOUR_ACCOUNT/track3-profile --out .kaggle_upload/profile
+python scripts/build_kaggle_selfcontained.py --only next \
+  --env T3_NEXT_PHASE=integrated --env T3_X3_BLAS=lt \
+  --accelerator NvidiaTeslaT4 --id YOUR_ACCOUNT/track3-integrated \
+  --out .kaggle_upload/integrated
+python scripts/build_kaggle_selfcontained.py --only next \
+  --env T3_NEXT_PHASE=flash --accelerator NvidiaTeslaT4 \
+  --id YOUR_ACCOUNT/track3-flash --out .kaggle_upload/flash
+kaggle kernels push -p .kaggle_upload/flash --accelerator NvidiaTeslaT4
+```
+
+The flash phase builds the exact pinned optional dependency without modifying
+torch, checks attention contracts, then runs a full-sized warmup pair and three
+paired rounds. It requires two full native-FP16 outputs' worth of comparison
+storage (one streamed to host), so host memory matters as well as GPU memory.
+For an earlier exact experiment variant, run its committed `cloud_script.py`;
+the current driver contains the repaired validation and integration checks.
+
+## Sources checked
+
+- NVIDIA's [cuBLAS 12.8 API and heuristics cache](https://docs.nvidia.com/cuda/archive/12.8.1/cublas/index.html#heuristics-cache),
+  matching the measured CUDA generation. Cached algorithm selection is supported;
+  that is not a promise of improvement over PyTorch's current choice.
+- PyTorch's [C++ wrapper tutorial](https://docs.pytorch.org/tutorials/unstable/inductor_cpp_wrapper_tutorial.html).
+  Availability and benefit were tested on the actual installed version.
+- The [Turing attention repository](https://github.com/ssiu/flash-attention-turing),
+  pinned to `9ef98fcb506bb1e2fe3cece50935e2935bf6b124`, advertises FP16 head widths
+  64/96/128 and benchmarks T4. Its reported speedups are attention-only, not ours.
+  Source inspection finds contiguous B,S,H,D indexing and default-stream launches;
+  both conditions need guarding. There is no top-level LICENSE at that revision,
+  so upstream source is not vendored in this repository.
+
+GELU remains the reference's `approximate="none"` erf implementation. The
+cuBLASLt built-in GELU epilogue is not substituted silently: its documented tanh
+approximation is a different operation.

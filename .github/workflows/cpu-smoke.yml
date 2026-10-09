@@ -31,5 +31,7 @@ jobs:
           T3_TRITON=1 T3_ATTN=triton python scripts/smoke_cpu.py
           T3_LINEAR=fp16x3 python scripts/smoke_cpu.py
           T3_LINEAR=fp32 python scripts/smoke_cpu.py
+          T3_ATTN=turing python scripts/smoke_cpu.py
+          T3_X3_BLAS=lt python scripts/smoke_cpu.py
       - name: fp16x3 unit tests (exact CPU emulation)
         run: pytest -q tests/

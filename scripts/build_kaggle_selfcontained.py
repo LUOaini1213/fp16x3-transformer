@@ -68,17 +68,19 @@ def read(p):
 
 def build_selector(only, extra_env):
     """Kaggle kernels take no environment, so bake the knobs into the script."""
-    lines = ["import os as _os2", '_os2.environ["T3_ONLY"] = "%s"' % only]
+    lines = ["import os as _os2", f"_os2.environ['T3_ONLY'] = {only!r}"]
     for kv in extra_env:
         key, _, val = kv.partition("=")
-        lines.append('_os2.environ["%s"] = "%s"' % (key.strip(), val.strip()))
+        if not _ or not key.strip():
+            raise ValueError(f"expected NAME=VALUE, got {kv!r}")
+        lines.append(f"_os2.environ[{key.strip()!r}] = {val!r}")
     return "\n".join(lines) + "\n"
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="all",
-                    choices=["all", "1-13", "14", "ablation", "triton", "probe", "attn", "profile", "x3", "gemm", "x3k", "x3geo", "x3i8", "runtime", "runtime14"],
+                    choices=["all", "1-13", "14", "ablation", "triton", "probe", "attn", "profile", "x3", "gemm", "x3k", "x3geo", "x3i8", "runtime", "runtime14", "next"],
                     help="which section of the sweep the kernel runs (default: all)")
     ap.add_argument("--id", default="wenjiluo/track3-bench",
                     help="Kaggle kernel id to push to")
@@ -91,6 +93,8 @@ def main():
                          "(repeatable), e.g. --env T3_COMPILE=0")
     ap.add_argument("--reference-ref", default="HEAD",
                     help="git revision of the previous model for the paired runtime audit")
+    ap.add_argument("--kernel-source", action="append", default=[],
+                    help="optional private Kaggle kernel output to attach (repeatable)")
     args = ap.parse_args()
 
     bench = read("torch_transformer_benchmark.py")
@@ -102,7 +106,17 @@ def main():
     fut = "from __future__ import annotations\n"
     assert fut in bench
     source_sha = hashlib.sha256(read("user_optimized.py").encode("utf-8")).hexdigest()
-    source_env = [*args.env, "T3_RUNTIME_SOURCE_SHA256=" + source_sha]
+    sources = ["user_optimized.py", "torch_transformer_benchmark.py",
+               "kernels/fused_layernorm.py", "kernels/attention.py", "kernels/fp16x3.py",
+               "kernels/fp16x3_int8.py", "scripts/build_kaggle_selfcontained.py"]
+    sources += ["kernels/cublaslt_probe.cpp", "kernels/cublaslt_backend.py"]
+    sources.append("kernels/turing_attention.py")
+    sources += (["scripts/benchmark_next.py"] if args.only == "next" else
+                ["scripts/benchmark_runtime.py"] if args.only.startswith("runtime") else
+                ["scripts/_kaggle_driver.py"])
+    manifest = {p: hashlib.sha256(read(p).encode("utf-8")).hexdigest() for p in sources}
+    source_env = [*args.env, "T3_RUNTIME_SOURCE_SHA256=" + source_sha,
+                  "T3_SOURCE_MANIFEST=" + json.dumps(manifest, sort_keys=True)]
     prologue = fut + "\n" + BOOTSTRAP + "\n" + build_selector(args.only, source_env)
     bench = bench.replace(fut, prologue, 1)
 
@@ -118,6 +132,9 @@ def main():
     ti = read(os.path.join("kernels", "fp16x3_int8.py"))
     ti = ti.replace("from __future__ import annotations", "")
     ti = ti.replace("from .fp16x3 import _x3_geometry, _x3_tail", "")
+    lt = ("NEXT_LT_SOURCE = " + repr(read("kernels/cublaslt_probe.cpp")) + "\n" +
+          read("kernels/cublaslt_backend.py").replace("from __future__ import annotations", ""))
+    tt = read("kernels/turing_attention.py").replace("from __future__ import annotations", "")
 
     uo = read("user_optimized.py")
     uo = uo.replace("from __future__ import annotations\n", "")
@@ -131,6 +148,9 @@ def main():
          "can_use_attention = can_use\n" + uo[b1 + 1:])
 
     driver = read(os.path.join("scripts", "_kaggle_driver.py"))
+    if args.only == "next":
+        driver = ("NEXT_LT_SOURCE = " + repr(read("kernels/cublaslt_probe.cpp")) + "\n" +
+                  read("scripts/benchmark_next.py") + "\nnext_main()\n")
     if args.only in ("runtime", "runtime14"):
         revision = subprocess.check_output(
             ["git", "rev-parse", "--verify", args.reference_ref], cwd=HERE, text=True).strip()
@@ -153,6 +173,10 @@ def main():
         + tk
         + "\n\n# ============ kernels/attention.py (inlined) ============\n\n"
         + ta
+        + "\n\n# ============ optional cuBLASLt provider ============\n\n"
+        + lt
+        + "\n\n# ============ optional Turing attention adapter ============\n\n"
+        + tt
         + "\n\n# ============ kernels/fp16x3.py (inlined) ============\n\n"
         + tx
         + "\n\n# ============ kernels/fp16x3_int8.py (inlined) ============\n\n"
@@ -183,7 +207,7 @@ def main():
         "enable_internet": True,
         "dataset_sources": [],
         "competition_sources": [],
-        "kernel_sources": [],
+        "kernel_sources": args.kernel_source,
         "model_sources": [],
     }
     if args.accelerator:
