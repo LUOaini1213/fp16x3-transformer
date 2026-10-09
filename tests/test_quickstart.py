@@ -42,6 +42,7 @@ def test_cpu_doctor_makes_no_acceleration_claim():
 def test_profiles_pass_official_gate_on_cpu(mode):
     row = run_case(2, mode, "cpu", repeats=1)
     assert row["accuracy"]["passed"] and row["accuracy"]["failed"] == 0
+    assert len(row["accuracy_trials"]) == 3
     assert not row["dispatch"]["compiled"] and not row["dispatch"]["graph"]
     if mode == "quick":
         assert not row["dispatch"]["x3"]

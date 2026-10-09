@@ -65,7 +65,8 @@ def workspace(output):
         models[name] = release.make(cfg, base, "lt" if name == "production_lt" else "default")
         if name.startswith("ws"):
             providers[name] = WorkspaceProvider(ext, int(name[2:]) << 20)
-    production_provider = importlib.import_module("kernels.cublaslt_backend").lt_candidate_matmul
+    production_backend = importlib.import_module("kernels.cublaslt_backend")
+    production_provider = production_backend.lt_candidate_matmul
 
     def forward(name, x, mask):
         x3._X3_BLAS = "torch" if name == "default" else "lt"
@@ -91,6 +92,7 @@ def workspace(output):
                 del out, prior
             del ref, xx, mm
         times = release.paired(calls, x, mask, 20)
+        assert any(s["selected"] is not None for s in production_backend._LT_RESULTS), "production Lt did not execute"
         extra_peaks = {}
         for name, call in calls.items():
             torch.cuda.synchronize()
@@ -104,10 +106,12 @@ def workspace(output):
                "accuracy": accuracy, "timing": times,
                "dispatch": {n: release.modes(m) for n, m in models.items()},
                "search": {n: p.searches for n, p in providers.items()},
+               "production_lt_search": production_backend._LT_RESULTS,
                "workspace_calls": {n: p.calls for n, p in providers.items()},
                "shared_process_extra_peak_bytes": extra_peaks,
                "memory_scope": "incremental allocated peak above seven resident models; not isolated deployment memory",
                "scratch_policy": "allocation per invocation/current stream; allocations are included in timing/capture",
+               "counter_scope": "host extension invocations, including capture; graph replays do not increment Python counters",
                "acceptance": "at least 5% event AND wall reduction vs production_lt plus independent confirmation; no default promotion from this experiment"}
     current = times["production_lt"]
     results["qualified_candidates"] = [n for n in providers if providers[n].calls and

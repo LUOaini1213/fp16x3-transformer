@@ -128,7 +128,19 @@ def run_case(shape, mode, device_name, repeats=10):
         check = official.compare_outputs(ref, out, rtol=.02, atol=.002)
         if not check.passed:
             raise RuntimeError(f"official correctness gate failed: {check}")
-        del ref, out, base
+        checks = [{"seed": 20261009, "passed": check.passed, "failed": check.failed_elements,
+                   "max_abs": check.max_abs_error}]
+        del ref, out
+        for seed in (20261010, 20261011):
+            xx, mm = official.generate_random_case(cfg, device, torch.float32, seed, 0., 1.)
+            ref, candidate = base(xx, mm), model(xx, mm)
+            trial = official.compare_outputs(ref, candidate, rtol=.02, atol=.002)
+            if not trial.passed:
+                raise RuntimeError(f"official correctness gate failed at seed {seed}: {trial}")
+            checks.append({"seed": seed, "passed": trial.passed, "failed": trial.failed_elements,
+                           "max_abs": trial.max_abs_error})
+            del xx, mm, ref, candidate
+        del base
         times = []
         for _ in range(3):
             model(x, mask)
@@ -141,8 +153,8 @@ def run_case(shape, mode, device_name, repeats=10):
             del out
     return {"shape": shape, "mode": mode, "profile": profile, "device": device_name,
             "first_forward_seconds": first, "steady_wall_ms": statistics.median(times),
-            "steady_wall_samples_ms": times, "accuracy": {"passed": check.passed,
-            "failed": check.failed_elements, "max_abs": check.max_abs_error},
+            "steady_wall_samples_ms": times, "accuracy": {"passed": True,
+            "failed": 0, "max_abs": max(c["max_abs"] for c in checks)}, "accuracy_trials": checks,
             "dispatch": {"x3": model._x3_on, "compiled": model._compiled is not None,
                          "graph": model._graph is not None},
             "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}
