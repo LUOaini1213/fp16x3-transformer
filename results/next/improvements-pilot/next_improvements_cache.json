@@ -1,0 +1,254 @@
+{
+  "metadata": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "capability": [
+      7,
+      5
+    ],
+    "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]",
+    "git_commit": "c8fe1cf7807d5633a1b75773d2ab03461318cb22",
+    "source_manifest": {
+      "user_optimized.py": "c43450b4e8e8b334256acb59bd3b13fe438e33419449012826f4d53729b38434",
+      "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e",
+      "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8",
+      "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01",
+      "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304",
+      "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32",
+      "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983",
+      "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360",
+      "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee",
+      "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb",
+      "scripts/build_clean_kaggle.py": "6f368e252c01eca22afbe8dda4cc1ec4658c9e1d3d5b8a494618026b144f4e81",
+      "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23",
+      "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d",
+      "scripts/run.py": "e408a4ebc4931c4a64d2e815ea32cdcc30caac1f6e08936b8573a1521abf3f76",
+      "scripts/benchmark_improvements.py": "4ecf4cf6f3d8e567e5b1cebb7d673392ecbb87c1cabdc5f722ba5f055780adcb",
+      "kernels/dispatch_cache.py": "486bdbe8fba3a91acdca279b1c060f7d33fc20b7024b253ac07126705b1d97e2",
+      "kernels/ffn_fusion.py": "07833649812e079983d5c2c14131f1ce686a754c9d964e573ec45ed658c540a3"
+    },
+    "normal_imports": {
+      "official": "/tmp/track3-clean-r4_0j7es/repository/torch_transformer_benchmark.py",
+      "production": "/tmp/track3-clean-r4_0j7es/repository/user_optimized.py"
+    },
+    "protocol": "Source-pinned T4 validation: profiles, cache/recovery contracts, FFN fusion.\n\nCold profiles have separate empty compiler directories. Cache-hit and uncached\ncontrols share warmed compiler directories but run in fresh processes. Neither\ntiming includes Python imports/context probes. Production defaults are unchanged.\n",
+    "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold",
+    "clean_checkout": true
+  },
+  "results": {
+    "producer": {
+      "shape": 2,
+      "mode": "balanced",
+      "profile": {
+        "T3_AUTOCAST": "off",
+        "T3_ATTN": "sdpa",
+        "T3_X3_BLAS": "torch",
+        "T3_FUSED_QKV": "0",
+        "T3_TRITON": "0",
+        "T3_X3_GUARD": "static+first",
+        "T3_X3_ORDER": "lhh",
+        "T3_X3_SPLITK": "1",
+        "T3_X3_SITES": "auto",
+        "T3_MASK_CACHE": "1",
+        "T3_PACK_PADDING": "1",
+        "T3_COMPILE": "0",
+        "T3_CUDAGRAPH": "1",
+        "T3_LINEAR": "fp16x3",
+        "T3_TUNE_CACHE": "/kaggle/working/dispatch_hints.json"
+      },
+      "device": "cuda",
+      "first_forward_seconds": 3.8116145899999765,
+      "steady_wall_ms": 0.7067559999995865,
+      "steady_wall_samples_ms": [
+        0.7649079999509922,
+        0.7234500000095068,
+        0.6990170001017759,
+        0.7402469999533423,
+        0.7085870000764771,
+        0.7049249999226959,
+        0.69644600000629,
+        0.7096059999867066,
+        0.6987510000726616,
+        0.694637000037801
+      ],
+      "accuracy": {
+        "passed": true,
+        "failed": 0,
+        "max_abs": 2.1457672119140625e-06
+      },
+      "accuracy_trials": [
+        {
+          "seed": 20261009,
+          "passed": true,
+          "failed": 0,
+          "max_abs": 2.1457672119140625e-06
+        },
+        {
+          "seed": 20261010,
+          "passed": true,
+          "failed": 0,
+          "max_abs": 1.430511474609375e-06
+        },
+        {
+          "seed": 20261011,
+          "passed": true,
+          "failed": 0,
+          "max_abs": 1.9073486328125e-06
+        }
+      ],
+      "dispatch": {
+        "x3": true,
+        "compiled": false,
+        "graph": true
+      },
+      "tune_cache": {
+        "enabled": true,
+        "status": "stored-graph"
+      },
+      "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+    },
+    "hit": {
+      "shape": 2,
+      "mode": "balanced",
+      "profile": {
+        "T3_AUTOCAST": "off",
+        "T3_ATTN": "sdpa",
+        "T3_X3_BLAS": "torch",
+        "T3_FUSED_QKV": "0",
+        "T3_TRITON": "0",
+        "T3_X3_GUARD": "static+first",
+        "T3_X3_ORDER": "lhh",
+        "T3_X3_SPLITK": "1",
+        "T3_X3_SITES": "auto",
+        "T3_MASK_CACHE": "1",
+        "T3_PACK_PADDING": "1",
+        "T3_COMPILE": "0",
+        "T3_CUDAGRAPH": "1",
+        "T3_LINEAR": "fp16x3",
+        "T3_TUNE_CACHE": "/kaggle/working/dispatch_hints.json"
+      },
+      "device": "cuda",
+      "first_forward_seconds": 1.3954265009999745,
+      "steady_wall_ms": 0.6920595000110552,
+      "steady_wall_samples_ms": [
+        0.705176999986179,
+        0.6874150000157897,
+        0.684357000068303,
+        0.7158399999980247,
+        0.6927160000032018,
+        0.6987190000700139,
+        0.6898569999975734,
+        0.7035539999833418,
+        0.6914030000189086,
+        0.6813480000573691
+      ],
+      "accuracy": {
+        "passed": true,
+        "failed": 0,
+        "max_abs": 2.1457672119140625e-06
+      },
+      "accuracy_trials": [
+        {
+          "seed": 20261009,
+          "passed": true,
+          "failed": 0,
+          "max_abs": 2.1457672119140625e-06
+        },
+        {
+          "seed": 20261010,
+          "passed": true,
+          "failed": 0,
+          "max_abs": 1.430511474609375e-06
+        },
+        {
+          "seed": 20261011,
+          "passed": true,
+          "failed": 0,
+          "max_abs": 1.9073486328125e-06
+        }
+      ],
+      "dispatch": {
+        "x3": true,
+        "compiled": false,
+        "graph": true
+      },
+      "tune_cache": {
+        "enabled": true,
+        "status": "hit-validated-graph"
+      },
+      "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+    },
+    "warm_uncached": {
+      "shape": 2,
+      "mode": "balanced",
+      "profile": {
+        "T3_AUTOCAST": "off",
+        "T3_ATTN": "sdpa",
+        "T3_X3_BLAS": "torch",
+        "T3_FUSED_QKV": "0",
+        "T3_TRITON": "0",
+        "T3_X3_GUARD": "static+first",
+        "T3_X3_ORDER": "lhh",
+        "T3_X3_SPLITK": "1",
+        "T3_X3_SITES": "auto",
+        "T3_MASK_CACHE": "1",
+        "T3_PACK_PADDING": "1",
+        "T3_COMPILE": "0",
+        "T3_CUDAGRAPH": "1",
+        "T3_LINEAR": "fp16x3"
+      },
+      "device": "cuda",
+      "first_forward_seconds": 1.4189585579999857,
+      "steady_wall_ms": 0.6952614999704565,
+      "steady_wall_samples_ms": [
+        0.6946510000034323,
+        0.6873380000342877,
+        0.7648039999139655,
+        0.7035359999463253,
+        0.6859290000420515,
+        0.7076200000710742,
+        0.7183150000855676,
+        0.6818310000653582,
+        0.6891750000477259,
+        0.6958719999374807
+      ],
+      "accuracy": {
+        "passed": true,
+        "failed": 0,
+        "max_abs": 2.1457672119140625e-06
+      },
+      "accuracy_trials": [
+        {
+          "seed": 20261009,
+          "passed": true,
+          "failed": 0,
+          "max_abs": 2.1457672119140625e-06
+        },
+        {
+          "seed": 20261010,
+          "passed": true,
+          "failed": 0,
+          "max_abs": 1.430511474609375e-06
+        },
+        {
+          "seed": 20261011,
+          "passed": true,
+          "failed": 0,
+          "max_abs": 1.9073486328125e-06
+        }
+      ],
+      "dispatch": {
+        "x3": true,
+        "compiled": false,
+        "graph": true
+      },
+      "tune_cache": {
+        "enabled": false,
+        "status": "disabled"
+      },
+      "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+    },
+    "scope": "fresh workers, same warmed compiler directories for hit/control; only hints persist, graph recaptured"
+  }
+}

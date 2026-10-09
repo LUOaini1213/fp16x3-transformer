@@ -35,6 +35,8 @@ jobs:
           T3_X3_BLAS=lt python scripts/smoke_cpu.py
       - name: fp16x3 unit tests (exact CPU emulation)
         run: python -m pytest -q tests/
+      - name: GPU runtime report still matches committed source and measurements
+        run: python -m scripts.summarize_improvements --check
       - name: One-command entry point and explicit runtime profiles
         run: |
           python -m scripts.run --check-only --device cpu --output /tmp/doctor.json

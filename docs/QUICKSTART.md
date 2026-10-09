@@ -22,7 +22,7 @@ installation, downgrade, package upgrade, or login.
 | Profile | Compute | Startup work | Intended use |
 |---|---|---|---|
 | `quick` | FP32 GEMMs + memory-efficient SDPA | No Inductor, manual graphs, Triton launches, or native builds | Trying the model, short-lived inference |
-| `balanced` | Same compensated fp16x3 + SDPA as steady | No Inductor; Triton JIT and eager/manual-graph selection remain | Candidate for repeated inference with less setup; T4 performance pending |
+| `balanced` | Same compensated fp16x3 + SDPA as steady | No Inductor; Triton JIT and eager/manual-graph selection remain | Explicit opt-in for repeated inference; consult the per-shape T4 acceptance table |
 | `steady` | Shipped compensated fp16x3 + SDPA | First-forward compile/eager/manual-graph selection | Many repeated forwards |
 
 Quick mode is not FP16 autocast or a lower-accuracy shortcut. All profiles keep
@@ -53,9 +53,13 @@ configurations. This motivates a separate profile, not a blanket claim that
 Inductor is slower on every environment. The CLI still defaults to `quick` and
 direct model imports retain the shipped automatic policy.
 
-Balanced is new and has no measured T4 startup/throughput result yet. The old
-quick/steady numbers and 2.875x aggregate must not be presented as balanced
-measurements. The exact earlier runner is preserved in
+Balanced, dispatch-cache hits and weight/mask recovery now have source-pinned
+T4 evidence: a three-shape pilot followed by a full 13-shape sweep. The
+[runtime validation report](../results/next/improvements_summary.md) lists
+the first-public-forward cost, three-round paired event/wall results and each
+shape's acceptance gate. The profile remains an explicit opt-in; model and CLI
+defaults are unchanged. The old quick/steady numbers and 2.875x aggregate remain
+separate and must not be presented as balanced measurements. The earlier runner is preserved in
 `results/next/usability-quick/run.py.snapshot` and checked against its recorded
 source hash; it is historical evidence, not an executable entry point.
 
@@ -83,10 +87,12 @@ Weight/norm changes now invalidate dispatch and permit one new eager/graph
 selection. Rejecting a slower graph in the normal tuner does not reset that
 selection, so stable weights cannot trigger a tuning loop.
 
-The older model source is also preserved in
-`results/next/usability-quick/user_optimized.py.snapshot`. New runtime changes
-need their own cloud source stamp; the historical 2.875x result is not a test
-of cache or recovery behavior.
+The older model source is preserved in
+`results/next/usability-quick/user_optimized.py.snapshot`. The new cache/recovery
+checks and cloud source hashes are in `results/next/improvements-full/`.
+The historical 2.875x result is not a test of these changes. Cache-hit and
+warm-uncached controls are retained together; their single-worker times do
+not establish a statistically reliable cache speedup.
 
 ## Sweep and inspect results
 
