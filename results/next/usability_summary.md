@@ -60,6 +60,8 @@ All **78** profile/input checks pass. Maximum absolute error: **9.8347664e-06**.
 
 Original-FP32 gate on three inputs for each of seven variants; all 21 pass. Three rotated paired rounds include public-forward dispatch, input copies, output ownership and per-invocation/current-stream workspace allocations. No production core is changed. Memory records are incremental peaks above seven resident models, not isolated deployment peaks.
 
+Scratch policy: allocation per invocation/current stream; allocations are included in timing/capture.
+
 Acceptance requires at least 5% lower event AND wall latency than the existing opt-in zero-workspace production Lt provider, followed by independent confirmation before any promotion.
 
 | Variant | Event ms | Wall ms | Event reduction vs existing Lt | Host extension calls |
