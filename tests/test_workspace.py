@@ -13,6 +13,7 @@ def test_workspace_source_changes_only_experimental_copy():
     before = path.read_bytes()
     generated = workspace_source(path.read_text(encoding="utf-8"))
     assert "scratch.data_ptr(), scratch.numel()" in generated
+    assert "int64_t(p->candidates[index].workspaceSize)" in generated
     assert "key(x,w,bytes)" in generated
     assert "Plan>(x,w,limit,bytes)" in generated
     assert "at::cuda::getCurrentCUDAStream" in generated

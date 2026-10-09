@@ -110,7 +110,7 @@ def workspace(output):
                "workspace_calls": {n: p.calls for n, p in providers.items()},
                "shared_process_extra_peak_bytes": extra_peaks,
                "memory_scope": "incremental allocated peak above seven resident models; not isolated deployment memory",
-               "scratch_policy": "allocation per invocation/current stream; allocations are included in timing/capture",
+               "scratch_policy": "only actual selected workspaceSize allocated per invocation/current stream; allocations included in timing/capture",
                "counter_scope": "host extension invocations, including capture; graph replays do not increment Python counters",
                "acceptance": "at least 5% event AND wall reduction vs production_lt plus independent confirmation; no default promotion from this experiment"}
     current = times["production_lt"]

@@ -131,6 +131,7 @@ def workspace_text(payload):
             "Three rotated paired rounds include public-forward dispatch, input copies, output ownership "
             "and per-invocation/current-stream workspace allocations. No production core is changed. "
             "Memory records are incremental peaks above seven resident models, not isolated deployment peaks.", "",
+            "Scratch policy: " + r["scratch_policy"] + ".", "",
             "Acceptance requires at least 5% lower event AND wall latency than the existing opt-in zero-workspace "
             "production Lt provider, followed by independent confirmation before any promotion.", "",
             "| Variant | Event ms | Wall ms | Event reduction vs existing Lt | Host extension calls |",

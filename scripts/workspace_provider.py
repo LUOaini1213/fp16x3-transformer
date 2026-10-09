@@ -32,7 +32,7 @@ def workspace_source(source):
         "matmul(const at::Tensor& x, const at::Tensor& w, int index)":
             "matmul(const at::Tensor& x, const at::Tensor& w, int index, size_t bytes)",
         "float alpha=1.0f, beta=0.0f;":
-            "auto scratch=at::empty({int64_t(bytes)}, x.options().dtype(at::kByte));\n    float alpha=1.0f, beta=0.0f;",
+            "auto scratch=at::empty({int64_t(p->candidates[index].workspaceSize)}, x.options().dtype(at::kByte));\n    float alpha=1.0f, beta=0.0f;",
         "p->workspace.data_ptr(), p->workspace.numel()": "scratch.data_ptr(), scratch.numel()",
         "// Handles are thread-local. Only zero-workspace algorithms are queried: there\n// is no scratch buffer to race when graph capture uses a different CUDA stream.":
             "// Handles are thread-local; workspace budget is part of the plan key.\n// Each invocation has stream-local scratch, including graph capture.",
