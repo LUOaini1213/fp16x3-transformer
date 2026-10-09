@@ -126,6 +126,34 @@ results/kaggle_p100_run.log     raw log of the run those numbers come from
 results/ablation.md  report/  docs/AI_TOOLS.md
 ```
 
+## One-command quick start (maintained version)
+
+Use the repository root. The command checks the installed environment, copies
+the reference weights strictly, verifies the official FP32 correctness gate,
+and writes first-forward/steady-wall timings as JSON. It never installs or
+upgrades Torch/CUDA and ignores inherited experimental `T3_*` switches.
+
+```bash
+python -m scripts.run --check-only
+python -m scripts.run --mode quick --shape 2
+python -m scripts.run --mode steady --device cuda --shape 2
+python -m scripts.run --mode steady --device cuda --shapes 1-13 --output results/local_run.json
+```
+
+`quick` uses eager FP32 GEMMs + SDPA: no Inductor compilation, CUDA graph
+capture, Triton launches, or native extension build. It is intended for first
+use and short-lived inference, **not the 3.546× throughput claim**. `steady`
+uses the unchanged shipped fp16x3 + automatic compile/graph policy; its setup
+cost can be worthwhile for many repeated forwards. These are explicit CLI
+profiles; `submission.py` and direct model imports retain their existing defaults.
+
+Without a CUDA GPU, the command defaults to CPU and labels the result as a
+correctness check, not GPU speed evidence. `--device cuda` instead fails with
+an actionable message. Shape 6 is refused on CPU to avoid its large oracle;
+the 100k-token shape has a separate runner because a full FP32 oracle is
+infeasible. The measured accelerated stack is **Linux / T4 / Torch 2.11.0+cu128**;
+`torch>=2.1` is a fallback API floor, not validation of every version's speed.
+
 ## Setup
 
 GPU work runs on **free cloud GPUs** (Google Colab T4 / Kaggle T4 or P100);

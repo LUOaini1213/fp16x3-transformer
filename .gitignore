@@ -3,6 +3,7 @@ __pycache__/
 *.pyo
 .ipynb_checkpoints/
 .venv/
+results/local_run*.json
 venv/
 # Watermarked problem-statement screenshots (kept locally, not published)
 屏幕截图*.png

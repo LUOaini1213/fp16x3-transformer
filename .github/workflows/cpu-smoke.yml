@@ -35,3 +35,8 @@ jobs:
           T3_X3_BLAS=lt python scripts/smoke_cpu.py
       - name: fp16x3 unit tests (exact CPU emulation)
         run: python -m pytest -q tests/
+      - name: One-command entry point and explicit runtime profiles
+        run: |
+          python -m scripts.run --check-only --device cpu --output /tmp/doctor.json
+          python -m scripts.run --mode quick --device cpu --shape 2 --repeats 1 --output /tmp/quick.json
+          python -m scripts.run --mode steady --device cpu --shape 2 --repeats 1 --output /tmp/steady.json
