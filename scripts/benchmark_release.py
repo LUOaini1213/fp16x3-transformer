@@ -8,6 +8,7 @@ import argparse
 from contextlib import contextmanager
 import gc
 import hashlib
+import importlib
 import json
 import os
 from pathlib import Path
@@ -207,7 +208,9 @@ def fp32():
 
 
 def flash():
-    import kernels.turing_attention as adapter
+    # kernels.__init__ exports a same-named function. Dotted import-as can
+    # resolve that attribute instead of the submodule; request the module.
+    adapter = importlib.import_module("kernels.turing_attention")
     before = str(torch.__version__)
     start = time.perf_counter()
     with (OUT / "release_turing_build.log").open("w", encoding="utf-8") as log:
