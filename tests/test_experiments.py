@@ -63,6 +63,11 @@ def test_log_recovery_uses_last_source_stamped_payload():
         last_payload("no result", "next_flash")
 
 
+def test_committed_followup_evidence_hashes():
+    from scripts.verify_next_evidence import ROOT, verify_artifacts
+    assert verify_artifacts(ROOT / "results/next") >= 28
+
+
 def test_lt_cpu_fallback_never_builds(monkeypatch):
     import torch
     from kernels import cublaslt_backend as backend
@@ -152,3 +157,31 @@ def test_turing_noncausal_never_loads_extension(monkeypatch):
     q = torch.randn(1, 2, 16, 64)
     expected = torch.nn.functional.scaled_dot_product_attention(q, q, q, is_causal=False, scale=.125)
     assert torch.equal(backend.turing_attention(q, q, q, .125, False), expected)
+
+
+def test_turing_adapter_copies_interleaved_qkv_to_full_bshd(monkeypatch):
+    import importlib
+    from types import SimpleNamespace
+    import torch
+    backend = importlib.import_module("kernels.turing_attention")
+    packed = torch.randn(1, 8192, 3, 2, 64, dtype=torch.float16)
+    q, k, v = [packed[:, :, part].transpose(1, 2) for part in range(3)]
+    assert not q.transpose(1, 2).is_contiguous()
+    calls = []
+
+    def fake_fwd(qq, kk, vv, scale, causal):
+        assert all(t.is_contiguous() for t in (qq, kk, vv))
+        assert qq.shape == (1, 8192, 2, 64)
+        assert torch.equal(qq, q.transpose(1, 2))
+        assert torch.equal(kk, k.transpose(1, 2))
+        assert torch.equal(vv, v.transpose(1, 2))
+        calls.append((scale, causal))
+        return qq.clone(), None
+
+    monkeypatch.setattr(backend, "turing_eligible", lambda *args: True)
+    monkeypatch.setattr(backend, "_turing_load", lambda: SimpleNamespace(fwd=fake_fwd))
+    monkeypatch.setattr(backend, "_TURING_CALLS", 0)
+    out = backend.turing_attention(q, k, v, .125)
+    assert torch.equal(out, q) and out.shape == q.shape
+    assert out.data_ptr() != q.data_ptr()
+    assert calls == [(.125, True)] and backend._TURING_CALLS == 1

@@ -151,8 +151,12 @@ recovered from the **last complete printed payload** in Kaggle's persisted log,
 not represented as the original artifact's bytes. A
 [recovery receipt](../results/next/flash-candidate/next_recovery_receipt.json)
 and artifact hashes record that derivation. No upstream source or binary is
-copied into this repository. A separate final production-adapter verification
-is required before attributing these results to the maintained interface.
+copied into this repository. A later artifact download succeeded: its
+[original JSON](../results/next/flash-artifact-download/next_flash.json) is
+semantically identical to the recovered payload, and the original build log
+is retained alongside it. Both variants have independent artifact hashes.
+A separate final production-adapter verification is required before attributing
+these results to the maintained interface.
 
 ## Reproduction
 
@@ -177,6 +181,19 @@ paired rounds. It requires two full native-FP16 outputs' worth of comparison
 storage (one streamed to host), so host memory matters as well as GPU memory.
 For an earlier exact experiment variant, run its committed `cloud_script.py`;
 the current driver contains the repaired validation and integration checks.
+
+Evidence integrity and the final tested core can be checked locally without
+CUDA or Kaggle credentials:
+
+```bash
+python scripts/verify_next_evidence.py \
+  --current-core results/next/final/next_lt_integrated.json
+python -m pytest -q tests/
+```
+
+The evidence test verifies saved file hashes on CI as well as locally. Historical
+driver variants intentionally differ; the optional current-core check covers
+the model, kernels and unchanged official benchmark rather than those drivers.
 
 ## Sources checked
 
