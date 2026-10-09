@@ -112,6 +112,48 @@ Python key reconstruction erase the proposed benefit. It is rejected, without
 removing any safety checks from the real model.
 [Corrected graph comparison](../results/next/integrated/next_native_keys.json).
 
+## Long-sequence native-FP16 attention findings
+
+The pinned Turing extension was built against the unchanged cloud torch/CUDA
+installation. On full shape 14 (`32 × 100000 × 1024`, 16 heads, two layers),
+the isolated integration candidate and native-FP16 SDPA both use eager execution
+and batch chunks of one. Three rotated paired full forwards give:
+
+| Backend | Three steady rounds (seconds) | Median (seconds) |
+|---|---|---:|
+| Native-FP16 SDPA | 138.1881, 138.6050, 137.9473 | 138.1881 |
+| Guarded Turing candidate | 77.8718, 77.1328, 77.1079 | 77.1328 |
+
+This is **1.7916× throughput**, or **44.2% less full-forward time**, including
+QKV layout copies and the returned output. First calls are separate (138.52
+and 77.46 seconds), as is the roughly ten-minute external build. Both backends
+record 14,603,990,016 bytes peak allocated GPU memory in this two-model process;
+this is not the previous single-model capacity audit's memory protocol.
+
+All **3,276,800,000 outputs** are finite and pass the official elementwise
+absolute-OR-relative rule against the native-FP16 SDPA model: zero failed
+elements, max absolute error 0.0078125. Some elements pass by relative tolerance.
+An independent original-FP32 reference checks only the first batch's first 512
+causal tokens: zero failures, max absolute error 0.0055175. **This does not
+establish full-length equivalence to the original FP32 reference.** FP32 graded
+inference never selects this backend or casts down to half.
+
+The 100000-token, head-width-64 attention-only comparison is 2033.19 → 1087.12
+ms in the official event loop, including guards and contiguous copies. Short
+128-token requests lose, supporting the production adapter's minimum sequence
+length of 8192. Packed strided QKV, head widths 64/96/128, unsupported widths,
+FP32 input and non-default-stream rejection are exercised by the candidate.
+
+[Candidate result](../results/next/flash-candidate/next_flash.json) and its
+exact cloud script/log retain this separate candidate implementation. Artifact
+enumeration was rate-limited by the large private build tree; the JSON was
+recovered from the **last complete printed payload** in Kaggle's persisted log,
+not represented as the original artifact's bytes. A
+[recovery receipt](../results/next/flash-candidate/next_recovery_receipt.json)
+and artifact hashes record that derivation. No upstream source or binary is
+copied into this repository. A separate final production-adapter verification
+is required before attributing these results to the maintained interface.
+
 ## Reproduction
 
 ```bash
@@ -123,7 +165,8 @@ python scripts/build_kaggle_selfcontained.py --only next \
   --accelerator NvidiaTeslaT4 --id YOUR_ACCOUNT/track3-integrated \
   --out .kaggle_upload/integrated
 python scripts/build_kaggle_selfcontained.py --only next \
-  --env T3_NEXT_PHASE=flash --accelerator NvidiaTeslaT4 \
+  --env T3_NEXT_PHASE=flash --env T3_FLASH_USE_ADAPTER=1 \
+  --accelerator NvidiaTeslaT4 \
   --id YOUR_ACCOUNT/track3-flash --out .kaggle_upload/flash
 kaggle kernels push -p .kaggle_upload/flash --accelerator NvidiaTeslaT4
 ```

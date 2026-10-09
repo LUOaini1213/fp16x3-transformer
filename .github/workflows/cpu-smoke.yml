@@ -34,4 +34,4 @@ jobs:
           T3_ATTN=turing python scripts/smoke_cpu.py
           T3_X3_BLAS=lt python scripts/smoke_cpu.py
       - name: fp16x3 unit tests (exact CPU emulation)
-        run: pytest -q tests/
+        run: python -m pytest -q tests/

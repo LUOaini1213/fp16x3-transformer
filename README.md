@@ -484,6 +484,13 @@ An independent final-code session confirms **77.71 → 72.10 ms** event latency
 (-7.2%) and **78.63 → 72.43 ms** wall latency (-7.9%); all 13 FP32 shapes pass
 again. [Final paired evidence](results/next/final/next_lt_integrated.json).
 
+For native-FP16 shape 14, the separate guarded Turing integration candidate
+records **138.19 → 77.13 seconds**, **1.79×**, over three paired full forwards.
+All 3.277 billion outputs agree with native-FP16 SDPA under the official OR
+gate. The independent original-FP32 check is a 512-token causal prefix only,
+not a full-length FP32 accuracy claim. Build time and first calls are excluded
+from steady timing. [Candidate evidence](results/next/flash-candidate/next_flash.json).
+
 C++ dispatch wrappers and bulk native parameter-key reads were also implemented
 and measured, but did not beat the existing manual CUDA Graph. They remain
 experiments rather than default-path dependencies.

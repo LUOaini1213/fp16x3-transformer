@@ -52,6 +52,17 @@ def test_evidence_never_silently_overwrites(tmp_path):
     assert target.read_bytes() == b"first"
 
 
+def test_log_recovery_uses_last_source_stamped_payload():
+    from scripts.recover_next_log import last_payload
+    log = ('noise\nNEXT_FLASH {"metadata":{"source_manifest":{}},"results":{"round":1}}\n'
+           'NEXT_FLASH {"metadata":{"source_manifest":{}},"results":{"round":3}}\n')
+    assert last_payload(log, "next_flash")["results"]["round"] == 3
+    with pytest.raises(ValueError):
+        last_payload("NEXT_FLASH {\"results\":{}}\n", "next_flash")
+    with pytest.raises(ValueError):
+        last_payload("no result", "next_flash")
+
+
 def test_lt_cpu_fallback_never_builds(monkeypatch):
     import torch
     from kernels import cublaslt_backend as backend

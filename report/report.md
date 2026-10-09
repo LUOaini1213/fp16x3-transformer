@@ -353,6 +353,21 @@ Full native-FP16 backend agreement, feasible original-FP32 causal-prefix checks,
 and full-length timings are separate evidence categories, not interchangeable
 accuracy claims.
 
+The isolated integration candidate's full shape-14 paired experiment records
+three steady SDPA forwards at 138.1881/138.6050/137.9473 seconds and three
+Turing forwards at 77.8718/77.1328/77.1079 seconds. Median latency falls
+138.19 → 77.13 seconds (1.7916× throughput, 44.2% less time), including layout
+copies. Setup/build and first forwards are separate. Both record 14.604 GB
+peak GPU allocation in the shared two-model process, not the older
+single-model memory protocol.
+
+All 3,276,800,000 outputs are finite; full agreement with native-FP16 SDPA
+has zero OR-gate failures (max absolute error 0.0078125). The independent
+original-FP32 first-batch 512-token prefix also passes (max error 0.0055175).
+There is no full original-FP32 equivalence claim. Candidate evidence is in
+`results/next/flash-candidate/`; its JSON is recovered from the final printed
+cloud-log payload, with an explicit provenance receipt.
+
 Exact methods, raw logs, repaired/invalid trials and primary-source links are in
 [`docs/NEXT_OPTIMIZATION_AUDIT.md`](../docs/NEXT_OPTIMIZATION_AUDIT.md). Earlier
 reported results and the frozen submission are retained unchanged.
