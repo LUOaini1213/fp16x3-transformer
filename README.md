@@ -22,9 +22,10 @@ shapes.
 
 ## Current maintained version: independent reproduction and quick startup (2026-10-09)
 
-The numerical tables in this section describe the pre-cache/recovery revision,
-preserved by exact Git commits and source snapshots. New balanced/cache/recovery
-code is being validated separately; no old speedup is attributed to that revision.
+The earlier numerical tables in this section describe the pre-cache/recovery
+revision, preserved by exact Git commits and source snapshots. Balanced and the
+cache/recovery changes have their own source-pinned T4 audit below; historical
+speedups are not attributed to that revision.
 
 Two additional independent T4 sessions reproduce the same nine production-core
 hashes as the first clean audit. Their median shape speedups are **2.801×** and
@@ -49,8 +50,24 @@ wall improvement over existing opt-in Lt; no backend is promoted.
 
 An additional opt-in `balanced` CLI profile now keeps fp16x3 and manual CUDA
 graph selection while skipping Inductor. It does not change the model defaults
-or the old measurements; balanced T4 performance remains unmeasured. It still
-incurs Triton JIT and graph setup costs where applicable.
+or the old measurements. On all 13 shapes, separate compiler-cold workers
+record **3.707–6.404 s** first public forwards versus **10.609–34.542 s** for
+steady, excluding process/import/model/input/context setup. All **234**
+profile/input checks pass. The paired performance gate clears **12/13** shapes:
+shape 2 has similar GPU event time but **6.95% higher wall time** in this sweep.
+Balanced remains opt-in, with Triton JIT and graph setup costs still present.
+A targeted repeat in one new T4 session uses three fresh processes and 200
+calls per round: **2/3** comparisons clear the steady gate; the third records
+**+3.63% event time**. Both the original miss and the repeat are retained.
+
+Weight changes now permit one fresh dispatch selection; real T4 graph tests
+verify recovery, stable-weight behavior, masks and owned outputs. Optional
+JSON dispatch hints are recaptured and validated, never persisted tensors or
+graph pointers. Two fresh-session trials save an observed **23.5 / 71.4 ms**
+on first forward versus warmed uncached controls; this is not a throughput
+guarantee. Four shape-6 FFN-fusion candidates pass accuracy but lose on speed,
+so none replaces production.
+[Completed improvement audit](results/next/improvements_summary.md).
 
 ### Original single-session clean audit
 
@@ -181,7 +198,8 @@ cost can be worthwhile for many repeated forwards. These are explicit CLI
 profiles; `submission.py` and direct model imports retain their existing defaults.
 `balanced` keeps steady's compensated arithmetic and guards but skips Inductor,
 retaining eager/manual-graph selection. Its T4 startup and steady performance
-are pending validation, so no existing speedup is attributed to it.
+have a separate 13-shape audit: all numerical checks pass, while the strict
+startup/steady performance gate clears 12/13 shapes. No default is changed.
 
 An optional `--tune-cache results/local_dispatch.json` stores environment/source/
 layout-keyed eager/graph hints. It never stores outputs or graph pointers, and a

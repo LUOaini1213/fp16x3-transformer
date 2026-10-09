@@ -452,3 +452,37 @@ pass, but every experimental budget loses to existing opt-in Lt
 5%-on-both-metrics gate or is promoted. Core files and the frozen submission remain
 unchanged. See the [generated combined report](../results/next/usability_summary.md)
 and [methods](../docs/RELEASE_VERIFICATION.md).
+
+## 13. Balanced runtime, recovery, dispatch hints and rejected FFN fusion
+
+The next maintained revision (`c8fe1cf7807d5633a1b75773d2ab03461318cb22`)
+adds an explicit balanced CLI profile, one-time dispatch re-selection after
+weight/norm changes and opt-in source/environment/layout-keyed JSON hints.
+It keeps FP32 input/output, compensated tensor-core GEMMs, FP32 SDPA, exact
+GELU and strict reference parameter compatibility. No graph pointers, outputs
+or compiled functions are serialized; cache hits recapture and validate against
+fresh eager output. Existing direct-model and CLI defaults are unchanged.
+
+A clean normal-import T4 sweep passes **234/234** profile/input checks across
+13 shapes. Balanced skips Inductor, reducing first public-forward cost to
+**3.707–6.404 s**, versus steady **10.609–34.542 s** under empty per-mode
+compiler caches. These are not total application startup costs. Its strict
+performance gate clears **12/13** shapes; shape 2 has **+6.95% wall time**.
+A new T4 session repeats that shape with three fresh processes, three paired
+rounds of 200 calls and all 27 additional accuracy checks passing: **2/3**
+comparisons meet the steady gate, while one has **+3.63% event time**. Both
+misses remain published; balanced stays opt-in rather than becoming a default.
+
+Real graph contracts pass in two sessions, including weight recovery, stable
+weights, masks, owned outputs and sequential alternate-stream use. Cache hits
+save an observed **23.5 / 71.4 ms** first-forward cost against warmed uncached
+controls, with no steady-throughput win established. Concurrent calls on one
+mutable graph instance are not claimed.
+
+A fresh shape-6 profile motivates four FFN GEMM + exact-GELU + operand-split
+fusion variants. All 15 variant/input checks pass, but each is slower than
+the baseline (**647.95 ms** versus **1117.71–4631.51 ms** event latency).
+None is promoted. Negative results, exact launchers, raw logs and source hashes
+are included in the [generated audit](../results/next/improvements_summary.md);
+this revision's single-session figures do not replace earlier independent
+three-session results or the frozen competition submission.

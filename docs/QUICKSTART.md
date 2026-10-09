@@ -22,7 +22,7 @@ installation, downgrade, package upgrade, or login.
 | Profile | Compute | Startup work | Intended use |
 |---|---|---|---|
 | `quick` | FP32 GEMMs + memory-efficient SDPA | No Inductor, manual graphs, Triton launches, or native builds | Trying the model, short-lived inference |
-| `balanced` | Same compensated fp16x3 + SDPA as steady | No Inductor; Triton JIT and eager/manual-graph selection remain | Candidate for repeated inference with less setup; T4 performance pending |
+| `balanced` | Same compensated fp16x3 + SDPA as steady | No Inductor; Triton JIT and eager/manual-graph selection remain | Opt-in repeated inference with less measured first-forward setup; performance gate 12/13 |
 | `steady` | Shipped compensated fp16x3 + SDPA | First-forward compile/eager/manual-graph selection | Many repeated forwards |
 
 Quick mode is not FP16 autocast or a lower-accuracy shortcut. All profiles keep
@@ -53,9 +53,20 @@ configurations. This motivates a separate profile, not a blanket claim that
 Inductor is slower on every environment. The CLI still defaults to `quick` and
 direct model imports retain the shipped automatic policy.
 
-Balanced is new and has no measured T4 startup/throughput result yet. The old
-quick/steady numbers and 2.875x aggregate must not be presented as balanced
-measurements. The exact earlier runner is preserved in
+The new source-pinned T4 sweep checks all 13 shapes, with three seeds each
+for every profile in both separate cold workers and paired workers: **234/234
+accuracy checks pass**. Balanced first public forwards span **3.707–6.404 s**
+versus steady **10.609–34.542 s** using empty per-mode compiler directories.
+The lower-first-forward / <=2% event-and-wall-regression gate clears **12/13**:
+shape 2 records **+6.95% wall time** despite similar GPU event latency. The
+profile remains opt-in; see the [complete audit](../results/next/improvements_summary.md).
+A targeted shape-2 repeat in one new T4 session uses three fresh processes,
+three rounds and 200 calls per variant/round: **2/3** comparisons are within
+2% on both metrics; the third has **+3.63% event time**. It does not replace
+the original failed gate or justify a default promotion.
+
+The old quick/steady numbers and 2.875x aggregate must not be presented as
+balanced measurements. The exact earlier runner is preserved in
 `results/next/usability-quick/run.py.snapshot` and checked against its recorded
 source hash; it is historical evidence, not an executable entry point.
 
@@ -83,10 +94,17 @@ Weight/norm changes now invalidate dispatch and permit one new eager/graph
 selection. Rejecting a slower graph in the normal tuner does not reset that
 selection, so stable weights cannot trigger a tuning loop.
 
+Two source-pinned T4 sessions verify fresh graph-cache reuse, weight recovery,
+mutable masks and owned outputs. Sequential use on an alternate stream passes;
+concurrent calls on one mutable graph instance are not claimed. Cache hits save
+an observed **23.5 / 71.4 ms** on first public forward versus compiler-warm
+uncached controls. Steady wall latency is essentially unchanged; these trials
+are not a general startup or throughput guarantee.
+
 The older model source is also preserved in
 `results/next/usability-quick/user_optimized.py.snapshot`. New runtime changes
-need their own cloud source stamp; the historical 2.875x result is not a test
-of cache or recovery behavior.
+are tested at commit `c8fe1cf7807d5633a1b75773d2ab03461318cb22`; the historical
+2.875x result is not a test of cache or recovery behavior.
 
 ## Sweep and inspect results
 
@@ -146,6 +164,10 @@ real graph/weight/mask/output contracts. `--phase fusion` profiles shape 6 and
 tests four experimental compensated GEMM + exact-GELU + split epilogues. The
 fusion must pass all three original accuracy gates and win at least 3% in both
 event and wall timing, then be independently confirmed before any promotion.
+All four measured shape-6 candidates pass accuracy but lose by **72.5–614.8%**
+in event latency. They remain research-only; production math and defaults are
+unchanged. Exact launchers, logs, hashes and the generated comparison are in
+the [improvement report](../results/next/improvements_summary.md).
 
 The [generated usability report](../results/next/usability_summary.md) includes
 independent-session ranges, startup/steady trade-offs, and losing workspace
