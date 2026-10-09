@@ -20,9 +20,11 @@ Examples:
 """
 
 import argparse
+import hashlib
 import json
 import os
 import py_compile
+import subprocess
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_OUTDIR = os.path.join(HERE, ".kaggle_upload", "kernel_sc")
@@ -76,7 +78,7 @@ def build_selector(only, extra_env):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="all",
-                    choices=["all", "1-13", "14", "ablation", "triton", "probe", "attn", "profile", "x3", "gemm", "x3k", "x3geo", "x3i8"],
+                    choices=["all", "1-13", "14", "ablation", "triton", "probe", "attn", "profile", "x3", "gemm", "x3k", "x3geo", "x3i8", "runtime", "runtime14"],
                     help="which section of the sweep the kernel runs (default: all)")
     ap.add_argument("--id", default="wenjiluo/track3-bench",
                     help="Kaggle kernel id to push to")
@@ -87,6 +89,8 @@ def main():
     ap.add_argument("--env", action="append", default=[], metavar="K=V",
                     help="extra environment variable baked into the kernel "
                          "(repeatable), e.g. --env T3_COMPILE=0")
+    ap.add_argument("--reference-ref", default="HEAD",
+                    help="git revision of the previous model for the paired runtime audit")
     args = ap.parse_args()
 
     bench = read("torch_transformer_benchmark.py")
@@ -97,7 +101,9 @@ def main():
     # mandatory __future__ import.
     fut = "from __future__ import annotations\n"
     assert fut in bench
-    prologue = fut + "\n" + BOOTSTRAP + "\n" + build_selector(args.only, args.env)
+    source_sha = hashlib.sha256(read("user_optimized.py").encode("utf-8")).hexdigest()
+    source_env = [*args.env, "T3_RUNTIME_SOURCE_SHA256=" + source_sha]
+    prologue = fut + "\n" + BOOTSTRAP + "\n" + build_selector(args.only, source_env)
     bench = bench.replace(fut, prologue, 1)
 
     # The Kaggle kernel is a single file, so the hand-written Triton kernels
@@ -125,6 +131,21 @@ def main():
          "can_use_attention = can_use\n" + uo[b1 + 1:])
 
     driver = read(os.path.join("scripts", "_kaggle_driver.py"))
+    if args.only in ("runtime", "runtime14"):
+        revision = subprocess.check_output(
+            ["git", "rev-parse", "--verify", args.reference_ref], cwd=HERE, text=True).strip()
+        previous = subprocess.check_output(
+            ["git", "show", f"{revision}:user_optimized.py"], cwd=HERE, encoding="utf-8")
+        previous = previous.replace("from __future__ import annotations\n", "")
+        previous = previous.replace("from torch_transformer_benchmark import BaselineTransformer\n", "")
+        p0 = previous.index("# --- kernels import (begin) ---")
+        p1 = previous.index("# --- kernels import (end) ---")
+        p1 = previous.index("\n", p1)
+        previous = previous[:p0] + "HAVE_KERNELS = True\n" + previous[p1 + 1:]
+        previous = previous.replace("class UserOptimizedTransformer(", "class PreviousTransformer(", 1)
+        driver = (previous + "\n" + read(os.path.join("scripts", "benchmark_runtime.py"))
+                  + ("\nruntime_benchmark(PreviousTransformer, " + repr(revision) + ")\n"
+                     if args.only == "runtime" else "\nruntime_shape14(" + repr(revision) + ")\n"))
 
     combined = (
         bench

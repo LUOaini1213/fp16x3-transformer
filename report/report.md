@@ -1,8 +1,9 @@
 # Track 3 Technical Report — Implement a GPU Kernel for a Transformer Layer
 ### TikTok TechJam 2026
 
-Rendered version (figures inline, print-to-PDF from the browser):
-https://claude.ai/code/artifact/80227d3c-9682-42d0-a957-bf5188704088
+Historical rendered version (figures inline, print-to-PDF from the browser;
+the maintained runtime audit below is newer):
+[Rendered historical report](https://claude.ai/code/artifact/80227d3c-9682-42d0-a957-bf5188704088)
 
 ## 1. Environment
 
@@ -78,8 +79,8 @@ and `user_optimized.py`.
 
 ## 5. Results
 
-All 13 gradeable shapes PASS on both cards. The shipped T4 path lands 6.7e-06 from the fp32
-reference on twelve shapes and 4.1e-05 on the K=1024 one (297× and 49× inside the `atol=0.002`
+All 13 gradeable shapes PASS on both cards. The shipped T4 path lands 2.86e-06 from the fp32
+reference on twelve shapes and 9.54e-06 on the K=1024 one (699× and 210× inside the `atol=0.002`
 gate); the fp32-SGEMM path and the P100 sit at ~1.9e-6, ~1049× inside.
 
 | regime | median | range | worst `max_abs` | margin vs `atol` |
@@ -165,9 +166,9 @@ matmuls — the same forward takes
 **184 s at 17,402 tok/s** with a 14.17 GB peak — on a card with only 15.64 GB
 total, tighter than the P100, and it still fits
 (`results/kaggle_t4_shape14.log`).
-Correctness is established at a truncated `seq_len` where the baseline can run
-(PASS, `max_abs 1.2e-6`); SDPA's math is independent of `S`, so that carries to
-1e5. Getting here required the memory fix in §4.4 — before it, the run died in
+The separate truncated fp32 check passes (`max_abs 1.2e-6`); this does not prove
+full-length fp16 numerical equivalence. Getting here required the memory fix
+in §4.4 — before it, the run died in
 the final `torch.cat`, not in the attention.
 
 **Precision.** The truncated correctness check runs in **fp32**, matching the
@@ -216,9 +217,11 @@ the fp16 range is guarded without a sync in steady state.
   recomputed in fp32 fails identically (7603 vs our 6131 elements, same
   `max_abs 0.047`), because bf16's ulp near 1.0 is 0.0078 against `atol=0.002`.
   The graded configuration is fp32.
-- The padded fallback still builds a dense `[B,1,S,S]` bias, reintroducing the
-  `O(S^2)` allocation SDPA avoids. The graded path (`padding_ratio=0`) never
-  takes it; making it memory-efficient is unfinished work.
+- The maintained padded path (2026-10-09) packs valid tokens by length and
+  scatters outputs, avoiding the previous dense `[B,1,S,S]` bias. It preserves
+  order, supports internal holes and empty rows, and is equivalent here because
+  the model has no position-dependent operators. Many distinct valid lengths
+  require many smaller forwards, so there is still launch-overhead work to do.
 - The fused add+LayerNorm Triton kernel is written, registered as a
   `torch.library` op so it composes with `torch.compile`, and measured
   (`kernels/fused_layernorm.py`). Inside Inductor's graph it is within ±5% of
@@ -257,3 +260,62 @@ session, `git clone`, run — numbers reproduce within free-tier variance.
 ## 8. AI tooling
 
 See `docs/AI_TOOLS.md`.
+
+## 9. Maintained runtime audit (2026-10-09)
+
+The post-submission update caches stable ordinary-mask reductions, drops an
+unused CUDA-graph mask copy, and fixes cached-weight invalidation on Parameter
+replacement and LayerNorm updates. It also packs padding without a dense
+S-by-S bias and extends eager-vs-compiled autotuning to large unchunked shapes;
+manual CUDA graphs remain small-shape-only. The September results above are
+historical and remain intact.
+
+The paired T4 repeat (`results/runtime_repeat.json`, raw log alongside it) uses
+the unmodified official `benchmark_once` loop: 9 rotated rounds of 50 samples
+per model, identical weights and inputs, reference revision `6a52565`, current
+source SHA256 recorded in the result. B=1 latency falls from 0.4383 to 0.3809 ms;
+B=4 falls from 0.4112 to 0.3592 ms. Shapes 8 and 12 are 1.0% and 2.4% slower,
+so this is a small-batch improvement, not a claim that every shape gets faster.
+All four numerical checks pass; separate wall-clock measurements are retained.
+
+The final-code sweep (`results/runtime_full.json`) passes all 13 gradeable
+shapes on three random input trials each. It uses 3 rotated rounds of 30
+official timing samples per model. Extending eager-vs-compiled selection
+recovers a PyTorch 2.11 compiler regression: shape 6 goes from 1479.81 to
+671.80 ms (-54.6%), shape 13 from 109.52 to 68.18 ms (-37.7%), both choosing
+eager. Wall-clock loop latency confirms the gain (1465.55 → 673.68 ms and
+105.44 → 65.50 ms). These are paired improvements over revision `6a52565` in
+the current environment, not extra multipliers over the September headline.
+Worst absolute error is 9.96e-6. Shapes 8 and 9 are slightly slower (0.6% and
+0.4%), and the small-shape repeat above is preserved with its earlier source hash.
+The median of the 13 paired improvements is 1.012×, not the 2.20× of shape 6.
+
+On the 32,768-token irregular-padding case (1,024 valid tokens per row), the
+current model uses 93.5 MB peak additional tensor allocation, compared with an
+8.59 GB theoretical dense bias in the old implementation. Valid outputs pass
+against an independent compact-sequence reference (`max_abs=1.43e-6`) and
+invalid positions are zero. The medium padded comparison in the initial logs
+measured memory after warmup, excluding persistent graph allocations; those
+memory columns must not be used as a total-footprint comparison.
+
+The corrected audit (`results/runtime_memory.json`) measures from before the
+first forward, excluding only the comparison's own temporary tensors. On the
+4×512×128 padded case it records 22.27 MB vs 9.43 MB peak extra allocation and
+2.603 vs 2.266 ms latency. This includes setup caches and persistent CUDA-graph
+allocations. Both implementations pass the official comparison rule.
+The final full-process sweep records a higher previous-model setup peak
+(316.85 MB) while the current packed path remains 9.43 MB. The dedicated and
+full-sweep contexts are retained separately; the old peak is not a constant
+independent of the surrounding run.
+
+The final-code full-length capacity audit (`results/runtime_shape14.json`)
+records one cold fp16 forward at 157.57 s and 14.37 GB peak allocation. All
+outputs are finite. An independent fp32 reference on the same original weights
+checks the first batch's first 512 causal outputs: zero failing elements under
+the official OR gate, `max_abs=0.0021081` (some pass via relative tolerance).
+No numerical equivalence is claimed for the remaining full-length outputs,
+and this single cold timing is not comparable to the historical steady median.
+
+Local regression tests: 51 passed, 1 CUDA-only test skipped. CPU smoke checks
+also pass the 12 CPU-feasible official shapes and two padded cases. The cloud
+audit separately validates graph ownership and mutation/invalidation contracts.

@@ -10,6 +10,7 @@ honestly.
 | Tool | Role |
 |---|---|
 | **Claude (Claude Code, Opus 4.8)** | Read and line-by-line analyzed the official `torch_transformer_benchmark.py`; designed the optimization strategy (multi-agent design pass exploring an SDPA/compile MVP, a Triton/dispatch track, and an infra/deliverables track); implemented `UserOptimizedTransformer`; wrote the run harness, notebooks, and this documentation. |
+| **Codex** | Maintained the project after submission: audited the current code, removed repeated mask synchronization, repaired cache invalidation on parameter/LayerNorm changes, implemented packed padding, extended large-shape runtime selection, and ran paired T4 checks using the official timing loop (2026-10-09). |
 | **Google Colab / Kaggle** | Free GPU runtimes (T4 / P100) used to benchmark and validate — an explicitly allowed development tool. |
 | **PyTorch Inductor (`torch.compile`)** | AI/compiler-driven kernel generation: automatically fuses LayerNorm, bias, and GELU epilogues into Triton kernels. |
 
@@ -21,7 +22,7 @@ honestly.
    rather than guessing — several of these directly constrain the implementation.
 2. **The headline insight.** The AI computed that shape 14's baseline score
    matrix is `[32,16,1e5,1e5] = 5.12e12` elements ≈ **20.5 TB**, proving the
-   baseline is infeasible and that a memory-efficient (Flash) attention is
+   baseline is infeasible and that memory-efficient attention is
    mandatory, not merely faster. This reframed the whole submission as
    "impossible → possible."
 3. **Per-shape dispatch.** The AI classified the 14 shapes into launch-bound,
@@ -38,8 +39,10 @@ honestly.
   (see `report/` and the project plan).
 - **Diff:** implemented `user_optimized.py`, `submission.py`, `run_all.py`,
   `scripts/shape14_optimized_only.py`.
-- **Verify:** every shape re-run through the *official* harness on cloud GPUs;
-  results captured in `results/results.csv` and the ablation table.
+- **Verify:** numerical checks use the official comparison rule. Historical
+  tables came from the custom sweep driver documented in the README; the
+  maintained runtime audit uses the official timing loop. Raw logs and
+  machine-readable results identify which protocol produced each table.
 
 _This file is intentionally specific so judges can see exactly where AI was used
 and where human review/verification gated it._

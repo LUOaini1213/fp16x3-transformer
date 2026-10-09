@@ -1,0 +1,94 @@
+{
+  "metadata": {
+    "reference_revision": "6a52565d25dd0455a0425b1d7a8f79039267c4db",
+    "current_source_sha256": "3cd97e0c098b47776b5cb4a42c542dad2f4280a09eede64316d76053a263906e",
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "timing": "official benchmark_once, interleaved three-model order",
+    "repeats": 50,
+    "rounds": 9,
+    "accuracy_trials": 3
+  },
+  "results": [
+    {
+      "shape": 2,
+      "status": "PASS",
+      "reference_ms": 3.016256093978882,
+      "previous_ms": 0.43827199935913086,
+      "current_ms": 0.38092800974845886,
+      "previous_speedup": 6.882155598325795,
+      "current_speedup": 7.91817880751439,
+      "improvement": 1.1505376032824113,
+      "previous_wall_ms": 0.39856779999922765,
+      "current_wall_ms": 0.3613787999995566,
+      "max_abs": 1.6689300537109375e-06
+    },
+    {
+      "shape": 3,
+      "status": "PASS",
+      "reference_ms": 3.084351897239685,
+      "previous_ms": 0.41121600568294525,
+      "current_ms": 0.35920000076293945,
+      "previous_speedup": 7.50056382683162,
+      "current_speedup": 8.586725753587231,
+      "improvement": 1.144810703812706,
+      "previous_wall_ms": 0.41049999999813735,
+      "current_wall_ms": 0.37330440000005183,
+      "max_abs": 1.430511474609375e-06
+    },
+    {
+      "shape": 8,
+      "status": "PASS",
+      "reference_ms": 156.29505157470703,
+      "previous_ms": 99.90817642211914,
+      "current_ms": 100.8768310546875,
+      "previous_speedup": 1.5643869918548943,
+      "current_speedup": 1.5493652005184038,
+      "improvement": 0.9903976500605651,
+      "previous_wall_ms": 100.82760689999759,
+      "current_wall_ms": 100.85906040000054,
+      "max_abs": 9.953975677490234e-06
+    },
+    {
+      "shape": 12,
+      "status": "PASS",
+      "reference_ms": 3.018671989440918,
+      "previous_ms": 0.9783520102500916,
+      "current_ms": 1.0022239685058594,
+      "previous_speedup": 3.0854661285658,
+      "current_speedup": 3.0119734553357667,
+      "improvement": 0.9761810144180081,
+      "previous_wall_ms": 1.0916054999995595,
+      "current_wall_ms": 1.061040900003718,
+      "max_abs": 2.1457672119140625e-06
+    }
+  ],
+  "summary": {
+    "shapes": 4,
+    "all_passed": true,
+    "median_previous_speedup": 4.983810863445798,
+    "median_current_speedup": 5.465076131425079,
+    "median_improvement": 1.0676041769366356
+  },
+  "padding": [
+    {
+      "case": "padded_4x512x128",
+      "status": "PASS",
+      "previous_ms": 2.293007969856262,
+      "current_ms": 2.2317919731140137,
+      "improvement": 1.0274290782831492,
+      "previous_peak_extra_bytes": 1048576,
+      "current_peak_extra_bytes": 8192000
+    },
+    {
+      "case": "sparse_2x32768x128",
+      "status": "PASS",
+      "valid_per_row": 1024,
+      "max_abs": 1.430511474609375e-06,
+      "peak_extra_bytes": 93520384,
+      "old_dense_bias_bytes": 8589934592,
+      "reference": "same weights, compact valid tokens, original order"
+    }
+  ]
+}

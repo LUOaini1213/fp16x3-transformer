@@ -77,3 +77,10 @@ logs/
 !results/kaggle_t4_x3i8_run.log
 !results/kaggle_t4_v14_run.log
 !results/kaggle_t4_vgeo_run.log
+!results/kaggle_t4_runtime_probe.log
+!results/kaggle_t4_runtime_full.log
+!results/kaggle_t4_runtime_repeat.log
+!results/kaggle_t4_runtime_memory.log
+!results/kaggle_t4_runtime_shape14.log
+!results/kaggle_t4_runtime_full_before_large_tune.log
+!results/kaggle_t4_runtime_shape14_before_large_tune.log

@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "reference_revision": "6a52565d25dd0455a0425b1d7a8f79039267c4db",
+    "current_source_sha256": "3cd97e0c098b47776b5cb4a42c542dad2f4280a09eede64316d76053a263906e",
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "timing": "official benchmark_once, interleaved three-model order",
+    "repeats": 30,
+    "rounds": 3,
+    "accuracy_trials": 3
+  },
+  "results": [
+    {
+      "shape": 2,
+      "status": "PASS",
+      "reference_ms": 3.1061919927597046,
+      "previous_ms": 0.5995360016822815,
+      "current_ms": 0.5411520004272461,
+      "previous_speedup": 5.18099327487226,
+      "current_speedup": 5.739962136899297,
+      "improvement": 1.107888358924924,
+      "previous_wall_ms": 0.4462793999977066,
+      "current_wall_ms": 0.4057512999992241,
+      "max_abs": 1.6689300537109375e-06
+    }
+  ],
+  "summary": {
+    "shapes": 1,
+    "all_passed": true,
+    "median_previous_speedup": 5.18099327487226,
+    "median_current_speedup": 5.739962136899297,
+    "median_improvement": 1.107888358924924
+  },
+  "padding": [
+    {
+      "case": "padded_4x512x128",
+      "status": "PASS",
+      "previous_ms": 2.6025760173797607,
+      "current_ms": 2.2662720680236816,
+      "improvement": 1.1483952231954901,
+      "previous_peak_extra_bytes": 22265856,
+      "current_peak_extra_bytes": 9429504,
+      "memory_protocol": "peak includes first-forward caches and persistent graph allocations; comparison tensors excluded",
+      "previous_retained_bytes": 1228800,
+      "current_retained_bytes": 1237504
+    },
+    {
+      "case": "sparse_2x32768x128",
+      "status": "PASS",
+      "valid_per_row": 1024,
+      "max_abs": 1.430511474609375e-06,
+      "peak_extra_bytes": 93520384,
+      "old_dense_bias_bytes": 8589934592,
+      "reference": "same weights, compact valid tokens, original order"
+    }
+  ]
+}

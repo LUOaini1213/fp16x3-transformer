@@ -1,0 +1,10 @@
+[{"stream_name":"stdout","time":13.714066189,"data":"[user_optimized] T3_LINEAR: fp16x3 path unavailable on this device/dtype; using fp32\n"}
+,{"stream_name":"stdout","time":168.752411707,"data":"[warning] dtype mismatch: baseline=torch.float32, optimized=torch.float16\n"}
+,{"stream_name":"stdout","time":168.982035611,"data":"RUNTIME_SHAPE14 {\"shape\": 14, \"status\": \"FULL_FINITE_PREFIX_PASS\", \"dtype\": \"float16\", \"cold_seconds\": 154.55087295700002, \"peak_allocated_bytes\": 14373979136, \"chunk_bs\": 1, \"prefix_tokens_checked\": 512, \"prefix_batches_checked\": 1, \"prefix_max_abs\": 0.0021080970764160156, \"prefix_failed_elements\": 0, \"source_sha256\": \"3cd97e0c098b47776b5cb4a42c542dad2f4280a09eede64316d76053a263906e\", \"reference_revision\": \"6a52565d25dd0455a0425b1d7a8f79039267c4db\", \"torch\": \"2.11.0+cu128\", \"gpu\": \"Tesla T4\", \"correctness_scope\": \"all output elements finite; first batch's causal prefix compared against fp32 reference; not full-length numerical equivalence\"}\n"}
+,{"stream_name":"stderr","time":174.857711822,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":174.857738338,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":175.091596042,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":175.091619744,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":175.832078232,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":177.482654571,"data":"[NbConvertApp] Writing 1105235 bytes to __results__.html\n"}
+]

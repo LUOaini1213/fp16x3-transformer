@@ -51,16 +51,16 @@ Five results, each traceable to a committed kernel log under `results/`:
    recompile limit) and under-reported three shapes. All fixed, re-measured, with the
    probes and logs committed as evidence.
 
-What a judge should weigh: every number here was measured three times, the losers are
-published next to the winner, and the one kernel that ships did so by beating the
-alternative on the same input — not by being ours.
+The September T4 headline is the median of three independent runs; the maintained
+audits below state their own sampling protocols. Losing variants are published
+alongside the shipped kernel, which was selected by measurement on the same input.
 
 ## TL;DR — what we do
 
 | Lever | Effect |
 |---|---|
 | **`F.scaled_dot_product_attention` (memory-efficient fused attention)** | Replaces the baseline's `O(S²)` materialized score matrix with an `O(S)` fused kernel. Makes the `seq_len=100000` shape possible at all — the baseline would need **~20.5 TB** just for its attention scores. Measured: the full 100k-token forward completes in **14.6 GB** on a free P100. |
-| **fp16x3 linear layers** (`T3_LINEAR=fp16x3`, **default**) | Every GEMM runs on the fp16 tensor cores at fp32-class accuracy: the kernel that produces each activation (fused LayerNorm, GELU, or a plain split) also writes it as an fp16 hi + lo pair, and one cuBLAS GEMM with K tripled accumulates the three cross terms in fp32. Measured: median 2.30x -> **2.50x**, shape 8 (K=1024) 1.09x -> 1.60x; worst error 4.1e-05 against a 2e-3 gate. `T3_LINEAR=fp32` is the SGEMM path, measured three times too. |
+| **fp16x3 linear layers** (`T3_LINEAR=fp16x3`, **default**) | Every GEMM runs on the fp16 tensor cores at fp32-class accuracy: the kernel that produces each activation (fused LayerNorm, GELU, or a plain split) also writes it as an fp16 hi + lo pair, and one cuBLAS GEMM with K tripled accumulates the three cross terms in fp32. Historical three-session median: 2.300x -> **2.834x**, shape 8 (K=1024) 1.09x -> 1.57x; worst error 9.54e-06 against a 2e-3 gate. `T3_LINEAR=fp32` is the SGEMM path, measured three times too. |
 | **Internal fp16 autocast** (`T3_AUTOCAST=fp16`, **opt-in**) | Lights up the tensor cores and roughly **doubles** the fp32-SGEMM path's median (2.29x -> 4.01x). Shipped **off**: it passes all 13 shapes, but its worst absolute error has already crossed `atol=0.002` and survives on the relative branch alone. Reductions stay in fp32. |
 | **Self-applied `torch.compile`** | Fuses LayerNorm / bias / GELU epilogues into Triton kernels; independent of the grader passing `--compile-user`. Needs sm≥7.0, so it is inactive on a P100. Measured on a T4 it is worth +0.3x on compute-bound shapes and a **net loss** on launch-bound ones — so the model now times eager against compiled once, on the real input, and keeps the winner — with a CUDA graph of the eager kernels as a third candidate (`T3_COMPILE=auto`, `T3_CUDAGRAPH=1`, both default). |
 | **Batch chunking into a preallocated output** (only `seq_len=1e5`) | Keeps activations inside a 16 GB GPU. Chunks are written in place rather than collected and `torch.cat`-ed — the concat holds the pieces *and* the joined result at once, which is what made this shape OOM. |
@@ -235,7 +235,8 @@ large enough (`|ref| >= 0.102`) for the relative branch to catch it.
 
 Nothing makes that repeatable. Put the same error on a near-zero reference and
 the element fails, and one failing element fails the shape and forfeits the
-speed score entirely. The shipped fp32 path sits **1049x inside** the same gate.
+speed score entirely. The shipped fp16x3 path sits **210x inside** the same gate
+on its worst historical shape.
 We took the margin. The flag is documented, measured, and yours if you want the
 other side of the trade — full numbers in [`results/ablation.md`](results/ablation.md).
 
@@ -265,9 +266,10 @@ full S=100000: median=293376.9 ms | 10,907 tok/s | peak_vram=14.61 GB | chunk_bs
 293 s per forward over 3.2 M tokens, peak 14.6 GB. On a **T4** — same memory-efficient SDPA backend, but its fp16 tensor cores now
 carry the natively-fp16 matmuls — the same forward takes **184 s at 17,402 tok/s**
 with a 14.17 GB peak — on a card that has only 15.64 GB in total, tighter than the
-P100's 17.06 GB, and it still fits (`results/kaggle_t4_shape14.log`). Correctness is validated at a
-truncated `seq_len` where the baseline *can* run (PASS, `max_abs 1.2e-6`); SDPA's
-math does not depend on `S`, so passing there evidences correctness at 1e5.
+P100's 17.06 GB, and it still fits (`results/kaggle_t4_shape14.log`). The separate
+truncated fp32 check passes (`max_abs 1.2e-6`), but does not establish full-length
+fp16 numerical equivalence. The maintained audit below additionally checks a
+causal prefix of the actual full-length output against the fp32 reference.
 
 **Precision, stated plainly:** the truncated correctness check is **fp32**, the
 same dtype as every graded shape. The full-length *timing* is **fp16**, and that
@@ -295,8 +297,8 @@ ablation and the delivered path are literally the same code. The measured
 
 Shipped defaults are `T3_LINEAR=fp16x3`, `T3_AUTOCAST=off`, `T3_COMPILE=auto`,
 `T3_CUDAGRAPH=1`: SDPA, tensor-core GEMMs with hi/lo compensation, plus whichever of eager / Inductor-compiled / eager-captured-into-a-CUDA-graph a
-first-forward timing on the real input says is fastest. On the T4 that came out
-0 compiled, 10 graph, 1 eager across the 11 shapes small enough to tune;
+first-forward timing on the real input says is fastest. In the historical T4 run
+that came out 0 compiled, 10 graph, 1 eager across the 11 shapes then eligible to tune;
 the per-shape table is in [`results/ablation.md`](results/ablation.md).
 
 **Fused QKV projection (`T3_FUSED_QKV=1`), measured and declined.** One `[3D, D]`
@@ -319,7 +321,131 @@ T3_COMPILE=1 T3_AUTOCAST=fp16 python run_all.py --shapes 1 --out /tmp/both.csv
 
 Environment toggles: `T3_AUTOCAST` (auto|fp16|bf16|off), `T3_COMPILE` (1|0),
 `T3_COMPILE_MODE`, `T3_FP32_FFN` (1|0), `T3_CHUNK_BS`, `T3_TRITON` (1|0),
-`T3_LINEAR` (fp16x3|fp32|auto).
+`T3_LINEAR` (fp16x3|fp32|auto), `T3_MASK_CACHE` (1|0, default 1),
+`T3_PACK_PADDING` (1|0, default 1).
+
+## Maintained runtime improvements (2026-10-09)
+
+The September tables above remain the historical measurements, not numbers
+silently replaced by a newer GPU session. The maintained implementation also:
+
+- Reuses the all-valid mask reduction while the same ordinary tensor's mutation
+  counter, storage and metadata are unchanged. New masks and in-place writes
+  invalidate the cache. Inference tensors have no mutation counter and are
+  always rechecked. `T3_MASK_CACHE=0` also disables cached packing indices;
+  use it when mutating masks through `.data`, NumPy or an external pointer.
+- Removes the unused mask allocation/copy from all-valid CUDA graph replay.
+  Inputs still copy into the graph's static buffer and each output remains
+  owned by its caller; model outputs are never memoized.
+- Tracks parameter identity and storage as well as its version when rebuilding
+  fused/split weights. LayerNorm updates now recheck the fp16-range guard and
+  invalidate a captured graph too.
+- Times eager against compiled execution for large, unchunked shapes too.
+  CUDA-graph candidates remain restricted to small shapes to bound memory;
+  chunked shape 14 is excluded from repeated autotuning.
+- Packs valid tokens, grouped by length, before a padded forward and scatters
+  results to the original positions. Left padding, internal holes and empty
+  rows work as well as right padding. This avoids a dense `[B,1,S,S]` bias.
+  Order-preserving compaction is equivalent for this model, which has no
+  position-dependent operators; adding positional embeddings or RoPE would
+  require preserving the original position indices.
+
+`tests/test_runtime.py` covers the mutation cases. `scripts/benchmark_runtime.py`
+uses the **unmodified official `benchmark_once` loop**, rotating the order of
+the baseline, previous implementation and current implementation across rounds,
+on identical weights and inputs. It records wall-clock latency separately,
+checks the CUDA-graph contracts on the GPU, and records the source SHA256.
+The original reference scripts are unchanged.
+
+Paired repeat on a T4 (PyTorch 2.11.0+cu128, 9 rotated rounds × 50 samples per
+model, against revision `6a52565`; [`runtime_repeat.json`](results/runtime_repeat.json)):
+
+| Shape | Previous ms | Current ms | Latency change |
+|---|---:|---:|---:|
+| 2 (B=1) | 0.4383 | 0.3809 | -13.1% |
+| 3 (B=4) | 0.4112 | 0.3592 | -12.7% |
+| 8 (D=1024) | 99.9082 | 100.8768 | +1.0% |
+| 12 (S=32) | 0.9784 | 1.0022 | +2.4% |
+
+All four pass. The improvement is in the small-batch dispatch path, not a
+new universal multiplier; the compute-bound and S=32 results are near flat.
+This paired protocol differs from the September custom sweep, so its absolute
+baseline speedups must not be spliced into that three-session headline.
+
+The final-code full sweep ([`runtime_full.json`](results/runtime_full.json))
+then validates **13/13 shapes**, with three independent random inputs per
+shape and 3 rotated timing rounds × 30 samples per model. Large shapes had
+previously been excluded from eager-vs-compiled selection; on PyTorch 2.11,
+that leaves them on a substantially slower compiled path:
+
+| Shape | Previous ms | Current ms | Latency change |
+|---|---:|---:|---:|
+| 6 (B=10000) | 1479.81 | 671.80 | -54.6% |
+| 13 (S=1024) | 109.52 | 68.18 | -37.7% |
+
+Both now select eager execution. Their separate wall-clock loop measurements
+also improve (1465.55 → 673.68 ms and 105.44 → 65.50 ms). This is recovery from
+a compiler-version regression, not an additional 2.2× over the historical
+September result. The final sweep's worst absolute error is 9.96e-6. Shapes
+8 and 9 are 0.6% and 0.4% slower, respectively; no universal improvement is
+claimed. The earlier small-shape repeat is retained with its own source hash;
+the final change extends dispatch only for the large shapes.
+The median of all 13 paired ratios is 1.012×; the large-shape gains should not
+be mistaken for a large across-the-board median improvement.
+
+The irregular padding test also passed at S=32,768 with 1,024 valid tokens per
+row: `max_abs=1.43e-6` against the same weights applied to the compact valid
+tokens, and 93.5 MB peak additional tensor allocation (including the output,
+excluding input/reference already live). The old dense padding bias alone
+would be 8.59 GB at that original length; that figure is a size calculation,
+not a measured old-model peak. The compact reference validates the valid
+outputs; every invalid output is also checked to be zero.
+
+The corrected setup-inclusive memory audit
+([`runtime_memory.json`](results/runtime_memory.json)) also counts cached
+weights, packing indices and persistent graph allocations: on the medium
+4×512×128 padded case, peak extra tensor allocation falls from 22.27 MB to
+9.43 MB. Its latency falls from 2.603 to 2.266 ms. The initial probe measured
+memory after warmup and omitted persistent graph storage; use the corrected
+audit rather than those initial memory columns.
+The previous model's setup-inclusive peak is context-sensitive: it is 316.85 MB
+in the final full-process sweep versus 22.27 MB in the dedicated audit; the
+current packed path is 9.43 MB in both. These are separate run contexts, not
+interchangeable exact footprint constants.
+
+The final-code shape-14 capacity audit
+([`runtime_shape14.json`](results/runtime_shape14.json)) completes one **cold**
+fp16 forward in 157.57 s with 14.37 GB peak allocated tensor memory. This is
+not a steady-state median or a speedup over the historical 184 s run. All
+output elements are finite. The first batch's first 512 causal tokens pass
+the official OR rule against the original fp32 reference using the same
+weights (`max_abs=0.0021081`, zero failing elements; some rely on the relative
+branch). The other outputs have not been numerically compared, so this remains
+a capacity demonstration with partial numerical validation, not a shape-14
+full-accuracy PASS.
+
+Local regression checks: **51 passed, 1 CUDA-only test skipped**; the CPU smoke
+test also passes all 12 CPU-feasible official shapes and both padded cases.
+The cloud audit separately exercises CUDA-graph output ownership, mask writes,
+parameter replacement and the fp16 range guard.
+
+```bash
+python scripts/build_kaggle_selfcontained.py --only runtime \
+  --reference-ref 6a52565 --accelerator NvidiaTeslaT4 \
+  --id wenjiluo/track3-runtime-final --out .kaggle_upload/runtime_final \
+  --env T3_RUNTIME_SHAPES=1,2,3,4,5,6,7,8,9,10,11,12,13 \
+  --env T3_RUNTIME_REPEATS=30
+kaggle kernels push -p .kaggle_upload/runtime_final
+
+python scripts/build_kaggle_selfcontained.py --only runtime14 \
+  --reference-ref 6a52565 --accelerator NvidiaTeslaT4 \
+  --id wenjiluo/track3-runtime-shape14-final --out .kaggle_upload/runtime_shape14_final
+kaggle kernels push -p .kaggle_upload/runtime_shape14_final
+```
+
+The PyTorch [inference tensor contract](https://docs.pytorch.org/docs/stable/generated/torch.autograd.grad_mode.inference_mode.html)
+and [CUDA graph storage requirements](https://docs.pytorch.org/docs/stable/notes/cuda.html#cuda-graphs)
+explain the cache exclusions and static-buffer copies above.
 
 <!-- x3-section:begin -->
 ## fp16x3: fp32-accurate GEMMs on the fp16 tensor cores (shipped)
@@ -698,13 +824,12 @@ on the right GPU it is the one we would reach for.
   near 1.0 is 0.0078, four times coarser than `atol=0.002`, so no implementation
   that reorders a single operation can hold that gate in bf16. The graded
   configuration is fp32 (the harness default), where we sit ~1049x inside it.
-- The padded (`padding_ratio > 0`) fallback still materializes a dense
-  `[B,1,S,S]` additive bias, i.e. it gives back the `O(S^2)` memory that SDPA
-  exists to avoid. The graded path runs `padding_ratio=0`, where masking is
-  kernel-generated via `is_causal` and no bias is built; the fallback only has to
-  be correct at the small `S` where a mask is actually supplied. Making the
-  padded path memory-efficient too (block-sparse or a folded key-padding mask)
-  is unfinished work, not a solved problem we left out.
+- The packed padding path groups by exact valid length. A batch with many
+  distinct lengths pays for many smaller forwards and may be launch-bound;
+  `T3_PACK_PADDING=0` keeps the old dense fallback available for comparison.
+  The default never allocates its dense bias. Packing removes padding storage
+  and redundant tokens, not the quadratic arithmetic in the remaining valid
+  attention sequence.
 
 ## Demo video
 
