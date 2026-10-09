@@ -208,22 +208,10 @@ def repeat_text(payload):
     return "\n".join(lines) + "\n"
 
 
-def main():
-    parser = argparse.ArgumentParser(__doc__)
-    parser.add_argument("--profiles", type=Path, required=True)
-    parser.add_argument("--cache", type=Path, required=True)
-    parser.add_argument("--contracts", type=Path, required=True)
-    parser.add_argument("--fusion", type=Path, required=True)
-    parser.add_argument("--shape2-repeat", type=Path)
-    parser.add_argument("--pilot", action="store_true")
-    parser.add_argument("--output", type=Path, required=True)
-    args = parser.parse_args()
-    paths = [args.profiles, args.cache, args.contracts, args.fusion]
-    if args.shape2_repeat:
-        paths.append(args.shape2_repeat)
-    payloads = [json.loads(path.read_text(encoding="utf-8")) for path in paths]
+def render(payloads, paths, pilot=False):
+    """Return the existing report text without writing or rebuilding evidence."""
     compatible(payloads)
-    indices = (2, 8, 13) if args.pilot else range(1, 14)
+    indices = (2, 8, 13) if pilot else range(1, 14)
     metrics = profile_metrics(payloads[0], indices)
     if payloads[2]["results"]["status"] != "PASS":
         raise ValueError("GPU contracts did not pass")
@@ -245,16 +233,34 @@ def main():
     lines += ["", f"Lower first-forward cost AND <=2% event/wall regression: **{len(passed)}/{len(metrics)} shapes**, {passed}.",
               f"All **{len(metrics)*18}** profile/input checks pass (three profiles, three seeds, both cold and paired workers).",
               "No model or CLI default is promoted by this single session."]
-    if not args.pilot:
+    if not pilot:
         lines += [f"Single-session balanced median paired event speedup over original FP32: **{statistics.median(r['speedup'] for r in metrics):.3f}x**. "
                   "Not pooled with the historical three-session 2.875x cohort."]
-    if args.shape2_repeat:
+    if len(payloads) == 5:
         lines += ["", repeat_text(payloads[4])]
     lines += ["", cache_text(payloads[1]), "Real CUDA graph contracts: **PASS**, including one re-selection after weight change, "
               "mutable masks, owned outputs and sequential alternate-stream use. Concurrent use of one mutable graph instance is not claimed.",
               "", fusion_text(payloads[3])]
+    return "\n".join(lines) + "\n"
+
+
+def main():
+    parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument("--profiles", type=Path, required=True)
+    parser.add_argument("--cache", type=Path, required=True)
+    parser.add_argument("--contracts", type=Path, required=True)
+    parser.add_argument("--fusion", type=Path, required=True)
+    parser.add_argument("--shape2-repeat", type=Path)
+    parser.add_argument("--pilot", action="store_true")
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    paths = [args.profiles, args.cache, args.contracts, args.fusion]
+    if args.shape2_repeat:
+        paths.append(args.shape2_repeat)
+    payloads = [json.loads(path.read_text(encoding="utf-8")) for path in paths]
+    text = render(payloads, paths, args.pilot)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    args.output.write_text(text, encoding="utf-8", newline="\n")
 
 
 if __name__ == "__main__":

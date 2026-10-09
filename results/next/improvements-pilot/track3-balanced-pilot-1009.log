@@ -1,0 +1,1098 @@
+Cloning into '/tmp/track3-clean-r4_0j7es/repository'...
+HEAD is now at c8fe1cf Add balanced inference, validated dispatch hints and weight-change recovery
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 2,
+  "mode": "steady",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "auto",
+    "T3_CUDAGRAPH": "1",
+    "T3_LINEAR": "fp16x3"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 16.698117698000004,
+  "steady_wall_ms": 0.7193309999991016,
+  "steady_wall_samples_ms": [
+    0.7326719999980469,
+    0.7324819999894316,
+    0.7216909999954169,
+    0.7230559999982233,
+    0.7140499999991334,
+    0.7241039999996701,
+    0.7169710000027862,
+    0.7114889999968455,
+    0.7132860000069741,
+    0.704121000012492
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 2.1457672119140625e-06
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 2.1457672119140625e-06
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.430511474609375e-06
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.9073486328125e-06
+    }
+  ],
+  "dispatch": {
+    "x3": true,
+    "compiled": false,
+    "graph": true
+  },
+  "tune_cache": {
+    "enabled": false,
+    "status": "disabled"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 2,
+  "mode": "balanced",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "0",
+    "T3_CUDAGRAPH": "1",
+    "T3_LINEAR": "fp16x3"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 3.8819522269999993,
+  "steady_wall_ms": 0.6903689999830931,
+  "steady_wall_samples_ms": [
+    0.709813000014492,
+    0.6925659999978961,
+    0.6867730000408301,
+    0.6969350000076702,
+    0.6876830000237533,
+    0.7355840000400349,
+    0.68817199996829,
+    0.708820999989257,
+    0.6866379999905803,
+    0.6801369999607232
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 2.1457672119140625e-06
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 2.1457672119140625e-06
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.430511474609375e-06
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.9073486328125e-06
+    }
+  ],
+  "dispatch": {
+    "x3": true,
+    "compiled": false,
+    "graph": true
+  },
+  "tune_cache": {
+    "enabled": false,
+    "status": "disabled"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 2,
+  "mode": "quick",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "0",
+    "T3_CUDAGRAPH": "0",
+    "T3_LINEAR": "fp32"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 0.057828035,
+  "steady_wall_ms": 1.3397779999877457,
+  "steady_wall_samples_ms": [
+    1.261290000002191,
+    1.285858000017015,
+    1.3746179999998276,
+    1.252504999968096,
+    1.3300929999786604,
+    1.7845909999891774,
+    1.5439310000147088,
+    1.447200999962206,
+    1.349462999996831,
+    1.3070570000195403
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 9.5367431640625e-07
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 9.5367431640625e-07
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 9.5367431640625e-07
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 7.152557373046875e-07
+    }
+  ],
+  "dispatch": {
+    "x3": false,
+    "compiled": false,
+    "graph": false
+  },
+  "tune_cache": {
+    "enabled": false,
+    "status": "disabled"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+IMPROVEMENTS_PAIR_2 {"metadata": {"torch": "2.11.0+cu128", "cuda": "12.8", "gpu": "Tesla T4", "capability": [7, 5], "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]", "git_commit": "c8fe1cf7807d5633a1b75773d2ab03461318cb22", "source_manifest": {"user_optimized.py": "c43450b4e8e8b334256acb59bd3b13fe438e33419449012826f4d53729b38434", "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e", "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8", "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01", "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304", "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32", "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983", "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360", "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee", "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb", "scripts/build_clean_kaggle.py": "6f368e252c01eca22afbe8dda4cc1ec4658c9e1d3d5b8a494618026b144f4e81", "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23", "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d", "scripts/run.py": "e408a4ebc4931c4a64d2e815ea32cdcc30caac1f6e08936b8573a1521abf3f76", "scripts/benchmark_improvements.py": "4ecf4cf6f3d8e567e5b1cebb7d673392ecbb87c1cabdc5f722ba5f055780adcb", "kernels/dispatch_cache.py": "486bdbe8fba3a91acdca279b1c060f7d33fc20b7024b253ac07126705b1d97e2", "kernels/ffn_fusion.py": "07833649812e079983d5c2c14131f1ce686a754c9d964e573ec45ed658c540a3"}, "normal_imports": {"official": "/tmp/track3-clean-r4_0j7es/repository/torch_transformer_benchmark.py", "production": "/tmp/track3-clean-r4_0j7es/repository/user_optimized.py"}, "protocol": "Source-pinned T4 validation: profiles, cache/recovery contracts, FFN fusion.\n\nCold profiles have separate empty compiler directories. Cache-hit and uncached\ncontrols share warmed compiler directories but run in fresh processes. Neither\ntiming includes Python imports/context probes. Production defaults are unchanged.\n", "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold", "clean_checkout": true}, "results": {"shape": 2, "accuracy": [{"variant": "quick", "seed": 0, "max_abs": 9.5367431640625e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "quick", "seed": 1, "max_abs": 9.5367431640625e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 1, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 1, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "quick", "seed": 2, "max_abs": 7.152557373046875e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 2, "max_abs": 1.9073486328125e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 2, "max_abs": 1.9073486328125e-06, "failed": 0, "elements": 16384, "passed": true}], "timing": {"baseline": {"event_round_ms": [2.932576060295105, 2.9748799800872803, 2.9980159997940063], "wall_round_ms": [2.889137900001515, 2.994957449999447, 2.9199535000003607], "event_ms": 2.9748799800872803, "wall_ms": 2.9199535000003607}, "quick": {"event_round_ms": [1.2411999702453613, 1.227776050567627, 1.2749760150909424], "wall_round_ms": [1.1953981999994312, 1.194153949998622, 1.2203457999987677], "event_ms": 1.2411999702453613, "wall_ms": 1.1953981999994312}, "balanced": {"event_round_ms": [0.5391519963741302, 0.5391680002212524, 0.3097120076417923], "wall_round_ms": [0.5470860999992055, 0.5492774999993344, 0.3180147500017938], "event_ms": 0.5391519963741302, "wall_ms": 0.5470860999992055}, "steady": {"event_round_ms": [0.5406880080699921, 0.5407040119171143, 0.3112959861755371], "wall_round_ms": [0.5492156999991948, 0.5509368000019776, 0.3193815499997754], "event_ms": 0.5406880080699921, "wall_ms": 0.5492156999991948}}, "shared_process_setup_seconds": {"baseline": 0.2157300470000223, "quick": 0.017961749999983567, "balanced": 3.9485518810000144, "steady": 7.368573081000022}, "dispatch": {"baseline": {"graph": false, "compiled": false, "x3": false}, "quick": {"graph": false, "compiled": false, "x3": false}, "balanced": {"graph": true, "compiled": false, "x3": true}, "steady": {"graph": true, "compiled": false, "x3": true}}, "output_ownership": "PASS", "cache": "disabled", "memory_scope": "paired models share a process; not isolated deployment memory"}}
+IMPROVEMENTS_PILOT {"metadata": {"torch": "2.11.0+cu128", "cuda": "12.8", "gpu": "Tesla T4", "capability": [7, 5], "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]", "git_commit": "c8fe1cf7807d5633a1b75773d2ab03461318cb22", "source_manifest": {"user_optimized.py": "c43450b4e8e8b334256acb59bd3b13fe438e33419449012826f4d53729b38434", "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e", "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8", "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01", "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304", "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32", "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983", "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360", "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee", "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb", "scripts/build_clean_kaggle.py": "6f368e252c01eca22afbe8dda4cc1ec4658c9e1d3d5b8a494618026b144f4e81", "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23", "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d", "scripts/run.py": "e408a4ebc4931c4a64d2e815ea32cdcc30caac1f6e08936b8573a1521abf3f76", "scripts/benchmark_improvements.py": "4ecf4cf6f3d8e567e5b1cebb7d673392ecbb87c1cabdc5f722ba5f055780adcb", "kernels/dispatch_cache.py": "486bdbe8fba3a91acdca279b1c060f7d33fc20b7024b253ac07126705b1d97e2", "kernels/ffn_fusion.py": "07833649812e079983d5c2c14131f1ce686a754c9d964e573ec45ed658c540a3"}, "normal_imports": {"official": "/tmp/track3-clean-r4_0j7es/repository/torch_transformer_benchmark.py", "production": "/tmp/track3-clean-r4_0j7es/repository/user_optimized.py"}, "protocol": "Source-pinned T4 validation: profiles, cache/recovery contracts, FFN fusion.\n\nCold profiles have separate empty compiler directories. Cache-hit and uncached\ncontrols share warmed compiler directories but run in fresh processes. Neither\ntiming includes Python imports/context probes. Production defaults are unchanged.\n", "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold", "clean_checkout": true}, "results": [{"shape": 2, "cold": {"steady": {"shape": 2, "mode": "steady", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "auto", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 16.698117698000004, "steady_wall_ms": 0.7193309999991016, "steady_wall_samples_ms": [0.7326719999980469, 0.7324819999894316, 0.7216909999954169, 0.7230559999982233, 0.7140499999991334, 0.7241039999996701, 0.7169710000027862, 0.7114889999968455, 0.7132860000069741, 0.704121000012492], "accuracy": {"passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}], "dispatch": {"x3": true, "compiled": false, "graph": true}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "balanced": {"shape": 2, "mode": "balanced", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 3.8819522269999993, "steady_wall_ms": 0.6903689999830931, "steady_wall_samples_ms": [0.709813000014492, 0.6925659999978961, 0.6867730000408301, 0.6969350000076702, 0.6876830000237533, 0.7355840000400349, 0.68817199996829, 0.708820999989257, 0.6866379999905803, 0.6801369999607232], "accuracy": {"passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}], "dispatch": {"x3": true, "compiled": false, "graph": true}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "quick": {"shape": 2, "mode": "quick", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "0", "T3_LINEAR": "fp32"}, "device": "cuda", "first_forward_seconds": 0.057828035, "steady_wall_ms": 1.3397779999877457, "steady_wall_samples_ms": [1.261290000002191, 1.285858000017015, 1.3746179999998276, 1.252504999968096, 1.3300929999786604, 1.7845909999891774, 1.5439310000147088, 1.447200999962206, 1.349462999996831, 1.3070570000195403], "accuracy": {"passed": true, "failed": 0, "max_abs": 9.5367431640625e-07}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 9.5367431640625e-07}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 9.5367431640625e-07}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 7.152557373046875e-07}], "dispatch": {"x3": false, "compiled": false, "graph": false}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}}, "paired": {"shape": 2, "accuracy": [{"variant": "quick", "seed": 0, "max_abs": 9.5367431640625e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "quick", "seed": 1, "max_abs": 9.5367431640625e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 1, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 1, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "quick", "seed": 2, "max_abs": 7.152557373046875e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 2, "max_abs": 1.9073486328125e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 2, "max_abs": 1.9073486328125e-06, "failed": 0, "elements": 16384, "passed": true}], "timing": {"baseline": {"event_round_ms": [2.932576060295105, 2.9748799800872803, 2.9980159997940063], "wall_round_ms": [2.889137900001515, 2.994957449999447, 2.9199535000003607], "event_ms": 2.9748799800872803, "wall_ms": 2.9199535000003607}, "quick": {"event_round_ms": [1.2411999702453613, 1.227776050567627, 1.2749760150909424], "wall_round_ms": [1.1953981999994312, 1.194153949998622, 1.2203457999987677], "event_ms": 1.2411999702453613, "wall_ms": 1.1953981999994312}, "balanced": {"event_round_ms": [0.5391519963741302, 0.5391680002212524, 0.3097120076417923], "wall_round_ms": [0.5470860999992055, 0.5492774999993344, 0.3180147500017938], "event_ms": 0.5391519963741302, "wall_ms": 0.5470860999992055}, "steady": {"event_round_ms": [0.5406880080699921, 0.5407040119171143, 0.3112959861755371], "wall_round_ms": [0.5492156999991948, 0.5509368000019776, 0.3193815499997754], "event_ms": 0.5406880080699921, "wall_ms": 0.5492156999991948}}, "shared_process_setup_seconds": {"baseline": 0.2157300470000223, "quick": 0.017961749999983567, "balanced": 3.9485518810000144, "steady": 7.368573081000022}, "dispatch": {"baseline": {"graph": false, "compiled": false, "x3": false}, "quick": {"graph": false, "compiled": false, "x3": false}, "balanced": {"graph": true, "compiled": false, "x3": true}, "steady": {"graph": true, "compiled": false, "x3": true}}, "output_ownership": "PASS", "cache": "disabled", "memory_scope": "paired models share a process; not isolated deployment memory"}}]}
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 8,
+  "mode": "steady",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "auto",
+    "T3_CUDAGRAPH": "1",
+    "T3_LINEAR": "fp16x3"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 14.019796204000045,
+  "steady_wall_ms": 80.12040049999314,
+  "steady_wall_samples_ms": [
+    79.597036999985,
+    79.89695300000221,
+    79.73172099997328,
+    80.96981400001368,
+    80.72858600002064,
+    80.21496300000308,
+    80.19857499999716,
+    80.10652600000867,
+    80.1342749999776,
+    80.07070299998986
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 9.834766387939453e-06
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 9.834766387939453e-06
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 8.821487426757812e-06
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 8.556991815567017e-06
+    }
+  ],
+  "dispatch": {
+    "x3": true,
+    "compiled": false,
+    "graph": true
+  },
+  "tune_cache": {
+    "enabled": false,
+    "status": "disabled"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 8,
+  "mode": "balanced",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "0",
+    "T3_CUDAGRAPH": "1",
+    "T3_LINEAR": "fp16x3"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 6.383134846000019,
+  "steady_wall_ms": 79.75389950001954,
+  "steady_wall_samples_ms": [
+    78.06896300002109,
+    78.02018600000338,
+    78.6025560000212,
+    79.63003799994794,
+    79.64825200002679,
+    80.2435800000012,
+    81.20458999997027,
+    79.8595470000123,
+    80.50587899998618,
+    80.06808400000409
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 9.834766387939453e-06
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 9.834766387939453e-06
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 8.821487426757812e-06
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 8.556991815567017e-06
+    }
+  ],
+  "dispatch": {
+    "x3": true,
+    "compiled": false,
+    "graph": false
+  },
+  "tune_cache": {
+    "enabled": false,
+    "status": "disabled"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 8,
+  "mode": "quick",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "0",
+    "T3_CUDAGRAPH": "0",
+    "T3_LINEAR": "fp32"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 0.18588698000002069,
+  "steady_wall_ms": 118.0886730000168,
+  "steady_wall_samples_ms": [
+    117.2139959999754,
+    118.12906199997997,
+    118.07468900002505,
+    118.09415400000489,
+    118.08616500002245,
+    118.09118100001115,
+    118.08515500001704,
+    118.1256899999994,
+    118.09403800003793,
+    118.08345100001816
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 1.9073486328125e-06
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.6689300537109375e-06
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.6689300537109375e-06
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.9073486328125e-06
+    }
+  ],
+  "dispatch": {
+    "x3": false,
+    "compiled": false,
+    "graph": false
+  },
+  "tune_cache": {
+    "enabled": false,
+    "status": "disabled"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+IMPROVEMENTS_PAIR_8 {"metadata": {"torch": "2.11.0+cu128", "cuda": "12.8", "gpu": "Tesla T4", "capability": [7, 5], "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]", "git_commit": "c8fe1cf7807d5633a1b75773d2ab03461318cb22", "source_manifest": {"user_optimized.py": "c43450b4e8e8b334256acb59bd3b13fe438e33419449012826f4d53729b38434", "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e", "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8", "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01", "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304", "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32", "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983", "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360", "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee", "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb", "scripts/build_clean_kaggle.py": "6f368e252c01eca22afbe8dda4cc1ec4658c9e1d3d5b8a494618026b144f4e81", "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23", "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d", "scripts/run.py": "e408a4ebc4931c4a64d2e815ea32cdcc30caac1f6e08936b8573a1521abf3f76", "scripts/benchmark_improvements.py": "4ecf4cf6f3d8e567e5b1cebb7d673392ecbb87c1cabdc5f722ba5f055780adcb", "kernels/dispatch_cache.py": "486bdbe8fba3a91acdca279b1c060f7d33fc20b7024b253ac07126705b1d97e2", "kernels/ffn_fusion.py": "07833649812e079983d5c2c14131f1ce686a754c9d964e573ec45ed658c540a3"}, "normal_imports": {"official": "/tmp/track3-clean-r4_0j7es/repository/torch_transformer_benchmark.py", "production": "/tmp/track3-clean-r4_0j7es/repository/user_optimized.py"}, "protocol": "Source-pinned T4 validation: profiles, cache/recovery contracts, FFN fusion.\n\nCold profiles have separate empty compiler directories. Cache-hit and uncached\ncontrols share warmed compiler directories but run in fresh processes. Neither\ntiming includes Python imports/context probes. Production defaults are unchanged.\n", "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold", "clean_checkout": true}, "results": {"shape": 8, "accuracy": [{"variant": "quick", "seed": 0, "max_abs": 1.6689300537109375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 0, "max_abs": 9.834766387939453e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 0, "max_abs": 9.834766387939453e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "quick", "seed": 1, "max_abs": 1.6689300537109375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 1, "max_abs": 8.821487426757812e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 1, "max_abs": 8.821487426757812e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "quick", "seed": 2, "max_abs": 1.9073486328125e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 2, "max_abs": 8.556991815567017e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 2, "max_abs": 8.556991815567017e-06, "failed": 0, "elements": 8388608, "passed": true}], "timing": {"baseline": {"event_round_ms": [137.0470428466797, 154.79398345947266, 163.2020263671875], "wall_round_ms": [138.7925911499991, 156.46956909999972, 163.8908256499974], "event_ms": 154.79398345947266, "wall_ms": 156.46956909999972}, "quick": {"event_round_ms": [128.47035217285156, 133.6492691040039, 150.9206771850586], "wall_round_ms": [127.6215242500001, 134.74821364999912, 149.49786095000093], "event_ms": 133.6492691040039, "wall_ms": 134.74821364999912}, "balanced": {"event_round_ms": [88.26444625854492, 93.7686882019043, 100.34694290161133], "wall_round_ms": [89.16107459999978, 94.46153570000035, 100.81104664999998], "event_ms": 93.7686882019043, "wall_ms": 94.46153570000035}, "steady": {"event_round_ms": [90.27730941772461, 95.90265655517578, 101.48880004882812], "wall_round_ms": [90.8138104499983, 96.84076380000022, 102.10796425000126], "event_ms": 95.90265655517578, "wall_ms": 96.84076380000022}}, "shared_process_setup_seconds": {"baseline": 0.3144228819999739, "quick": 0.1506613309999807, "balanced": 4.714333008999972, "steady": 9.686277612000026}, "dispatch": {"baseline": {"graph": false, "compiled": false, "x3": false}, "quick": {"graph": false, "compiled": false, "x3": false}, "balanced": {"graph": false, "compiled": false, "x3": true}, "steady": {"graph": true, "compiled": false, "x3": true}}, "output_ownership": "PASS", "cache": "disabled", "memory_scope": "paired models share a process; not isolated deployment memory"}}
+IMPROVEMENTS_PILOT {"metadata": {"torch": "2.11.0+cu128", "cuda": "12.8", "gpu": "Tesla T4", "capability": [7, 5], "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]", "git_commit": "c8fe1cf7807d5633a1b75773d2ab03461318cb22", "source_manifest": {"user_optimized.py": "c43450b4e8e8b334256acb59bd3b13fe438e33419449012826f4d53729b38434", "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e", "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8", "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01", "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304", "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32", "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983", "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360", "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee", "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb", "scripts/build_clean_kaggle.py": "6f368e252c01eca22afbe8dda4cc1ec4658c9e1d3d5b8a494618026b144f4e81", "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23", "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d", "scripts/run.py": "e408a4ebc4931c4a64d2e815ea32cdcc30caac1f6e08936b8573a1521abf3f76", "scripts/benchmark_improvements.py": "4ecf4cf6f3d8e567e5b1cebb7d673392ecbb87c1cabdc5f722ba5f055780adcb", "kernels/dispatch_cache.py": "486bdbe8fba3a91acdca279b1c060f7d33fc20b7024b253ac07126705b1d97e2", "kernels/ffn_fusion.py": "07833649812e079983d5c2c14131f1ce686a754c9d964e573ec45ed658c540a3"}, "normal_imports": {"official": "/tmp/track3-clean-r4_0j7es/repository/torch_transformer_benchmark.py", "production": "/tmp/track3-clean-r4_0j7es/repository/user_optimized.py"}, "protocol": "Source-pinned T4 validation: profiles, cache/recovery contracts, FFN fusion.\n\nCold profiles have separate empty compiler directories. Cache-hit and uncached\ncontrols share warmed compiler directories but run in fresh processes. Neither\ntiming includes Python imports/context probes. Production defaults are unchanged.\n", "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold", "clean_checkout": true}, "results": [{"shape": 2, "cold": {"steady": {"shape": 2, "mode": "steady", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "auto", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 16.698117698000004, "steady_wall_ms": 0.7193309999991016, "steady_wall_samples_ms": [0.7326719999980469, 0.7324819999894316, 0.7216909999954169, 0.7230559999982233, 0.7140499999991334, 0.7241039999996701, 0.7169710000027862, 0.7114889999968455, 0.7132860000069741, 0.704121000012492], "accuracy": {"passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}], "dispatch": {"x3": true, "compiled": false, "graph": true}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "balanced": {"shape": 2, "mode": "balanced", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 3.8819522269999993, "steady_wall_ms": 0.6903689999830931, "steady_wall_samples_ms": [0.709813000014492, 0.6925659999978961, 0.6867730000408301, 0.6969350000076702, 0.6876830000237533, 0.7355840000400349, 0.68817199996829, 0.708820999989257, 0.6866379999905803, 0.6801369999607232], "accuracy": {"passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}], "dispatch": {"x3": true, "compiled": false, "graph": true}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "quick": {"shape": 2, "mode": "quick", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "0", "T3_LINEAR": "fp32"}, "device": "cuda", "first_forward_seconds": 0.057828035, "steady_wall_ms": 1.3397779999877457, "steady_wall_samples_ms": [1.261290000002191, 1.285858000017015, 1.3746179999998276, 1.252504999968096, 1.3300929999786604, 1.7845909999891774, 1.5439310000147088, 1.447200999962206, 1.349462999996831, 1.3070570000195403], "accuracy": {"passed": true, "failed": 0, "max_abs": 9.5367431640625e-07}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 9.5367431640625e-07}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 9.5367431640625e-07}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 7.152557373046875e-07}], "dispatch": {"x3": false, "compiled": false, "graph": false}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}}, "paired": {"shape": 2, "accuracy": [{"variant": "quick", "seed": 0, "max_abs": 9.5367431640625e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "quick", "seed": 1, "max_abs": 9.5367431640625e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 1, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 1, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "quick", "seed": 2, "max_abs": 7.152557373046875e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 2, "max_abs": 1.9073486328125e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 2, "max_abs": 1.9073486328125e-06, "failed": 0, "elements": 16384, "passed": true}], "timing": {"baseline": {"event_round_ms": [2.932576060295105, 2.9748799800872803, 2.9980159997940063], "wall_round_ms": [2.889137900001515, 2.994957449999447, 2.9199535000003607], "event_ms": 2.9748799800872803, "wall_ms": 2.9199535000003607}, "quick": {"event_round_ms": [1.2411999702453613, 1.227776050567627, 1.2749760150909424], "wall_round_ms": [1.1953981999994312, 1.194153949998622, 1.2203457999987677], "event_ms": 1.2411999702453613, "wall_ms": 1.1953981999994312}, "balanced": {"event_round_ms": [0.5391519963741302, 0.5391680002212524, 0.3097120076417923], "wall_round_ms": [0.5470860999992055, 0.5492774999993344, 0.3180147500017938], "event_ms": 0.5391519963741302, "wall_ms": 0.5470860999992055}, "steady": {"event_round_ms": [0.5406880080699921, 0.5407040119171143, 0.3112959861755371], "wall_round_ms": [0.5492156999991948, 0.5509368000019776, 0.3193815499997754], "event_ms": 0.5406880080699921, "wall_ms": 0.5492156999991948}}, "shared_process_setup_seconds": {"baseline": 0.2157300470000223, "quick": 0.017961749999983567, "balanced": 3.9485518810000144, "steady": 7.368573081000022}, "dispatch": {"baseline": {"graph": false, "compiled": false, "x3": false}, "quick": {"graph": false, "compiled": false, "x3": false}, "balanced": {"graph": true, "compiled": false, "x3": true}, "steady": {"graph": true, "compiled": false, "x3": true}}, "output_ownership": "PASS", "cache": "disabled", "memory_scope": "paired models share a process; not isolated deployment memory"}}, {"shape": 8, "cold": {"steady": {"shape": 8, "mode": "steady", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "auto", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 14.019796204000045, "steady_wall_ms": 80.12040049999314, "steady_wall_samples_ms": [79.597036999985, 79.89695300000221, 79.73172099997328, 80.96981400001368, 80.72858600002064, 80.21496300000308, 80.19857499999716, 80.10652600000867, 80.1342749999776, 80.07070299998986], "accuracy": {"passed": true, "failed": 0, "max_abs": 9.834766387939453e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 9.834766387939453e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 8.821487426757812e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 8.556991815567017e-06}], "dispatch": {"x3": true, "compiled": false, "graph": true}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "balanced": {"shape": 8, "mode": "balanced", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 6.383134846000019, "steady_wall_ms": 79.75389950001954, "steady_wall_samples_ms": [78.06896300002109, 78.02018600000338, 78.6025560000212, 79.63003799994794, 79.64825200002679, 80.2435800000012, 81.20458999997027, 79.8595470000123, 80.50587899998618, 80.06808400000409], "accuracy": {"passed": true, "failed": 0, "max_abs": 9.834766387939453e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 9.834766387939453e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 8.821487426757812e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 8.556991815567017e-06}], "dispatch": {"x3": true, "compiled": false, "graph": false}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "quick": {"shape": 8, "mode": "quick", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "0", "T3_LINEAR": "fp32"}, "device": "cuda", "first_forward_seconds": 0.18588698000002069, "steady_wall_ms": 118.0886730000168, "steady_wall_samples_ms": [117.2139959999754, 118.12906199997997, 118.07468900002505, 118.09415400000489, 118.08616500002245, 118.09118100001115, 118.08515500001704, 118.1256899999994, 118.09403800003793, 118.08345100001816], "accuracy": {"passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 1.6689300537109375e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.6689300537109375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}], "dispatch": {"x3": false, "compiled": false, "graph": false}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}}, "paired": {"shape": 8, "accuracy": [{"variant": "quick", "seed": 0, "max_abs": 1.6689300537109375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 0, "max_abs": 9.834766387939453e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 0, "max_abs": 9.834766387939453e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "quick", "seed": 1, "max_abs": 1.6689300537109375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 1, "max_abs": 8.821487426757812e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 1, "max_abs": 8.821487426757812e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "quick", "seed": 2, "max_abs": 1.9073486328125e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 2, "max_abs": 8.556991815567017e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 2, "max_abs": 8.556991815567017e-06, "failed": 0, "elements": 8388608, "passed": true}], "timing": {"baseline": {"event_round_ms": [137.0470428466797, 154.79398345947266, 163.2020263671875], "wall_round_ms": [138.7925911499991, 156.46956909999972, 163.8908256499974], "event_ms": 154.79398345947266, "wall_ms": 156.46956909999972}, "quick": {"event_round_ms": [128.47035217285156, 133.6492691040039, 150.9206771850586], "wall_round_ms": [127.6215242500001, 134.74821364999912, 149.49786095000093], "event_ms": 133.6492691040039, "wall_ms": 134.74821364999912}, "balanced": {"event_round_ms": [88.26444625854492, 93.7686882019043, 100.34694290161133], "wall_round_ms": [89.16107459999978, 94.46153570000035, 100.81104664999998], "event_ms": 93.7686882019043, "wall_ms": 94.46153570000035}, "steady": {"event_round_ms": [90.27730941772461, 95.90265655517578, 101.48880004882812], "wall_round_ms": [90.8138104499983, 96.84076380000022, 102.10796425000126], "event_ms": 95.90265655517578, "wall_ms": 96.84076380000022}}, "shared_process_setup_seconds": {"baseline": 0.3144228819999739, "quick": 0.1506613309999807, "balanced": 4.714333008999972, "steady": 9.686277612000026}, "dispatch": {"baseline": {"graph": false, "compiled": false, "x3": false}, "quick": {"graph": false, "compiled": false, "x3": false}, "balanced": {"graph": false, "compiled": false, "x3": true}, "steady": {"graph": true, "compiled": false, "x3": true}}, "output_ownership": "PASS", "cache": "disabled", "memory_scope": "paired models share a process; not isolated deployment memory"}}]}
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 13,
+  "mode": "quick",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "0",
+    "T3_CUDAGRAPH": "0",
+    "T3_LINEAR": "fp32"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 0.14850758400001496,
+  "steady_wall_ms": 74.05790449999472,
+  "steady_wall_samples_ms": [
+    76.27267499998425,
+    74.58266799994817,
+    72.57422300000371,
+    74.52225700001236,
+    73.31788899995217,
+    72.63894899995194,
+    76.55674800002998,
+    73.59355199997708,
+    73.04894399999284,
+    76.4930779999986
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 1.430511474609375e-06
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.430511474609375e-06
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.430511474609375e-06
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.430511474609375e-06
+    }
+  ],
+  "dispatch": {
+    "x3": false,
+    "compiled": false,
+    "graph": false
+  },
+  "tune_cache": {
+    "enabled": false,
+    "status": "disabled"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 13,
+  "mode": "balanced",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "0",
+    "T3_CUDAGRAPH": "1",
+    "T3_LINEAR": "fp16x3"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 3.7129992899999706,
+  "steady_wall_ms": 62.11381450000886,
+  "steady_wall_samples_ms": [
+    62.16061399999262,
+    62.067015000025094,
+    62.3506010000483,
+    61.96460500001422,
+    61.624601999994866,
+    61.63607500002399,
+    62.03361900003301,
+    62.351375999980974,
+    62.25364899995611,
+    62.2657639999602
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 2.384185791015625e-06
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 2.1457672119140625e-06
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 2.384185791015625e-06
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 2.384185791015625e-06
+    }
+  ],
+  "dispatch": {
+    "x3": true,
+    "compiled": false,
+    "graph": false
+  },
+  "tune_cache": {
+    "enabled": false,
+    "status": "disabled"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 13,
+  "mode": "steady",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "auto",
+    "T3_CUDAGRAPH": "1",
+    "T3_LINEAR": "fp16x3"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 12.223464224999987,
+  "steady_wall_ms": 62.60033850000468,
+  "steady_wall_samples_ms": [
+    62.52544000000171,
+    62.61275200000682,
+    62.21797099999549,
+    62.72280799998953,
+    62.90571899995712,
+    62.875602000019626,
+    62.58792500000254,
+    62.51279600002135,
+    62.913916000013614,
+    62.426556999980676
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 2.384185791015625e-06
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 2.1457672119140625e-06
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 2.384185791015625e-06
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 2.384185791015625e-06
+    }
+  ],
+  "dispatch": {
+    "x3": true,
+    "compiled": false,
+    "graph": false
+  },
+  "tune_cache": {
+    "enabled": false,
+    "status": "disabled"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+IMPROVEMENTS_PAIR_13 {"metadata": {"torch": "2.11.0+cu128", "cuda": "12.8", "gpu": "Tesla T4", "capability": [7, 5], "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]", "git_commit": "c8fe1cf7807d5633a1b75773d2ab03461318cb22", "source_manifest": {"user_optimized.py": "c43450b4e8e8b334256acb59bd3b13fe438e33419449012826f4d53729b38434", "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e", "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8", "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01", "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304", "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32", "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983", "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360", "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee", "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb", "scripts/build_clean_kaggle.py": "6f368e252c01eca22afbe8dda4cc1ec4658c9e1d3d5b8a494618026b144f4e81", "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23", "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d", "scripts/run.py": "e408a4ebc4931c4a64d2e815ea32cdcc30caac1f6e08936b8573a1521abf3f76", "scripts/benchmark_improvements.py": "4ecf4cf6f3d8e567e5b1cebb7d673392ecbb87c1cabdc5f722ba5f055780adcb", "kernels/dispatch_cache.py": "486bdbe8fba3a91acdca279b1c060f7d33fc20b7024b253ac07126705b1d97e2", "kernels/ffn_fusion.py": "07833649812e079983d5c2c14131f1ce686a754c9d964e573ec45ed658c540a3"}, "normal_imports": {"official": "/tmp/track3-clean-r4_0j7es/repository/torch_transformer_benchmark.py", "production": "/tmp/track3-clean-r4_0j7es/repository/user_optimized.py"}, "protocol": "Source-pinned T4 validation: profiles, cache/recovery contracts, FFN fusion.\n\nCold profiles have separate empty compiler directories. Cache-hit and uncached\ncontrols share warmed compiler directories but run in fresh processes. Neither\ntiming includes Python imports/context probes. Production defaults are unchanged.\n", "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold", "clean_checkout": true}, "results": {"shape": 13, "accuracy": [{"variant": "quick", "seed": 0, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "quick", "seed": 1, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 1, "max_abs": 2.384185791015625e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 1, "max_abs": 2.384185791015625e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "quick", "seed": 2, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 2, "max_abs": 2.384185791015625e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 2, "max_abs": 2.384185791015625e-06, "failed": 0, "elements": 8388608, "passed": true}], "timing": {"baseline": {"event_round_ms": [339.2760467529297, 338.52696228027344, 323.7608337402344], "wall_round_ms": [351.86646110000197, 326.56250615000033, 323.81870954999954], "event_ms": 338.52696228027344, "wall_ms": 326.56250615000033}, "quick": {"event_round_ms": [80.86507415771484, 79.37547302246094, 73.20996856689453], "wall_round_ms": [80.74390419999986, 77.43821174999823, 73.40217994999989], "event_ms": 79.37547302246094, "wall_ms": 77.43821174999823}, "balanced": {"event_round_ms": [65.4948959350586, 64.89274978637695, 62.95758247375488], "wall_round_ms": [65.51157570000044, 64.67296164999823, 62.89588654999818], "event_ms": 64.89274978637695, "wall_ms": 64.67296164999823}, "steady": {"event_round_ms": [65.52228546142578, 64.61686325073242, 62.59854507446289], "wall_round_ms": [65.32481364999967, 64.59067735000019, 62.745477099997515], "event_ms": 64.61686325073242, "wall_ms": 64.59067735000019}}, "shared_process_setup_seconds": {"baseline": 0.4767365760000075, "quick": 0.08385675800002446, "balanced": 2.060420195000006, "steady": 8.24779652899997}, "dispatch": {"baseline": {"graph": false, "compiled": false, "x3": false}, "quick": {"graph": false, "compiled": false, "x3": false}, "balanced": {"graph": false, "compiled": false, "x3": true}, "steady": {"graph": false, "compiled": false, "x3": true}}, "output_ownership": "PASS", "cache": "disabled", "memory_scope": "paired models share a process; not isolated deployment memory"}}
+IMPROVEMENTS_PILOT {"metadata": {"torch": "2.11.0+cu128", "cuda": "12.8", "gpu": "Tesla T4", "capability": [7, 5], "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]", "git_commit": "c8fe1cf7807d5633a1b75773d2ab03461318cb22", "source_manifest": {"user_optimized.py": "c43450b4e8e8b334256acb59bd3b13fe438e33419449012826f4d53729b38434", "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e", "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8", "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01", "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304", "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32", "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983", "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360", "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee", "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb", "scripts/build_clean_kaggle.py": "6f368e252c01eca22afbe8dda4cc1ec4658c9e1d3d5b8a494618026b144f4e81", "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23", "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d", "scripts/run.py": "e408a4ebc4931c4a64d2e815ea32cdcc30caac1f6e08936b8573a1521abf3f76", "scripts/benchmark_improvements.py": "4ecf4cf6f3d8e567e5b1cebb7d673392ecbb87c1cabdc5f722ba5f055780adcb", "kernels/dispatch_cache.py": "486bdbe8fba3a91acdca279b1c060f7d33fc20b7024b253ac07126705b1d97e2", "kernels/ffn_fusion.py": "07833649812e079983d5c2c14131f1ce686a754c9d964e573ec45ed658c540a3"}, "normal_imports": {"official": "/tmp/track3-clean-r4_0j7es/repository/torch_transformer_benchmark.py", "production": "/tmp/track3-clean-r4_0j7es/repository/user_optimized.py"}, "protocol": "Source-pinned T4 validation: profiles, cache/recovery contracts, FFN fusion.\n\nCold profiles have separate empty compiler directories. Cache-hit and uncached\ncontrols share warmed compiler directories but run in fresh processes. Neither\ntiming includes Python imports/context probes. Production defaults are unchanged.\n", "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold", "clean_checkout": true}, "results": [{"shape": 2, "cold": {"steady": {"shape": 2, "mode": "steady", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "auto", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 16.698117698000004, "steady_wall_ms": 0.7193309999991016, "steady_wall_samples_ms": [0.7326719999980469, 0.7324819999894316, 0.7216909999954169, 0.7230559999982233, 0.7140499999991334, 0.7241039999996701, 0.7169710000027862, 0.7114889999968455, 0.7132860000069741, 0.704121000012492], "accuracy": {"passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}], "dispatch": {"x3": true, "compiled": false, "graph": true}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "balanced": {"shape": 2, "mode": "balanced", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 3.8819522269999993, "steady_wall_ms": 0.6903689999830931, "steady_wall_samples_ms": [0.709813000014492, 0.6925659999978961, 0.6867730000408301, 0.6969350000076702, 0.6876830000237533, 0.7355840000400349, 0.68817199996829, 0.708820999989257, 0.6866379999905803, 0.6801369999607232], "accuracy": {"passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}], "dispatch": {"x3": true, "compiled": false, "graph": true}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "quick": {"shape": 2, "mode": "quick", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "0", "T3_LINEAR": "fp32"}, "device": "cuda", "first_forward_seconds": 0.057828035, "steady_wall_ms": 1.3397779999877457, "steady_wall_samples_ms": [1.261290000002191, 1.285858000017015, 1.3746179999998276, 1.252504999968096, 1.3300929999786604, 1.7845909999891774, 1.5439310000147088, 1.447200999962206, 1.349462999996831, 1.3070570000195403], "accuracy": {"passed": true, "failed": 0, "max_abs": 9.5367431640625e-07}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 9.5367431640625e-07}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 9.5367431640625e-07}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 7.152557373046875e-07}], "dispatch": {"x3": false, "compiled": false, "graph": false}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}}, "paired": {"shape": 2, "accuracy": [{"variant": "quick", "seed": 0, "max_abs": 9.5367431640625e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "quick", "seed": 1, "max_abs": 9.5367431640625e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 1, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 1, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "quick", "seed": 2, "max_abs": 7.152557373046875e-07, "failed": 0, "elements": 16384, "passed": true}, {"variant": "balanced", "seed": 2, "max_abs": 1.9073486328125e-06, "failed": 0, "elements": 16384, "passed": true}, {"variant": "steady", "seed": 2, "max_abs": 1.9073486328125e-06, "failed": 0, "elements": 16384, "passed": true}], "timing": {"baseline": {"event_round_ms": [2.932576060295105, 2.9748799800872803, 2.9980159997940063], "wall_round_ms": [2.889137900001515, 2.994957449999447, 2.9199535000003607], "event_ms": 2.9748799800872803, "wall_ms": 2.9199535000003607}, "quick": {"event_round_ms": [1.2411999702453613, 1.227776050567627, 1.2749760150909424], "wall_round_ms": [1.1953981999994312, 1.194153949998622, 1.2203457999987677], "event_ms": 1.2411999702453613, "wall_ms": 1.1953981999994312}, "balanced": {"event_round_ms": [0.5391519963741302, 0.5391680002212524, 0.3097120076417923], "wall_round_ms": [0.5470860999992055, 0.5492774999993344, 0.3180147500017938], "event_ms": 0.5391519963741302, "wall_ms": 0.5470860999992055}, "steady": {"event_round_ms": [0.5406880080699921, 0.5407040119171143, 0.3112959861755371], "wall_round_ms": [0.5492156999991948, 0.5509368000019776, 0.3193815499997754], "event_ms": 0.5406880080699921, "wall_ms": 0.5492156999991948}}, "shared_process_setup_seconds": {"baseline": 0.2157300470000223, "quick": 0.017961749999983567, "balanced": 3.9485518810000144, "steady": 7.368573081000022}, "dispatch": {"baseline": {"graph": false, "compiled": false, "x3": false}, "quick": {"graph": false, "compiled": false, "x3": false}, "balanced": {"graph": true, "compiled": false, "x3": true}, "steady": {"graph": true, "compiled": false, "x3": true}}, "output_ownership": "PASS", "cache": "disabled", "memory_scope": "paired models share a process; not isolated deployment memory"}}, {"shape": 8, "cold": {"steady": {"shape": 8, "mode": "steady", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "auto", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 14.019796204000045, "steady_wall_ms": 80.12040049999314, "steady_wall_samples_ms": [79.597036999985, 79.89695300000221, 79.73172099997328, 80.96981400001368, 80.72858600002064, 80.21496300000308, 80.19857499999716, 80.10652600000867, 80.1342749999776, 80.07070299998986], "accuracy": {"passed": true, "failed": 0, "max_abs": 9.834766387939453e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 9.834766387939453e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 8.821487426757812e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 8.556991815567017e-06}], "dispatch": {"x3": true, "compiled": false, "graph": true}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "balanced": {"shape": 8, "mode": "balanced", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 6.383134846000019, "steady_wall_ms": 79.75389950001954, "steady_wall_samples_ms": [78.06896300002109, 78.02018600000338, 78.6025560000212, 79.63003799994794, 79.64825200002679, 80.2435800000012, 81.20458999997027, 79.8595470000123, 80.50587899998618, 80.06808400000409], "accuracy": {"passed": true, "failed": 0, "max_abs": 9.834766387939453e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 9.834766387939453e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 8.821487426757812e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 8.556991815567017e-06}], "dispatch": {"x3": true, "compiled": false, "graph": false}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "quick": {"shape": 8, "mode": "quick", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "0", "T3_LINEAR": "fp32"}, "device": "cuda", "first_forward_seconds": 0.18588698000002069, "steady_wall_ms": 118.0886730000168, "steady_wall_samples_ms": [117.2139959999754, 118.12906199997997, 118.07468900002505, 118.09415400000489, 118.08616500002245, 118.09118100001115, 118.08515500001704, 118.1256899999994, 118.09403800003793, 118.08345100001816], "accuracy": {"passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 1.6689300537109375e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.6689300537109375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}], "dispatch": {"x3": false, "compiled": false, "graph": false}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}}, "paired": {"shape": 8, "accuracy": [{"variant": "quick", "seed": 0, "max_abs": 1.6689300537109375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 0, "max_abs": 9.834766387939453e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 0, "max_abs": 9.834766387939453e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "quick", "seed": 1, "max_abs": 1.6689300537109375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 1, "max_abs": 8.821487426757812e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 1, "max_abs": 8.821487426757812e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "quick", "seed": 2, "max_abs": 1.9073486328125e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 2, "max_abs": 8.556991815567017e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 2, "max_abs": 8.556991815567017e-06, "failed": 0, "elements": 8388608, "passed": true}], "timing": {"baseline": {"event_round_ms": [137.0470428466797, 154.79398345947266, 163.2020263671875], "wall_round_ms": [138.7925911499991, 156.46956909999972, 163.8908256499974], "event_ms": 154.79398345947266, "wall_ms": 156.46956909999972}, "quick": {"event_round_ms": [128.47035217285156, 133.6492691040039, 150.9206771850586], "wall_round_ms": [127.6215242500001, 134.74821364999912, 149.49786095000093], "event_ms": 133.6492691040039, "wall_ms": 134.74821364999912}, "balanced": {"event_round_ms": [88.26444625854492, 93.7686882019043, 100.34694290161133], "wall_round_ms": [89.16107459999978, 94.46153570000035, 100.81104664999998], "event_ms": 93.7686882019043, "wall_ms": 94.46153570000035}, "steady": {"event_round_ms": [90.27730941772461, 95.90265655517578, 101.48880004882812], "wall_round_ms": [90.8138104499983, 96.84076380000022, 102.10796425000126], "event_ms": 95.90265655517578, "wall_ms": 96.84076380000022}}, "shared_process_setup_seconds": {"baseline": 0.3144228819999739, "quick": 0.1506613309999807, "balanced": 4.714333008999972, "steady": 9.686277612000026}, "dispatch": {"baseline": {"graph": false, "compiled": false, "x3": false}, "quick": {"graph": false, "compiled": false, "x3": false}, "balanced": {"graph": false, "compiled": false, "x3": true}, "steady": {"graph": true, "compiled": false, "x3": true}}, "output_ownership": "PASS", "cache": "disabled", "memory_scope": "paired models share a process; not isolated deployment memory"}}, {"shape": 13, "cold": {"quick": {"shape": 13, "mode": "quick", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "0", "T3_LINEAR": "fp32"}, "device": "cuda", "first_forward_seconds": 0.14850758400001496, "steady_wall_ms": 74.05790449999472, "steady_wall_samples_ms": [76.27267499998425, 74.58266799994817, 72.57422300000371, 74.52225700001236, 73.31788899995217, 72.63894899995194, 76.55674800002998, 73.59355199997708, 73.04894399999284, 76.4930779999986], "accuracy": {"passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}], "dispatch": {"x3": false, "compiled": false, "graph": false}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "balanced": {"shape": 13, "mode": "balanced", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 3.7129992899999706, "steady_wall_ms": 62.11381450000886, "steady_wall_samples_ms": [62.16061399999262, 62.067015000025094, 62.3506010000483, 61.96460500001422, 61.624601999994866, 61.63607500002399, 62.03361900003301, 62.351375999980974, 62.25364899995611, 62.2657639999602], "accuracy": {"passed": true, "failed": 0, "max_abs": 2.384185791015625e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 2.384185791015625e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 2.384185791015625e-06}], "dispatch": {"x3": true, "compiled": false, "graph": false}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "steady": {"shape": 13, "mode": "steady", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "auto", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 12.223464224999987, "steady_wall_ms": 62.60033850000468, "steady_wall_samples_ms": [62.52544000000171, 62.61275200000682, 62.21797099999549, 62.72280799998953, 62.90571899995712, 62.875602000019626, 62.58792500000254, 62.51279600002135, 62.913916000013614, 62.426556999980676], "accuracy": {"passed": true, "failed": 0, "max_abs": 2.384185791015625e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 2.384185791015625e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 2.384185791015625e-06}], "dispatch": {"x3": true, "compiled": false, "graph": false}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}}, "paired": {"shape": 13, "accuracy": [{"variant": "quick", "seed": 0, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 0, "max_abs": 2.1457672119140625e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "quick", "seed": 1, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 1, "max_abs": 2.384185791015625e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 1, "max_abs": 2.384185791015625e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "quick", "seed": 2, "max_abs": 1.430511474609375e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "balanced", "seed": 2, "max_abs": 2.384185791015625e-06, "failed": 0, "elements": 8388608, "passed": true}, {"variant": "steady", "seed": 2, "max_abs": 2.384185791015625e-06, "failed": 0, "elements": 8388608, "passed": true}], "timing": {"baseline": {"event_round_ms": [339.2760467529297, 338.52696228027344, 323.7608337402344], "wall_round_ms": [351.86646110000197, 326.56250615000033, 323.81870954999954], "event_ms": 338.52696228027344, "wall_ms": 326.56250615000033}, "quick": {"event_round_ms": [80.86507415771484, 79.37547302246094, 73.20996856689453], "wall_round_ms": [80.74390419999986, 77.43821174999823, 73.40217994999989], "event_ms": 79.37547302246094, "wall_ms": 77.43821174999823}, "balanced": {"event_round_ms": [65.4948959350586, 64.89274978637695, 62.95758247375488], "wall_round_ms": [65.51157570000044, 64.67296164999823, 62.89588654999818], "event_ms": 64.89274978637695, "wall_ms": 64.67296164999823}, "steady": {"event_round_ms": [65.52228546142578, 64.61686325073242, 62.59854507446289], "wall_round_ms": [65.32481364999967, 64.59067735000019, 62.745477099997515], "event_ms": 64.61686325073242, "wall_ms": 64.59067735000019}}, "shared_process_setup_seconds": {"baseline": 0.4767365760000075, "quick": 0.08385675800002446, "balanced": 2.060420195000006, "steady": 8.24779652899997}, "dispatch": {"baseline": {"graph": false, "compiled": false, "x3": false}, "quick": {"graph": false, "compiled": false, "x3": false}, "balanced": {"graph": false, "compiled": false, "x3": true}, "steady": {"graph": false, "compiled": false, "x3": true}}, "output_ownership": "PASS", "cache": "disabled", "memory_scope": "paired models share a process; not isolated deployment memory"}}]}
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 2,
+  "mode": "balanced",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "0",
+    "T3_CUDAGRAPH": "1",
+    "T3_LINEAR": "fp16x3",
+    "T3_TUNE_CACHE": "/kaggle/working/dispatch_hints.json"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 3.8116145899999765,
+  "steady_wall_ms": 0.7067559999995865,
+  "steady_wall_samples_ms": [
+    0.7649079999509922,
+    0.7234500000095068,
+    0.6990170001017759,
+    0.7402469999533423,
+    0.7085870000764771,
+    0.7049249999226959,
+    0.69644600000629,
+    0.7096059999867066,
+    0.6987510000726616,
+    0.694637000037801
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 2.1457672119140625e-06
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 2.1457672119140625e-06
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.430511474609375e-06
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.9073486328125e-06
+    }
+  ],
+  "dispatch": {
+    "x3": true,
+    "compiled": false,
+    "graph": true
+  },
+  "tune_cache": {
+    "enabled": true,
+    "status": "stored-graph"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 2,
+  "mode": "balanced",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "0",
+    "T3_CUDAGRAPH": "1",
+    "T3_LINEAR": "fp16x3",
+    "T3_TUNE_CACHE": "/kaggle/working/dispatch_hints.json"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 1.3954265009999745,
+  "steady_wall_ms": 0.6920595000110552,
+  "steady_wall_samples_ms": [
+    0.705176999986179,
+    0.6874150000157897,
+    0.684357000068303,
+    0.7158399999980247,
+    0.6927160000032018,
+    0.6987190000700139,
+    0.6898569999975734,
+    0.7035539999833418,
+    0.6914030000189086,
+    0.6813480000573691
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 2.1457672119140625e-06
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 2.1457672119140625e-06
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.430511474609375e-06
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.9073486328125e-06
+    }
+  ],
+  "dispatch": {
+    "x3": true,
+    "compiled": false,
+    "graph": true
+  },
+  "tune_cache": {
+    "enabled": true,
+    "status": "hit-validated-graph"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+{
+  "python": "3.13.15",
+  "torch": "2.11.0+cu128",
+  "cuda_build": "12.8",
+  "device": "cuda",
+  "triton_installed": true,
+  "native_toolchain": {
+    "nvcc": true,
+    "ninja": true,
+    "c++": true
+  },
+  "tested_accelerated_environment": "Linux Tesla T4 / PyTorch 2.11.0+cu128",
+  "warnings": [],
+  "gpu": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "fp16_to_fp32_mm": true
+}
+{
+  "shape": 2,
+  "mode": "balanced",
+  "profile": {
+    "T3_AUTOCAST": "off",
+    "T3_ATTN": "sdpa",
+    "T3_X3_BLAS": "torch",
+    "T3_FUSED_QKV": "0",
+    "T3_TRITON": "0",
+    "T3_X3_GUARD": "static+first",
+    "T3_X3_ORDER": "lhh",
+    "T3_X3_SPLITK": "1",
+    "T3_X3_SITES": "auto",
+    "T3_MASK_CACHE": "1",
+    "T3_PACK_PADDING": "1",
+    "T3_COMPILE": "0",
+    "T3_CUDAGRAPH": "1",
+    "T3_LINEAR": "fp16x3"
+  },
+  "device": "cuda",
+  "first_forward_seconds": 1.4189585579999857,
+  "steady_wall_ms": 0.6952614999704565,
+  "steady_wall_samples_ms": [
+    0.6946510000034323,
+    0.6873380000342877,
+    0.7648039999139655,
+    0.7035359999463253,
+    0.6859290000420515,
+    0.7076200000710742,
+    0.7183150000855676,
+    0.6818310000653582,
+    0.6891750000477259,
+    0.6958719999374807
+  ],
+  "accuracy": {
+    "passed": true,
+    "failed": 0,
+    "max_abs": 2.1457672119140625e-06
+  },
+  "accuracy_trials": [
+    {
+      "seed": 20261009,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 2.1457672119140625e-06
+    },
+    {
+      "seed": 20261010,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.430511474609375e-06
+    },
+    {
+      "seed": 20261011,
+      "passed": true,
+      "failed": 0,
+      "max_abs": 1.9073486328125e-06
+    }
+  ],
+  "dispatch": {
+    "x3": true,
+    "compiled": false,
+    "graph": true
+  },
+  "tune_cache": {
+    "enabled": false,
+    "status": "disabled"
+  },
+  "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+}
+IMPROVEMENTS_CACHE {"metadata": {"torch": "2.11.0+cu128", "cuda": "12.8", "gpu": "Tesla T4", "capability": [7, 5], "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]", "git_commit": "c8fe1cf7807d5633a1b75773d2ab03461318cb22", "source_manifest": {"user_optimized.py": "c43450b4e8e8b334256acb59bd3b13fe438e33419449012826f4d53729b38434", "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e", "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8", "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01", "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304", "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32", "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983", "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360", "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee", "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb", "scripts/build_clean_kaggle.py": "6f368e252c01eca22afbe8dda4cc1ec4658c9e1d3d5b8a494618026b144f4e81", "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23", "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d", "scripts/run.py": "e408a4ebc4931c4a64d2e815ea32cdcc30caac1f6e08936b8573a1521abf3f76", "scripts/benchmark_improvements.py": "4ecf4cf6f3d8e567e5b1cebb7d673392ecbb87c1cabdc5f722ba5f055780adcb", "kernels/dispatch_cache.py": "486bdbe8fba3a91acdca279b1c060f7d33fc20b7024b253ac07126705b1d97e2", "kernels/ffn_fusion.py": "07833649812e079983d5c2c14131f1ce686a754c9d964e573ec45ed658c540a3"}, "normal_imports": {"official": "/tmp/track3-clean-r4_0j7es/repository/torch_transformer_benchmark.py", "production": "/tmp/track3-clean-r4_0j7es/repository/user_optimized.py"}, "protocol": "Source-pinned T4 validation: profiles, cache/recovery contracts, FFN fusion.\n\nCold profiles have separate empty compiler directories. Cache-hit and uncached\ncontrols share warmed compiler directories but run in fresh processes. Neither\ntiming includes Python imports/context probes. Production defaults are unchanged.\n", "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold", "clean_checkout": true}, "results": {"producer": {"shape": 2, "mode": "balanced", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3", "T3_TUNE_CACHE": "/kaggle/working/dispatch_hints.json"}, "device": "cuda", "first_forward_seconds": 3.8116145899999765, "steady_wall_ms": 0.7067559999995865, "steady_wall_samples_ms": [0.7649079999509922, 0.7234500000095068, 0.6990170001017759, 0.7402469999533423, 0.7085870000764771, 0.7049249999226959, 0.69644600000629, 0.7096059999867066, 0.6987510000726616, 0.694637000037801], "accuracy": {"passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}], "dispatch": {"x3": true, "compiled": false, "graph": true}, "tune_cache": {"enabled": true, "status": "stored-graph"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "hit": {"shape": 2, "mode": "balanced", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3", "T3_TUNE_CACHE": "/kaggle/working/dispatch_hints.json"}, "device": "cuda", "first_forward_seconds": 1.3954265009999745, "steady_wall_ms": 0.6920595000110552, "steady_wall_samples_ms": [0.705176999986179, 0.6874150000157897, 0.684357000068303, 0.7158399999980247, 0.6927160000032018, 0.6987190000700139, 0.6898569999975734, 0.7035539999833418, 0.6914030000189086, 0.6813480000573691], "accuracy": {"passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}], "dispatch": {"x3": true, "compiled": false, "graph": true}, "tune_cache": {"enabled": true, "status": "hit-validated-graph"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "warm_uncached": {"shape": 2, "mode": "balanced", "profile": {"T3_AUTOCAST": "off", "T3_ATTN": "sdpa", "T3_X3_BLAS": "torch", "T3_FUSED_QKV": "0", "T3_TRITON": "0", "T3_X3_GUARD": "static+first", "T3_X3_ORDER": "lhh", "T3_X3_SPLITK": "1", "T3_X3_SITES": "auto", "T3_MASK_CACHE": "1", "T3_PACK_PADDING": "1", "T3_COMPILE": "0", "T3_CUDAGRAPH": "1", "T3_LINEAR": "fp16x3"}, "device": "cuda", "first_forward_seconds": 1.4189585579999857, "steady_wall_ms": 0.6952614999704565, "steady_wall_samples_ms": [0.6946510000034323, 0.6873380000342877, 0.7648039999139655, 0.7035359999463253, 0.6859290000420515, 0.7076200000710742, 0.7183150000855676, 0.6818310000653582, 0.6891750000477259, 0.6958719999374807], "accuracy": {"passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, "accuracy_trials": [{"seed": 20261009, "passed": true, "failed": 0, "max_abs": 2.1457672119140625e-06}, {"seed": 20261010, "passed": true, "failed": 0, "max_abs": 1.430511474609375e-06}, {"seed": 20261011, "passed": true, "failed": 0, "max_abs": 1.9073486328125e-06}], "dispatch": {"x3": true, "compiled": false, "graph": true}, "tune_cache": {"enabled": false, "status": "disabled"}, "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"}, "scope": "fresh workers, same warmed compiler directories for hit/control; only hints persist, graph recaptured"}}
+IMPROVEMENTS_CONTRACTS {"metadata": {"torch": "2.11.0+cu128", "cuda": "12.8", "gpu": "Tesla T4", "capability": [7, 5], "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]", "git_commit": "c8fe1cf7807d5633a1b75773d2ab03461318cb22", "source_manifest": {"user_optimized.py": "c43450b4e8e8b334256acb59bd3b13fe438e33419449012826f4d53729b38434", "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e", "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8", "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01", "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304", "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32", "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983", "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360", "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee", "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb", "scripts/build_clean_kaggle.py": "6f368e252c01eca22afbe8dda4cc1ec4658c9e1d3d5b8a494618026b144f4e81", "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23", "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d", "scripts/run.py": "e408a4ebc4931c4a64d2e815ea32cdcc30caac1f6e08936b8573a1521abf3f76", "scripts/benchmark_improvements.py": "4ecf4cf6f3d8e567e5b1cebb7d673392ecbb87c1cabdc5f722ba5f055780adcb", "kernels/dispatch_cache.py": "486bdbe8fba3a91acdca279b1c060f7d33fc20b7024b253ac07126705b1d97e2", "kernels/ffn_fusion.py": "07833649812e079983d5c2c14131f1ce686a754c9d964e573ec45ed658c540a3"}, "normal_imports": {"official": "/tmp/track3-clean-r4_0j7es/repository/torch_transformer_benchmark.py", "production": "/tmp/track3-clean-r4_0j7es/repository/user_optimized.py"}, "protocol": "Source-pinned T4 validation: profiles, cache/recovery contracts, FFN fusion.\n\nCold profiles have separate empty compiler directories. Cache-hit and uncached\ncontrols share warmed compiler directories but run in fresh processes. Neither\ntiming includes Python imports/context probes. Production defaults are unchanged.\n", "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold", "clean_checkout": true}, "results": {"status": "PASS", "dispatch": {"graph": true, "compiled": false, "x3": true}, "checks": ["owned output", "changed input", "mutable normal mask", "mutable inference mask", "weight change re-selects once", "stable weights do not retune", "sequential alternate stream"], "concurrency_scope": "no concurrent calls on a single mutable graph instance"}}
+/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 279725 bytes to __results__.html

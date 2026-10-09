@@ -334,3 +334,21 @@ skips**, **219 artifact hashes** and **11 matching current core-source hashes**.
 CPU tests check the complete generated reports, rejected performance gates,
 cache-file safeguards and source snapshots; the cloud artifacts provide the
 actual CUDA evidence. These counts do not replace earlier cohort counts.
+
+## Separate portfolio-full session
+
+`wenjiluo/track3-portfolio-full-1009` independently measures the same
+`c8fe1cf7807d5633a1b75773d2ab03461318cb22` sources on a fresh T4 checkout.
+All 234 profile/input checks and 13/13 startup/paired steady gates pass in that
+session. Balanced/steady first public forwards are 3.998–8.016 / 11.220–37.740 s,
+with the same setup exclusions. Its cache controls and real CUDA recovery
+contracts are preserved in a [separate generated report](../results/next/portfolio_runtime_summary.md).
+This successful session does not replace balanced-full's 12/13 result or the
+shape-2 repeat's 2/3 worker comparisons. The immutable raw collections and
+historical speedups remain separate; no default is promoted.
+
+`python -m scripts.verify_next_evidence --maintained-runtime` performs an
+offline, read-only audit of both full sessions, the retained pilots, fusion and
+the targeted repeat. It requires their complete receipts/files/raw logs, source
+hashes and all generated reports, and reports performance gates per session.
+Missing evidence and optimized Python are refused with exit code 2.

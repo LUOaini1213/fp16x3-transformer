@@ -486,3 +486,11 @@ None is promoted. Negative results, exact launchers, raw logs and source hashes
 are included in the [generated audit](../results/next/improvements_summary.md);
 this revision's single-session figures do not replace earlier independent
 three-session results or the frozen competition submission.
+
+A separate fresh-checkout portfolio-full T4 session at the same `c8fe1cf` sources
+passes 234/234 profile/input checks and 13/13 startup/steady gates. First public
+forwards are 3.998–8.016 s for balanced versus 11.220–37.740 s for steady,
+with the same setup exclusions. Its [separate generated report](../results/next/portfolio_runtime_summary.md)
+retains cache controls and GPU recovery contracts. It does not replace the
+12/13 full-sweep gate or the targeted repeat's 2/3 comparisons above; the
+variation supports keeping balanced opt-in rather than claiming a universal win.

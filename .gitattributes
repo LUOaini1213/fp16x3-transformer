@@ -8,3 +8,4 @@ results/next/usability_summary.md text eol=lf
 results/next/**/run.py.snapshot text eol=lf linguist-generated=true
 results/next/**/user_optimized.py.snapshot text eol=lf linguist-generated=true
 results/next/improvements*summary.md text eol=lf
+results/next/portfolio_runtime_summary.md text eol=lf
