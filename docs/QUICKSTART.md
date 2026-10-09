@@ -27,6 +27,10 @@ files or use the measured revision; recalculating a receipt is not a substitute
 for the missing GPU run. This audits published evidence rather than executing
 new inference or establishing performance on your machine.
 
+Run strict mode without Python's `-O`/`-OO` options and with `PYTHONOPTIMIZE`
+unset: its source/report validators use assertions, so optimized Python is
+explicitly refused with exit code 2 instead of silently skipping those checks.
+
 The original optional check remains available for historical subsets:
 `python -m scripts.verify_next_evidence --current-core PATH_TO_RESULT_JSON`.
 Use `--maintained-runtime` to require the complete maintained-profile evidence.

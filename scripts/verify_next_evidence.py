@@ -104,6 +104,9 @@ def verify_current_core(result, repository=ROOT):
 
 def verify_maintained_runtime(root, repository=ROOT):
     """Check receipts, current sources and the report; never regenerate missing evidence."""
+    if not __debug__:
+        raise ValueError("strict maintained-runtime audit requires assertions; rerun without -O/-OO "
+                         "and unset PYTHONOPTIMIZE")
     hashes = verify_artifacts(root, required_artifacts=MAINTAINED_ARTIFACTS)
     full_path = root / "improvements-full/next_improvements_full.json"
     core = verify_current_core(full_path, repository)

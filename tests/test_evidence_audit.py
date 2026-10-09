@@ -1,6 +1,7 @@
 """A reviewer must not certify a complete GPU run from a partial checkout."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -151,3 +152,25 @@ def test_audit_cli_missing_receipt_exits_two_with_actionable_error(evidence_copy
     assert "ERROR:" in process.stderr and "improvements-full/artifact_sha256.json" in process.stderr
     assert "Evidence was not certified" in process.stderr and "Traceback" not in process.stderr
     assert "PASS:" not in process.stdout
+
+
+@pytest.mark.parametrize("optimization", ["-O", "-OO", "environment"])
+def test_strict_audit_refuses_disabled_assertions_in_real_process(optimization):
+    env = os.environ.copy()
+    command = [sys.executable]
+    if optimization == "environment":
+        env["PYTHONOPTIMIZE"] = "1"
+    else:
+        command.append(optimization)
+    command += ["-m", "scripts.verify_next_evidence", "--maintained-runtime"]
+    process = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
+    assert process.returncode == 2
+    assert "requires assertions" in process.stderr and "PYTHONOPTIMIZE" in process.stderr
+    assert "Traceback" not in process.stderr and "PASS:" not in process.stdout
+
+
+def test_legacy_audit_keeps_working_in_optimized_python():
+    process = subprocess.run([sys.executable, "-O", "-m", "scripts.verify_next_evidence"],
+                             cwd=ROOT, capture_output=True, text=True, timeout=60)
+    assert process.returncode == 0, process.stderr
+    assert "PASS: 216 artifact hashes" in process.stdout
