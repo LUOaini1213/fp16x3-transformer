@@ -4,6 +4,7 @@ No result in this file changes production dispatch automatically. Timing uses
 three rotated paired rounds and includes public-forward checks and ownership.
 """
 import gc
+import hashlib
 import json
 import os
 import statistics
@@ -513,8 +514,20 @@ def next_flash_build():
         # Reuse only this account's attached private experiment, with its pinned
         # checkout verified. No compiled binary is copied into the public repo.
         for binary in Path("/kaggle/input").rglob("flash_attn_turing*.so"):
-            repository = next((parent for parent in binary.parents if (parent / ".git/HEAD").is_file()), None)
-            if repository is not None and (repository / ".git/HEAD").read_text().strip() == FLASH_TURING_REVISION:
+            repository = next((parent for parent in binary.parents if (parent / "setup.py").is_file()
+                               and (parent / "csrc/flash_attn/flash_api.cpp").is_file()), None)
+            # Some artifact stores omit hidden .git directories. Verify the
+            # pinned source fingerprints as well as HEAD when HEAD is retained.
+            fingerprints = {
+                "setup.py": "aa521d212fb7bc1f31fb786bc7504edef0515c6103649846c6ec74624456eadd",
+                "csrc/flash_attn/flash_api.cpp": "5c79c842ff82d1a9838ffc49edbee0aab66004e4be80137f8dd9c4c59067dcd6",
+                "csrc/flash_attn/src/flash_fwd_launch_template.h": "20c904afe94a4fa508a3a343c805b7711e993fa6aaa0143d67a53906a873e810"}
+            verified = repository is not None and all(
+                hashlib.sha256((repository / path).read_bytes()).hexdigest() == value
+                for path, value in fingerprints.items())
+            if verified and (repository / ".git/HEAD").exists():
+                verified = (repository / ".git/HEAD").read_text().strip() == FLASH_TURING_REVISION
+            if verified:
                 sys.path.insert(0, str(binary.parent))
                 import flash_attn_turing
                 print("TURING_PREBUILT_PIN_VERIFIED " + str(binary), flush=True)

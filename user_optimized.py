@@ -37,7 +37,11 @@ Ablation / robustness toggles via environment variables (see README):
   T3_FP32_FFN   = 1 | 0                          (default 0; force FFN+LN fp32)
   T3_CHUNK_BS   = <int>                          (override batch chunk size)
   T3_FUSED_QKV  = 1 | 0                          (default 0; one [3D,D] GEMM for q,k,v)
-  T3_ATTN       = sdpa | triton                  (default sdpa; tensor-core attention
+  T3_ATTN       = sdpa | triton | turing         (default sdpa; turing is optional,
+                                                  native-fp16 long-sequence inference only)
+  T3_X3_BLAS    = torch | lt                     (default torch; opt-in zero-workspace
+                                                  cuBLASLt search for the wide QKV GEMM)
+                                                (triton: tensor-core attention
                                                   kernel with fp32 statistics)
   T3_ATTN_SPLIT = 1 | 3                          (default 3; operand splitting for
                                                   fp32-class error on fp16 MMAs)
@@ -88,7 +92,7 @@ from torch_transformer_benchmark import BaselineTransformer
 # --- kernels import (begin) --- the Kaggle builder replaces this block
 try:
     from kernels import (HAVE_TRITON_OP, can_fuse, fused_add_layernorm,
-                         triton_attention, can_use_attention,
+                         triton_attention, can_use_attention, turing_attention,
                          x3_available, x3_prepare, x3_linear, x3_ln_split,
                          x3_add_ln_split, x3_act_split, x3_ln, x3_add_ln)
     HAVE_KERNELS = True
@@ -96,6 +100,7 @@ except Exception:  # the package is optional; the model works without it
     HAVE_KERNELS = False
     HAVE_TRITON_OP = False
     triton_attention = can_use_attention = None
+    turing_attention = None
     x3_available = x3_prepare = x3_linear = None
     x3_ln_split = x3_add_ln_split = x3_act_split = x3_ln = x3_add_ln = None
 # --- kernels import (end) ---
@@ -314,6 +319,12 @@ class UserOptimizedTransformer(BaselineTransformer):
         # Only now. Setting it up front means a throw anywhere above would leave
         # planning permanently "done" with _chunk_bs still None -- which for the
         # seq_len=1e5 shape is the difference between chunking and an OOM.
+        if (self._attn_impl == "turing" and x.device.type == "cuda"
+                and x.dtype == torch.float16 and s >= 8192):
+            # Upstream launches on the default stream. Keep this explicit
+            # opt-in native-fp16 path eager, never capture its raw launches.
+            self._compile_ok = False
+            self._cudagraph = False
         self._planned = True
 
     def _chunk_budget(self, x: torch.Tensor) -> int:
@@ -541,7 +552,10 @@ class UserOptimizedTransformer(BaselineTransformer):
         if all_valid:
             # Graded hot path: no padding. A dense [S,S] mask is impossible for
             # S=1e5, so causality MUST go through is_causal (kernel-generated).
-            if self._attn_impl == "triton" and can_use_attention(q):
+            if (self._attn_impl == "turing" and x.dtype == torch.float16
+                    and turing_attention is not None):
+                out = turing_attention(q, k, v, attn.scale, causal)
+            elif self._attn_impl == "triton" and can_use_attention(q):
                 out = triton_attention(q, k, v, attn.scale, causal, self._attn_split)
             else:
                 out = F.scaled_dot_product_attention(
