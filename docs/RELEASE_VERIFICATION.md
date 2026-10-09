@@ -144,12 +144,6 @@ python scripts/verify_next_evidence.py \
 python -m pytest -q tests/
 ```
 
-Final local verification of this improvement pass: **153 passed, two CUDA-only
-skips**, **219 artifact hashes** and **11 matching current core-source hashes**.
-CPU tests check the complete generated reports, rejected performance gates,
-cache-file safeguards and source snapshots; the cloud artifacts provide the
-actual CUDA evidence. These counts do not replace earlier cohort counts.
-
 `scripts/import_next_results.py` retains exact launcher snapshots, result JSON,
 normalized logs and SHA-256 manifests. `scripts/summarize_release.py` produces
 the table only after all thirteen shapes and all three long-sequence rounds
@@ -334,3 +328,9 @@ python scripts/verify_next_evidence.py \
   --current-core results/next/balanced-full/next_improvements_full.json
 python -m pytest -q tests/
 ```
+
+Final local verification of this improvement pass: **153 passed, two CUDA-only
+skips**, **219 artifact hashes** and **11 matching current core-source hashes**.
+CPU tests check the complete generated reports, rejected performance gates,
+cache-file safeguards and source snapshots; the cloud artifacts provide the
+actual CUDA evidence. These counts do not replace earlier cohort counts.
