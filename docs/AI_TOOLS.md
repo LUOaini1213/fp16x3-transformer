@@ -32,6 +32,12 @@ seven FP32 attention layouts end-to-end. Two harness mistakes exposed by normal
 imports/construction were repaired with regression tests; their failure logs
 remain archived. The original benchmark and production core are unchanged.
 See `docs/RELEASE_VERIFICATION.md` for this separate protocol.
+The final production adapter is additionally timed over three complete paired
+forwards through normal imports, with build/cold costs, full native-FP16
+equivalence and the restricted original-FP32 oracle documented separately.
+The unified Markdown table is generated from JSON and regression-checked
+against those immutable artifacts; AI-written prose cannot silently change its
+numbers. Default decisions retain the existing FP32 path and explicit opt-ins.
 
 1. **Workload analysis.** The AI extracted the exact grading contract from the
    harness code (tolerances `atol=0.002`/`rtol=0.02`, per-element all-pass rule,

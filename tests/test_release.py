@@ -69,3 +69,46 @@ def test_experiment_construction_keeps_parameter_versions_under_inference():
             assert isinstance(parameter._version, int)
         x = torch.randn(1, 128, 128)
         torch.testing.assert_close(model(x), base(x), rtol=.02, atol=.002)
+
+
+def test_unified_table_recomputes_current_fp32_metrics():
+    import json
+    from scripts.summarize_release import fp32_table
+    payload = json.loads(Path("results/next/release-fp32/next_release_fp32.json").read_text(encoding="utf-8"))
+    table = fp32_table(payload)
+    assert "3.546×" in table and "All 39" in table
+    assert "Default cold peak GiB" in table
+
+
+def test_attention_report_retains_all_losing_candidates():
+    import json
+    from scripts.summarize_release import attention_text
+    payload = json.loads(Path("results/next/release-attention/next_release_attention.json").read_text(encoding="utf-8"))
+    table = attention_text(payload)
+    assert "chunk32" in table and "bhsd" in table
+    r = payload["results"]["full_eager_timing"]
+    assert all(v["event_ms"] >= r["current"]["event_ms"] for v in r.values())
+
+
+def test_round_validator_rejects_incomplete_or_nonfinite_data():
+    from scripts.summarize_release import validate_rounds
+    with pytest.raises(AssertionError):
+        validate_rounds({"event_round_ms": [1, 2]})
+    with pytest.raises(AssertionError):
+        validate_rounds({"event_round_ms": [1, 2, float("nan")]})
+
+
+def test_generated_summary_matches_complete_evidence_and_rejects_partial_flash():
+    import copy
+    import json
+    from scripts.summarize_release import fp32_table, flash_text, attention_text
+    summary = Path("results/next/clean_release_summary.md").read_text(encoding="utf-8")
+    functions = {"fp32": fp32_table, "flash": flash_text, "attention": attention_text}
+    for name, function in functions.items():
+        payload = json.loads(Path(f"results/next/release-{name}/next_release_{name}.json").read_text(encoding="utf-8"))
+        assert function(payload) in summary
+        if name == "flash":
+            incomplete = copy.deepcopy(payload)
+            incomplete["results"]["full"]["sdpa"]["round_seconds"].pop()
+            with pytest.raises(AssertionError):
+                function(incomplete)

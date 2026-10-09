@@ -182,6 +182,17 @@ No unverified artifact was loaded. Default SDPA and FP32 grading are unchanged.
 
 ## Reproduction
 
+The later [clean repository release audit](RELEASE_VERIFICATION.md) closes the
+remaining integration gap: normal GitHub clones/imports, a complete current
+FP32 baseline table with isolated memory/startup costs, and formal production
+Turing three-round timing. The adapter's measured steady pair is
+171.44 → 94.32 seconds (1.818×), with 256 confirmed calls and full native-FP16
+agreement. Seven FP32 attention layout candidates pass correctness but lose
+end-to-end, so the default remains unchanged. All successful sessions match the
+same nine maintained core-source hashes. The
+[generated summary](../results/next/clean_release_summary.md) is a separate
+protocol; the earlier isolated/cold-only results above are retained, not pooled.
+
 ```bash
 python scripts/build_kaggle_selfcontained.py --only next \
   --env T3_NEXT_PHASE=profile_cpp --accelerator NvidiaTeslaT4 \

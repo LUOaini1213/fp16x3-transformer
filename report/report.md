@@ -402,3 +402,19 @@ Exact protocols and failed-instrumentation repairs are documented in
 [`docs/RELEASE_VERIFICATION.md`](../docs/RELEASE_VERIFICATION.md). JSON, exact
 launchers, raw normalized logs and independent file hashes are retained in
 `results/next/release-fp32/` and `results/next/release-attention/`.
+
+The production Turing adapter also finishes a separate normal-import steady
+gate: SDPA rounds 171.4410/172.2202/170.8376 seconds, adapter rounds
+92.3080/94.3196/95.0371 seconds. Median latency is **171.44 → 94.32 s**, **1.818×**.
+Its 618.26-second build and 156.18/95.07-second cold calls are not in those
+medians. All 3.277 billion outputs pass native-FP16 SDPA equivalence, every
+complete output is finite, and the independent original-FP32 causal prefix
+passes. The 256 adapter calls prove the opt-in kernel executes. Shared-process
+steady peak is 13.601 GiB. This remains a native-FP16 result, not a full-original-
+FP32 grading claim. Earlier isolated-candidate timing is not pooled with it.
+Both sides are eager with compile/graphs disabled and batch chunks of one;
+these are synchronized wall timings to isolate the attention backend, not an
+autotuned-native-SDPA comparison or a separate CUDA-event series.
+
+The [unified generated table](../results/next/clean_release_summary.md) includes
+all successful release results and is checked against the source JSON by tests.

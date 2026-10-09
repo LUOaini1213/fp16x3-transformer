@@ -1,6 +1,8 @@
 """Generate the current-version table from immutable release JSON evidence."""
 import argparse
 import json
+import math
+import os
 from pathlib import Path
 import statistics
 
@@ -9,6 +11,13 @@ def load(path):
     data = json.loads(path.read_text(encoding="utf-8"))
     assert data["metadata"]["normal_imports"], "normal-import evidence required"
     return data
+
+
+def validate_rounds(timing):
+    for kind in ("event", "wall"):
+        values = timing[kind + "_round_ms"]
+        assert len(values) == 3 and all(math.isfinite(v) and v > 0 for v in values)
+        assert timing[kind + "_ms"] == statistics.median(values)
 
 
 def fp32_table(payload):
@@ -25,8 +34,8 @@ def fp32_table(payload):
     errors = []
     for r in rows:
         t, m = r["timing"], r["memory"]
-        assert len(t["default"]["event_round_ms"]) == 3
-        assert len(t["baseline"]["event_round_ms"]) == 3
+        validate_rounds(t["default"])
+        validate_rounds(t["baseline"])
         checks = [c for c in r["accuracy"] if c["variant"] == "default"]
         assert len(checks) == 3 and all(c["passed"] and c["failed"] == 0 for c in checks)
         errors += [c["max_abs"] for c in checks]
@@ -42,7 +51,7 @@ def fp32_table(payload):
     wide = rows[7]
     if "lt" in wide["timing"]:
         t = wide["timing"]
-        assert len(t["lt"]["event_round_ms"]) == 3
+        validate_rounds(t["lt"])
         assert any(r["selected"] is not None for r in wide["lt_search"])
         reduction = 100 * (1 - t["lt"]["event_ms"] / t["default"]["event_ms"])
         text += ["", f'Shape 8 opt-in Lt: **{t["default"]["event_ms"]:.4f} → {t["lt"]["event_ms"]:.4f} ms** '
@@ -55,6 +64,8 @@ def fp32_table(payload):
 def flash_text(payload):
     r = payload["results"]
     assert r["full_equivalence"]["failed"] == 0 and r["adapter_calls"] == 256
+    assert r["full_equivalence"]["elements"] == 3276800000
+    assert r["fp32_causal_prefix"]["passed"] and r["fp32_causal_prefix"]["failed"] == 0
     text = ["## Formal production Turing adapter", "",
             "Native-FP16 shape 14 only; not the official FP32 grading speedup. All 3,276,800,000 "
             "outputs pass against native-FP16 SDPA. The independent original-FP32 oracle is restricted "
@@ -64,17 +75,23 @@ def flash_text(payload):
     for name in ("sdpa", "turing"):
         v = r["full"][name]
         assert len(v["round_seconds"]) == 3
+        assert len(v["peak_bytes"]) == 3
+        assert v["median_seconds"] == statistics.median(v["round_seconds"])
         text.append(f'| {name} | {v["cold_seconds"]:.3f} | ' + " | ".join(f"{n:.3f}" for n in v["round_seconds"])
                     + f' | {v["median_seconds"]:.3f} |')
     text += ["", f'Steady speedup: **{r["speedup"]:.3f}×**. Dependency build: **{r["build_seconds"]:.1f} s**. '
              f'Confirmed production-adapter calls: **{r["adapter_calls"]}**. '
              f'Full-output maximum absolute difference: **{r["full_equivalence"]["max_abs"]:.8g}**. '
              'Peak memory is from a shared two-model process, not isolated deployment memory.']
+    text += ["", "Shared-process steady peak allocated memory: " + ", ".join(
+             f'**{name}: {max(r["full"][name]["peak_bytes"]) / 2**30:.3f} GiB**'
+             for name in ("sdpa", "turing")) + "."]
     return "\n".join(text)
 
 
 def attention_text(payload):
     r = payload["results"]
+    assert len(r["full_accuracy"]) == 21 and len(r["micro_accuracy"]) == 21
     assert all(c["passed"] and c["failed"] == 0 for c in r["full_accuracy"])
     text = ["## Shape 13 FP32 attention candidates", "",
             "All conversion, copy, launch and concatenation costs are included. Each candidate is "
@@ -84,6 +101,8 @@ def attention_text(payload):
             "|---|---:|---:|---:|---:|"]
     base = r["full_eager_timing"]["current"]["event_ms"]
     for name, v in r["full_eager_timing"].items():
+        validate_rounds(v)
+        validate_rounds(r["micro_timing"][name])
         text.append(f'| {name} | {r["micro_timing"][name]["event_ms"]:.4f} | '
                     f'{v["event_ms"]:.4f} | {v["wall_ms"]:.4f} | {base / v["event_ms"]:.3f}× |')
     return "\n".join(text)
@@ -105,6 +124,8 @@ def main():
     body += "Measured Git commits: " + "; ".join(f"{name} `{p['metadata']['git_commit']}`" for name, p in
             zip(("FP32", "flash", "attention"), payloads)) + ". Core-source hashes match across all three.\n\n"
     body += f"GPU: Tesla T4; PyTorch {payloads[0]['metadata']['torch']}.\n\n"
+    body += "Source evidence: " + ", ".join(f"[{name} JSON]({Path(os.path.relpath(path.resolve(), args.output.resolve().parent)).as_posix()})"
+            for name, path in zip(("FP32", "flash", "attention"), (args.fp32, args.flash, args.attention))) + ".\n\n"
     body += "\n\n".join(fn(p) for fn, p in zip((fp32_table, flash_text, attention_text), payloads)) + "\n"
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(body, encoding="utf-8")

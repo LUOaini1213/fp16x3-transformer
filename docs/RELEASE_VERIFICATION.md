@@ -23,7 +23,11 @@ native builds stay outside the downloadable working directory.
   but excludes reference/comparison tensors. Cold and steady peaks are retained
   separately. Reserved memory and other CUDA process overhead are not this metric.
 - **Shape 14:** native-FP16 formal production adapter, one cold pair followed by
-  three rotated full-forward pairs. Full-output equivalence is against
+  three rotated full-forward pairs. Both sides use `T3_COMPILE=0`,
+  `T3_CUDAGRAPH=0`, `T3_CHUNK_BS=1` to isolate the attention backend. These are
+  synchronized whole-forward wall seconds, not a separate CUDA-event series
+  or a comparison against an independently autotuned SDPA model.
+  Full-output equivalence is against
   native-FP16 SDPA. The original FP32 oracle checks only the first batch's
   512-token causal prefix; it is not a full original-FP32 equivalence claim.
 - **Shape 13 attention experiment:** FP32 throughout. Test contiguous BHSD,
@@ -36,15 +40,18 @@ Every correctness gate requires finite outputs and the official elementwise
 rule `abs_error <= 0.002 OR abs_error <= 0.02 * abs(reference)`. This is not the
 additive tolerance used by `torch.isclose`. Historical September measurements
 and the frozen submission are left unchanged and are not pooled into this table.
+The driver does not lock GPU clocks. Per-round arrays are retained so runtime
+variance is visible; three paired rounds within one session are not three
+independent machines or a fleet-wide confidence interval.
 
 ## Reproduction
 
 ```bash
-python scripts/build_clean_kaggle.py --phase fp32 --ref EXACT_MEASURED_COMMIT \
+python scripts/build_clean_kaggle.py --phase fp32 --ref 62bb64c05ce55c27cbe10d034087939c9f1d7fed \
   --id YOUR_ACCOUNT/track3-release-fp32 --out .kaggle_upload/release_fp32
-python scripts/build_clean_kaggle.py --phase flash --ref EXACT_MEASURED_COMMIT \
+python scripts/build_clean_kaggle.py --phase flash --ref f30c8aa55f5d3dd1eb74a2f0e61727bcda6e3190 \
   --id YOUR_ACCOUNT/track3-release-flash --out .kaggle_upload/release_flash
-python scripts/build_clean_kaggle.py --phase attention --ref EXACT_MEASURED_COMMIT \
+python scripts/build_clean_kaggle.py --phase attention --ref 23d070f64df8c293e27de87a83dea4b829c51e39 \
   --id YOUR_ACCOUNT/track3-release-attention --out .kaggle_upload/release_attention
 kaggle kernels push -p .kaggle_upload/release_fp32
 kaggle kernels push -p .kaggle_upload/release_flash
@@ -86,6 +93,56 @@ construction repair the instrumentation; regression tests cover both. The model
 and all nine core-source hashes remain unchanged. Failure logs are in
 `results/next/release-flash-import-failure/` and
 `results/next/release-attention-construction-failure/`.
+
+## Completed formal-adapter steady gate
+
+The production adapter is measured through normal imports at
+`f30c8aa55f5d3dd1eb74a2f0e61727bcda6e3190`, with the same nine production-core
+hashes as the FP32 and attention sessions. Dependency build takes **618.26 s**.
+Cold calls are recorded separately: SDPA **156.18 s**, adapter **95.07 s**.
+Three rotated steady pairs give:
+
+| Round | SDPA seconds | Production adapter seconds |
+|---:|---:|---:|
+| 1 | 171.4410 | 92.3080 |
+| 2 | 172.2202 | 94.3196 |
+| 3 | 170.8376 | 95.0371 |
+| Median | **171.4410** | **94.3196** |
+
+The actual maintained adapter delivers **1.818×** in this paired session.
+All **3,276,800,000** outputs pass full native-FP16 SDPA equivalence, with zero
+OR-gate failures and maximum difference 0.0078125. Every full output is finite.
+The independent original-FP32 first-batch 512-token causal prefix passes
+(maximum difference 0.0055175). There are **256 confirmed adapter calls**,
+exactly 32 chunks × two layers × four complete forwards. Shared two-model
+steady peak allocation is **13.601 GiB** for both backends; this is not the
+isolated FP32-memory protocol or an original-full-FP32 equivalence claim.
+[Formal JSON and provenance](../results/next/release-flash/next_release_flash.json).
+
+The complete [generated release table](../results/next/clean_release_summary.md)
+is derived directly from the three successful JSON artifacts. It includes every
+FP32 shape, setup/memory costs, full adapter rounds and all seven attention
+candidates. Earlier 1.79× isolated-candidate measurements and the cold-only
+production gate remain historical evidence and are not pooled into this result.
+The measured driver's generic metadata protocol string describes the FP32
+event/wall helper; the flash `round_seconds` fields use synchronized wall timing
+only, as specified above and in the pinned source. The maintained metadata label
+now names these phase-specific methods explicitly; immutable evidence is not edited.
+
+Final local verification: **90 passed, one CUDA-only skip**; **92 artifact
+hashes** and all **nine current core-source hashes** pass. The unchanged
+official benchmark is checked against its original Git revision.
+
+```bash
+python scripts/summarize_release.py \
+  --fp32 results/next/release-fp32/next_release_fp32.json \
+  --flash results/next/release-flash/next_release_flash.json \
+  --attention results/next/release-attention/next_release_attention.json \
+  --output results/next/clean_release_summary.md
+python scripts/verify_next_evidence.py \
+  --current-core results/next/release-flash/next_release_flash.json
+python -m pytest -q tests/
+```
 
 `scripts/import_next_results.py` retains exact launcher snapshots, result JSON,
 normalized logs and SHA-256 manifests. `scripts/summarize_release.py` produces

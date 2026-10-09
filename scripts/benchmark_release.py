@@ -42,7 +42,7 @@ def metadata():
             "source_manifest": {n: hashlib.sha256((ROOT / n).read_text(encoding="utf-8").encode()).hexdigest()
                                 for n in SOURCES},
             "normal_imports": {"official": official.__file__, "production": production.__file__},
-            "protocol": "three rotated paired steady rounds; separate event/host wall timing; same weights/input",
+            "protocol": "FP32/attention: three rotated paired CUDA-event and separate synchronized-wall rounds; flash: complete synchronized-wall forwards; memory: isolated single-model child peaks; same paired weights/input",
             "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold"}
 
 

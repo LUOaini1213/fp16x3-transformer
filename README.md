@@ -43,6 +43,20 @@ unchanged. [Candidate evidence](results/next/release-attention/next_release_atte
 Methods, exact reproduction and dependency decisions:
 [clean release verification](docs/RELEASE_VERIFICATION.md).
 
+The actual production Turing adapter now also completes a **normal-import,
+three-round** full shape-14 pair: **171.44 → 94.32 seconds**, **1.818×** median
+speedup, with both sides eager and batch-chunked by one. This is **native FP16 only**, not an FP32 grading claim. All 3.277
+billion outputs pass native-FP16 SDPA equivalence; the original-FP32 oracle is
+the first batch's 512-token causal prefix only. Build time (**618.3 s**) and
+cold calls (**156.18 / 95.07 s**) are excluded from steady timing. All 256
+production-adapter calls are confirmed; shared-process peak is 13.601 GiB.
+[Formal adapter evidence](results/next/release-flash/next_release_flash.json).
+
+The [generated unified table](results/next/clean_release_summary.md) includes
+FP32 latency, first-call costs, isolated cold/steady memory, the formal adapter
+rounds, and all losing attention candidates. It is regenerated from JSON and
+checked against that evidence by tests, rather than maintained by hand.
+
 ## September submission and historical summary
 
 Five results, each traceable to a committed kernel log under `results/`:
