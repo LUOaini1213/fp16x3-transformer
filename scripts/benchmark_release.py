@@ -62,8 +62,18 @@ def inputs(cfg, seed=20261009, dtype=torch.float32):
 
 
 def baseline(cfg):
-    torch.manual_seed(141009 + cfg.d_model + cfg.seq_len)
-    return official.BaselineTransformer(cfg).eval()
+    with torch.inference_mode(False):
+        torch.manual_seed(141009 + cfg.d_model + cfg.seq_len)
+        return official.BaselineTransformer(cfg).eval()
+
+
+def copy_candidate(cfg, base):
+    # Forward is inference-only, but parameters need normal mutation counters.
+    # An outer experiment inference context must not leak into construction.
+    with torch.inference_mode(False):
+        model = production.UserOptimizedTransformer(cfg).eval()
+        official.copy_model_weights(base, model, strict=True)
+    return model
 
 
 def make(cfg, base, variant):
@@ -73,11 +83,8 @@ def make(cfg, base, variant):
     # environment requests lt. Paired experiments switch variants explicitly.
     x3.lt_candidate_matmul = lt_candidate_matmul
     x3._X3_BLAS = "lt" if variant == "lt" else "torch"
-    if variant == "baseline":
-        return base.cuda()
-    model = production.UserOptimizedTransformer(cfg).eval()
-    official.copy_model_weights(base, model, strict=True)
-    return model.cuda()
+    with torch.inference_mode(False):
+        return (base if variant == "baseline" else copy_candidate(cfg, base)).cuda()
 
 
 def modes(model):
@@ -323,12 +330,13 @@ def attention():
                 rows["micro_timing"] = paired({n: lambda xx, mm, n=n: layout_attention(
                     n, q, k, v, is_causal=True, scale=32 ** -.5) for n in layouts}, q, None, 20)
             del packed, q, k, v, ref, out
+        save("attention_micro", rows)
         # Test every candidate end-to-end, even if its microbenchmark loses.
         os.environ.update(T3_COMPILE="0", T3_CUDAGRAPH="0")
         cfg = config(13)
         base = baseline(cfg)
         models = {n: make(cfg, base, "default") for n in layouts}
-        base.cuda()
+        base = make(cfg, base, "baseline")
 
         def full(name, xx, mm):
             with attention_layout(name):

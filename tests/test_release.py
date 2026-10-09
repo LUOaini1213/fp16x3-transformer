@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 
 from scripts.build_clean_kaggle import launcher
-from scripts.benchmark_release import baseline, config, layout_attention
+from scripts.benchmark_release import baseline, config, copy_candidate, layout_attention
 
 
 def test_clean_launcher_pins_git_and_uses_normal_imports():
@@ -58,3 +58,14 @@ def test_production_adapter_counter_import_is_module_not_package_function():
     assert isinstance(adapter._TURING_CALLS, int)
     source = Path("scripts/benchmark_release.py").read_text(encoding="utf-8")
     assert 'adapter = importlib.import_module("kernels.turing_attention")' in source
+
+
+def test_experiment_construction_keeps_parameter_versions_under_inference():
+    with torch.inference_mode():
+        base = baseline(config(2))
+        model = copy_candidate(config(2), base)
+        for parameter in model.parameters():
+            assert not parameter.is_inference()
+            assert isinstance(parameter._version, int)
+        x = torch.randn(1, 128, 128)
+        torch.testing.assert_close(model(x), base(x), rtol=.02, atol=.002)

@@ -101,9 +101,10 @@ def main():
             if k.startswith("kernels/") or k in ("user_optimized.py", "torch_transformer_benchmark.py")}
     for payload in payloads[1:]:
         assert all(payload["metadata"]["source_manifest"][k] == v for k, v in core.items())
-    revision = payloads[0]["metadata"]["git_commit"]
     body = "# Clean GitHub/T4 release evidence\n\nGenerated from source-stamped JSON, not historical headlines.\n\n"
-    body += f"FP32/flash measured Git commit: `{revision}`. GPU: Tesla T4; PyTorch {payloads[0]['metadata']['torch']}.\n\n"
+    body += "Measured Git commits: " + "; ".join(f"{name} `{p['metadata']['git_commit']}`" for name, p in
+            zip(("FP32", "flash", "attention"), payloads)) + ". Core-source hashes match across all three.\n\n"
+    body += f"GPU: Tesla T4; PyTorch {payloads[0]['metadata']['torch']}.\n\n"
     body += "\n\n".join(fn(p) for fn, p in zip((fp32_table, flash_text, attention_text), payloads)) + "\n"
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(body, encoding="utf-8")
