@@ -67,7 +67,9 @@ def flash_text(payload):
     assert r["full_equivalence"]["elements"] == 3276800000
     assert r["fp32_causal_prefix"]["passed"] and r["fp32_causal_prefix"]["failed"] == 0
     text = ["## Formal production Turing adapter", "",
-            "Native-FP16 shape 14 only; not the official FP32 grading speedup. All 3,276,800,000 "
+            "Native-FP16 shape 14 only; not the official FP32 grading speedup. Both sides are eager "
+            "(compile/graphs disabled), batch-chunked by one; these are synchronized whole-forward "
+            "wall seconds, not an independently autotuned SDPA comparison. All 3,276,800,000 "
             "outputs pass against native-FP16 SDPA. The independent original-FP32 oracle is restricted "
             "to the first batch's 512-token causal prefix. Build and first calls are excluded from steady rounds.", "",
             "| Backend | First call s | Round 1 s | Round 2 s | Round 3 s | Median s |",
