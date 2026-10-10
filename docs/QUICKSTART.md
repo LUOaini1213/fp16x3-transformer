@@ -14,7 +14,7 @@ measurements or regenerate their receipts/reports:
 python -m scripts.verify_next_evidence --maintained-runtime
 ```
 
-Success reports 248 artifact hashes and 11 current core-source hashes. It
+Success reports 250 artifact hashes and 11 current core-source hashes. It
 requires both full sessions, both retained pilot collections, fusion and the
 targeted shape-2 repeat, including receipts, required JSON/launcher files and
 raw execution logs. All measured JSON/log files in these folders must be
@@ -22,6 +22,15 @@ receipted; all three runtime reports must match their verified measurements.
 Performance gates are reported per session: **balanced-full 234 checks, 12/13**;
 **portfolio-full 234 checks, 13/13**; **shape-2 repeat 2/3** worker comparisons.
 A recorded performance miss does not make intact evidence invalid.
+
+The extra two artifact hashes cover the frozen measured runner and its source
+identity, not a new GPU run. The historical `scripts/run.py` at exact commit
+`c8fe1cf7807d5633a1b75773d2ab03461318cb22` is retained under
+[`runtime-source-c8fe1cf`](../results/next/runtime-source-c8fe1cf/README.md).
+The audit verifies its recorded hash while still requiring the current
+model/kernel sources to match. That snapshot is not an executable entry point
+or evidence of the maintained CLI parser's GPU performance. All original
+measurements, receipts and three generated runtime reports remain unchanged.
 
 A partial checkout cannot pass by silently skipping its missing receipt.
 Missing files/entries, altered bytes, different current sources and stale
@@ -44,6 +53,13 @@ python -m scripts.run --mode quick --shape 2
 python -m scripts.run --mode balanced --device cuda --shape 2
 python -m scripts.run --mode steady --device cuda --shape 2
 ```
+
+`--shapes` requires a nonempty list of shape numbers or ascending ranges in
+1–13. Empty strings, out-of-range endpoints and conflicting `--shape`/`--shapes`
+requests fail with exit code 2 before changing profile settings, importing
+Torch, probing a device or writing a result. Large invalid ranges are rejected
+before their elements are allocated; `--check-only` also validates explicit
+shape requests.
 
 The command automatically chooses CUDA when available; otherwise it explicitly
 labels CPU results as correctness-only. `--device cuda` refuses silent CPU

@@ -9,13 +9,13 @@ import sys
 
 import pytest
 
-from scripts.verify_next_evidence import (MAINTAINED_ARTIFACTS, ROOT, verify_artifacts,
+from scripts.verify_next_evidence import (FROZEN_RUNNER_ARTIFACTS, MAINTAINED_ARTIFACTS, ROOT, verify_artifacts,
                                          verify_maintained_runtime)
 
 
 @pytest.fixture
 def evidence_copy(tmp_path):
-    for folder in MAINTAINED_ARTIFACTS:
+    for folder in (*MAINTAINED_ARTIFACTS, *FROZEN_RUNNER_ARTIFACTS):
         shutil.copytree(ROOT / "results/next" / folder, tmp_path / folder)
     for name in ("improvements_summary.md", "improvements_pilot_summary.md", "portfolio_runtime_summary.md"):
         shutil.copy(ROOT / "results/next" / name, tmp_path)
@@ -31,7 +31,7 @@ def edit_receipt(root, transform):
 
 def test_legacy_subset_check_is_preserved_but_strict_audit_rejects_missing_receipt(evidence_copy):
     (evidence_copy / "improvements-full/artifact_sha256.json").unlink()
-    assert verify_artifacts(evidence_copy) == 43
+    assert verify_artifacts(evidence_copy) == 45
     with pytest.raises(ValueError, match="improvements-full/artifact_sha256.json"):
         verify_maintained_runtime(evidence_copy)
 
@@ -117,7 +117,7 @@ def test_strict_audit_verifies_current_core_and_leaves_evidence_unchanged(eviden
     before = {p.relative_to(evidence_copy): hashlib.sha256(p.read_bytes()).hexdigest()
               for p in evidence_copy.rglob("*") if p.is_file()}
     result = verify_maintained_runtime(evidence_copy)
-    assert result["artifact_hashes"] == 61
+    assert result["artifact_hashes"] == 63
     assert result["core_source_hashes"] == 11
     assert result["cohorts"] == [
         {"name": "balanced-full", "profile_input_checks": 234, "balanced_gates_passed": 12, "shapes": 13},
@@ -149,7 +149,7 @@ def test_audit_cli_missing_receipt_exits_two_with_actionable_error(evidence_copy
     virtual_repository = evidence_copy / "cli-root"
     measurements = virtual_repository / "results/next"
     measurements.mkdir(parents=True)
-    for folder in MAINTAINED_ARTIFACTS:
+    for folder in (*MAINTAINED_ARTIFACTS, *FROZEN_RUNNER_ARTIFACTS):
         shutil.copytree(evidence_copy / folder, measurements / folder)
     for name in ("improvements_summary.md", "improvements_pilot_summary.md", "portfolio_runtime_summary.md"):
         shutil.copy(evidence_copy / name, measurements)
@@ -182,7 +182,7 @@ def test_legacy_audit_keeps_working_in_optimized_python():
     process = subprocess.run([sys.executable, "-O", "-m", "scripts.verify_next_evidence"],
                              cwd=ROOT, capture_output=True, text=True, timeout=60)
     assert process.returncode == 0, process.stderr
-    assert "PASS: 248 artifact hashes" in process.stdout
+    assert "PASS: 250 artifact hashes" in process.stdout
 
 
 @pytest.mark.parametrize("folder", list(MAINTAINED_ARTIFACTS))
@@ -190,3 +190,47 @@ def test_neither_full_session_nor_repeat_can_lose_its_receipt(evidence_copy, fol
     (evidence_copy / folder / "artifact_sha256.json").unlink()
     with pytest.raises(ValueError, match=folder + "/artifact_sha256.json"):
         verify_maintained_runtime(evidence_copy)
+
+
+@pytest.mark.parametrize("name", ["artifact_sha256.json", "run.py.snapshot", "source.json"])
+def test_historical_runner_archive_cannot_lose_its_receipt_or_sources(evidence_copy, name):
+    directory = evidence_copy / next(iter(FROZEN_RUNNER_ARTIFACTS))
+    (directory / name).unlink()
+    with pytest.raises(ValueError, match=name):
+        verify_maintained_runtime(evidence_copy)
+
+
+@pytest.mark.parametrize("change", ["altered_bytes", "replace_with_current_cli", "foreign_commit"])
+def test_historical_runner_cannot_be_altered_or_rebadged_even_with_a_new_receipt(evidence_copy, change):
+    directory = evidence_copy / next(iter(FROZEN_RUNNER_ARTIFACTS))
+    if change == "foreign_commit":
+        path = directory / "source.json"
+        source = json.loads(path.read_text(encoding="utf-8"))
+        source["git_commit"] = "0" * 40
+        path.write_text(json.dumps(source), encoding="utf-8")
+    else:
+        path = directory / "run.py.snapshot"
+        path.write_bytes(path.read_bytes() + b"\n" if change == "altered_bytes" else
+                         (ROOT / "scripts/run.py").read_bytes())
+    if change != "altered_bytes":
+        receipt_path = directory / "artifact_sha256.json"
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        receipt[path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+    with pytest.raises(ValueError):
+        verify_maintained_runtime(evidence_copy)
+
+
+def test_legacy_direct_script_entry_keeps_working_with_frozen_sources():
+    process = subprocess.run([sys.executable, "scripts/verify_next_evidence.py", "--maintained-runtime"],
+                             cwd=ROOT, capture_output=True, text=True, timeout=60)
+    assert process.returncode == 0, process.stdout + process.stderr
+    assert "PASS: 250 artifact hashes" in process.stdout and "frozen snapshot" in process.stdout
+
+
+def test_frozen_source_resolution_is_limited_to_the_exact_measured_runner():
+    from scripts.evidence_sources import MEASURED_RUNNER_COMMIT, measured_source
+    frozen = measured_source(ROOT, {"git_commit": MEASURED_RUNNER_COMMIT}, "scripts/run.py")
+    assert frozen.name == "run.py.snapshot"
+    assert measured_source(ROOT, {"git_commit": "0" * 40}, "scripts/run.py") == ROOT / "scripts/run.py"
+    assert measured_source(ROOT, {"git_commit": MEASURED_RUNNER_COMMIT}, "user_optimized.py") == ROOT / "user_optimized.py"

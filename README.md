@@ -100,6 +100,8 @@ receipts, artifact hashes, current core sources and all generated reports.
 It reports each session's gates separately. Missing receipts, unlisted or
 changed measurements, and stale reports fail with exit code 2 and file names.
 It verifies the recorded run; it does not rerun or certify a new GPU benchmark.
+The [frozen c8 runner](results/next/runtime-source-c8fe1cf/README.md) preserves
+the original measurement source separately from the maintained CLI parser.
 
 ```bash
 python -m pip install pytest
