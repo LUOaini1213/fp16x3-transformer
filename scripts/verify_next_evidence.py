@@ -7,6 +7,13 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import sys
+
+# Preserve the documented legacy `python scripts/verify_next_evidence.py` entry.
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from scripts.evidence_sources import RUNNER_ARCHIVE_FOLDER, measured_source
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +34,7 @@ MAINTAINED_ARTIFACTS = {
     "balanced-shape2-repeat": {"cloud_script.py", "next_improvements_shape2_repeat.json"},
     "ffn-fusion": {"cloud_script.py", "next_improvements_fusion.json"},
 }
+FROZEN_RUNNER_ARTIFACTS = {RUNNER_ARCHIVE_FOLDER: {"run.py.snapshot", "source.json"}}
 
 
 def _unique_entries(pairs):
@@ -38,7 +46,7 @@ def _unique_entries(pairs):
     return receipt
 
 
-def check_required_artifacts(root, required_artifacts):
+def check_required_artifacts(root, required_artifacts, require_raw_logs=True):
     """Require the full inventory before verifying hashes; missing receipts never certify a run."""
     missing = [f"{folder}/artifact_sha256.json" for folder in sorted(required_artifacts)
                if not (root / folder / "artifact_sha256.json").is_file()]
@@ -61,7 +69,7 @@ def check_required_artifacts(root, required_artifacts):
         if missing:
             raise ValueError(f"missing required artifact entries in {folder}: " + ", ".join(missing))
         inventory = {p.name for p in directory.iterdir() if p.is_file()
-                     and (p.suffix in (".json", ".log") or p.name == "cloud_script.py")
+                     and (p.suffix in (".json", ".log", ".snapshot") or p.name == "cloud_script.py")
                      and p.name != "artifact_sha256.json"}
         unreceipted = sorted(inventory - receipt.keys())
         if unreceipted:
@@ -69,7 +77,7 @@ def check_required_artifacts(root, required_artifacts):
         missing = sorted(name for name in receipt if not (directory / name).is_file())
         if missing:
             raise ValueError(f"missing evidence files in {folder}: " + ", ".join(missing))
-        if not any(name.endswith(".log") for name in receipt):
+        if require_raw_logs and not any(name.endswith(".log") for name in receipt):
             raise ValueError(f"missing raw execution log in {folder}")
 
 
@@ -115,6 +123,7 @@ def verify_maintained_runtime(root, repository=ROOT):
     if not __debug__:
         raise ValueError("strict maintained-runtime audit requires assertions; rerun without -O/-OO "
                          "and unset PYTHONOPTIMIZE")
+    check_required_artifacts(root, FROZEN_RUNNER_ARTIFACTS, require_raw_logs=False)
     hashes = verify_artifacts(root, required_artifacts=MAINTAINED_ARTIFACTS)
     full_path = root / "improvements-full/next_improvements_full.json"
     core = verify_current_core(full_path, repository)
@@ -122,6 +131,10 @@ def verify_maintained_runtime(root, repository=ROOT):
                                                      render, sweep_metrics)
     from scripts.summarize_improvements import render as render_main, repeat_metrics
     full = load(full_path)
+    runner = measured_source(repository, full["metadata"], "scripts/run.py", evidence_root=root)
+    runner_hash = hashlib.sha256(runner.read_text(encoding="utf-8").encode()).hexdigest()
+    if runner_hash != full["metadata"]["source_manifest"]["scripts/run.py"]:
+        raise ValueError("frozen measured runner differs from the recorded source hash")
     expected = render(full, load(root / "improvements-pilot/next_improvements_pilot.json"),
                       load(root / "improvements-full/next_improvements_cache.json"),
                       load(root / "improvements-full/next_improvements_contracts.json"),
@@ -178,6 +191,7 @@ def main():
             result = verify_maintained_runtime(ROOT / "results/next")
             print(f"PASS: {result['artifact_hashes']} artifact hashes; complete maintained-runtime receipts")
             print(f"PASS: {result['core_source_hashes']} current core-source hashes and all generated reports")
+            print("Historical c8 runner is verified from its frozen snapshot; current CLI parsing is outside GPU timing evidence")
             print(f"Measured Git: {result['measured_git']}")
             for cohort in result["cohorts"]:
                 print(f"{cohort['name']}: {cohort['profile_input_checks']} profile/input checks; "
