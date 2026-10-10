@@ -182,7 +182,9 @@ def main():
     ap.add_argument("--mode", choices=tuple(PROFILES), default="quick")
     ap.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto")
     group = ap.add_mutually_exclusive_group()
-    group.add_argument("--shape", type=int, choices=range(1, 14), default=2)
+    # Older argparse ignores a mutual-exclusion member equal to its default.
+    # Fill in shape 2 only after parsing, so an explicit --shape 2 still conflicts.
+    group.add_argument("--shape", type=int, choices=range(1, 14))
     group.add_argument("--shapes", help="fresh worker per shape, e.g. 1-13 or 2,8")
     ap.add_argument("--check-only", action="store_true")
     ap.add_argument("--repeats", type=int, default=10)
@@ -190,6 +192,8 @@ def main():
     ap.add_argument("--output", type=Path, default=Path("results/local_run.json"))
     ap.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args()
+    if args.shape is None:
+        args.shape = 2
     # Reject explicit empty/invalid requests before clearing T3_* settings,
     # importing Torch or probing a CUDA device, including --check-only requests.
     if args.repeats < 1:

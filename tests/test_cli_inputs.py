@@ -65,3 +65,20 @@ def test_invalid_shapes_do_not_call_probe_benchmark_or_output_writer(monkeypatch
     with pytest.raises(SystemExit) as stopped:
         cli.main()
     assert stopped.value.code == 2 and list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("arguments", [[], ["--shape", "2"]])
+def test_implicit_and_explicit_default_shape_remain_two(monkeypatch, tmp_path, arguments):
+    calls, outputs = [], []
+    monkeypatch.setattr(cli, "configure", lambda *args: None)
+    monkeypatch.setattr(cli, "environment_report", lambda *args: {"device": "cpu"})
+
+    def run_case(shape, *args):
+        calls.append(shape)
+        return {"shape": shape}
+
+    monkeypatch.setattr(cli, "run_case", run_case)
+    monkeypatch.setattr(cli, "write_json", lambda path, payload: outputs.append(payload))
+    monkeypatch.setattr(sys, "argv", ["run", *arguments, "--output", str(tmp_path / "result.json")])
+    assert cli.main() == 0
+    assert calls == [2] and outputs == [{"environment": {"device": "cpu"}, "results": [{"shape": 2}]}]
