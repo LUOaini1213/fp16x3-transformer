@@ -54,16 +54,20 @@ def test_real_pilot_keeps_complete_gates_cache_and_losing_fusion():
         profile_metrics(partial, (2, 8, 13))
 
 
-def test_tested_improvement_core_and_driver_match_this_checkout():
+def test_measured_core_and_frozen_runner_match_recorded_sources():
     import hashlib
     import json
     from scripts.verify_next_evidence import verify_current_core
     path = Path("results/next/balanced-pilot/next_improvements_pilot.json")
     assert verify_current_core(path) == 11
     payload = json.loads(path.read_text(encoding="utf-8"))
+    from scripts.evidence_sources import measured_source
     for name in ("scripts/run.py", "scripts/benchmark_improvements.py", "scripts/build_clean_kaggle.py"):
-        actual = hashlib.sha256(Path(name).read_text(encoding="utf-8").encode()).hexdigest()
+        source = measured_source(Path.cwd(), payload["metadata"], name)
+        actual = hashlib.sha256(source.read_text(encoding="utf-8").encode()).hexdigest()
         assert actual == payload["metadata"]["source_manifest"][name]
+    current_cli = hashlib.sha256(Path("scripts/run.py").read_text(encoding="utf-8").encode()).hexdigest()
+    assert current_cli != payload["metadata"]["source_manifest"]["scripts/run.py"]
 
 
 def full_payloads():

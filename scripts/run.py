@@ -50,21 +50,24 @@ def configure(mode, tune_cache=None):
 
 
 def parse_shapes(value):
+    if not value.strip():
+        raise ValueError("--shapes must contain shape numbers or ascending ranges in 1-13")
     shapes = []
     for token in value.split(","):
         endpoints = token.strip().split("-")
         if len(endpoints) == 1:
-            part = [int(endpoints[0])]
+            lo = hi = int(endpoints[0])
         elif len(endpoints) == 2:
             lo, hi = map(int, endpoints)
             if hi < lo:
                 raise ValueError("shape ranges must be ascending")
-            part = list(range(lo, hi + 1))
         else:
             raise ValueError("use shape numbers or ascending ranges, e.g. 1-13")
-        shapes.extend(part)
-    if not shapes or any(i not in range(1, 14) for i in shapes):
-        raise ValueError("only gradeable shapes 1-13 are supported; shape 14 has no full FP32 oracle")
+        # Bound endpoints before allocating a range: a typo must not allocate
+        # billions of integers before the gradeable-shape check can reject it.
+        if not 1 <= lo <= hi <= 13:
+            raise ValueError("only gradeable shapes 1-13 are supported; shape 14 has no full FP32 oracle")
+        shapes.extend(range(lo, hi + 1))
     return list(dict.fromkeys(shapes))
 
 
@@ -179,7 +182,9 @@ def main():
     ap.add_argument("--mode", choices=tuple(PROFILES), default="quick")
     ap.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto")
     group = ap.add_mutually_exclusive_group()
-    group.add_argument("--shape", type=int, choices=range(1, 14), default=2)
+    # Older argparse ignores a mutual-exclusion member equal to its default.
+    # Fill in shape 2 only after parsing, so an explicit --shape 2 still conflicts.
+    group.add_argument("--shape", type=int, choices=range(1, 14))
     group.add_argument("--shapes", help="fresh worker per shape, e.g. 1-13 or 2,8")
     ap.add_argument("--check-only", action="store_true")
     ap.add_argument("--repeats", type=int, default=10)
@@ -187,18 +192,26 @@ def main():
     ap.add_argument("--output", type=Path, default=Path("results/local_run.json"))
     ap.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args()
+    if args.shape is None:
+        args.shape = 2
+    # Reject explicit empty/invalid requests before clearing T3_* settings,
+    # importing Torch or probing a CUDA device, including --check-only requests.
+    if args.repeats < 1:
+        ap.error("--repeats must be positive")
     try:
-        if args.repeats < 1:
-            raise ValueError("--repeats must be positive")
+        shapes = parse_shapes(args.shapes) if args.shapes is not None else None
+    except ValueError as exc:
+        ap.error(str(exc))
+    try:
         configure(args.mode, args.tune_cache)
         env = environment_report(args.device)
         print(json.dumps(env, indent=2), flush=True)
         if args.check_only:
             write_json(args.output, {"environment": env})
             return 0
-        if args.shapes:
+        if shapes is not None:
             rows = []
-            for shape in parse_shapes(args.shapes):
+            for shape in shapes:
                 child = args.output.with_name(args.output.stem + f"_shape{shape}.json")
                 command = [sys.executable, "-m", "scripts.run", "--worker", "--mode", args.mode,
                                 "--device", env["device"], "--shape", str(shape), "--repeats", str(args.repeats),

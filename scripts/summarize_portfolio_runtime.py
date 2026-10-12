@@ -8,6 +8,7 @@ import re
 import statistics
 
 from scripts.summarize_release import validate_rounds
+from scripts.evidence_sources import measured_source
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,7 +32,7 @@ def check_metadata(payload):
                 "kernels/dispatch_cache.py", "scripts/run.py", "scripts/benchmark_improvements.py"}
     assert required <= manifest.keys(), "runtime source hashes required"
     for name, measured_hash in manifest.items():
-        path = (ROOT / name).resolve()
+        path = measured_source(ROOT, metadata, name).resolve()
         assert path.is_relative_to(ROOT), "source path leaves repository"
         actual = hashlib.sha256(path.read_text(encoding="utf-8").encode()).hexdigest()
         assert actual == measured_hash, f"measured source differs: {name}"
