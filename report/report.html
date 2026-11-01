@@ -694,8 +694,8 @@
     compared against <em class="term">itself</em> recomputed in fp32 &mdash; 7603 elements, the
     identical <code>max_abs</code>. bf16's ulp near 1.0 is 0.0078, four times coarser than
     <code>atol=0.002</code>, so no implementation that reorders a single operation can hold that
-    gate in bf16. The graded configuration is fp32, where we sit three orders of magnitude
-    inside it.</p>
+    gate in bf16. The graded configuration is fp32, where the shipped path sits 210&times; inside
+    it at worst and 699&times; on the other twelve shapes.</p>
 
     <h3>The padded path rebuilds an <code>O(S&sup2;)</code> tensor</h3>
     <p>True. When a real padding mask is supplied, the fallback materializes a dense
