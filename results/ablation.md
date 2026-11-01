@@ -52,14 +52,17 @@ right.**
 
 A full 13-shape fp16 sweep on the T4 (`results_t4_fp16.csv`,
 `kaggle_t4_fp16_run.log`) **passes all 13 shapes** at a **median 4.014x**
-(1.320x - 11.528x), against 2.286x for the shipped fp32 path. That is nearly
-double, for one environment variable.
+(1.320x - 11.528x), against 2.286x for the fp32 path it was measured against in
+that session (`results_t4_graph.csv` — the fp32-SGEMM path with the first-forward
+autotune, before fp16x3 became the default). That is 1.76x, for one environment
+variable; against the fp32 path shipped today it is 1.42x.
 
 Here is why we still do not ship it:
 
 | regime | shapes PASS | median speedup | worst `max_abs` | margin vs `atol=0.002` |
 |---|---|---|---|---|
-| fp32 (shipped) | 13/13 | 2.286x | 1.91e-6 | **1049x** |
+| **fp32 as shipped today** (`T3_LINEAR=fp16x3`, `results_t4.csv`) | 13/13 | **2.834x** | 9.54e-06 (K=1024); 2.86e-06 elsewhere | **210x** / 699x |
+| fp32-SGEMM + autotune — the baseline this fp16 sweep ran against (`results_t4_graph.csv`) | 13/13 | 2.286x | 1.91e-6 | 1049x |
 | fp16 (`T3_AUTOCAST=fp16`) | 13/13 | 4.014x | **2.04e-3** | **0.98x** |
 | fp16 attention + fp32 FFN/LN (`T3_AUTOCAST=fp16 T3_FP32_FFN=1`) | 13/13 | 2.953x | 1.72e-03 | 1.17x |
 
@@ -72,9 +75,10 @@ with a large reference; if it lands on a near-zero one instead, that element
 fails, and a single failing element fails the whole shape and forfeits the speed
 score entirely.
 
-So the trade is: **2x more speed, in exchange for a correctness margin of
-essentially zero on a hard gate.** We take the 2.286x that sits 1049x inside
-tolerance. The flag is there, documented and measured, for anyone who wants the
+So the trade is: **1.4x more speed, in exchange for a correctness margin of
+essentially zero on a hard gate.** We take the shipped fp32 path's 2.834x, whose
+worst error sits 210x inside tolerance (699x on the twelve shapes that are not
+K=1024). The flag is there, documented and measured, for anyone who wants the
 other side of that trade.
 
 **The middle ground was measured and is not one.** fp16 attention with fp32 FFN

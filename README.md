@@ -139,8 +139,11 @@ acceptance gates. Historical September Torch 2.10 results are kept separately.
 | [kernels/dispatch_cache.py](kernels/dispatch_cache.py) | Environment/source/layout-keyed JSON dispatch hints |
 | [scripts/run.py](scripts/run.py) | CLI profiles, correctness checks and timing JSON |
 | [results/next/](results/next/) | Source-stamped measurements and generated reports |
+| [report/report.md](report/report.md) | Technical report; [report/report.html](report/report.html) is the September report as one self-contained page, rebuilt from `results/results_t4.csv` by `scripts/build_report_page.py` |
 | [docs/EXPERIMENT_HISTORY.md](docs/EXPERIMENT_HISTORY.md) | Detailed ablations, precision ladders, losing variants and history |
 
 The narrated [demo video](build/track3_demo.mp4) and
 [AI tooling log](docs/AI_TOOLS.md) document the original development and
-measurement process.
+measurement process. The video was rendered on 2026-09-01 and narrates that
+day's sweep, before the September fixes; [build/README.md](build/README.md)
+lists its figures next to the re-measured ones.

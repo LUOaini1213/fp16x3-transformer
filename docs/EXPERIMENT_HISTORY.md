@@ -339,19 +339,21 @@ plus hardware, not a different attention kernel.
 The later optional third-party Turing backend is a separate implementation,
 not PyTorch's built-in flash backend; see the follow-up audit below.
 
-### fp16 is twice as fast, and we still ship fp32
+### fp16 is 1.4x the shipped path, and we still ship fp32
 
 `T3_AUTOCAST=fp16` passes all 13 shapes at a **median 4.014x**, up to 11.53x on
-shape 13. We ship it **off**. The reason is one number: its worst-case absolute
-error is `max_abs = 0.0020388` on shape 6, which has **already crossed the
-`atol=0.002` gate**. It passes only because the rule is
+shape 13 — 1.4x the shipped 2.834x, and 1.76x the 2.286x fp32-SGEMM path the
+sweep was actually run against. We ship it **off**. The reason is one number:
+its worst-case absolute error is `max_abs = 0.0020388` on shape 6, which has
+**already crossed the `atol=0.002` gate**. It passes only because the rule is
 `abs<=0.002` **OR** `rel<=0.02` and that element's reference value happened to be
 large enough (`|ref| >= 0.102`) for the relative branch to catch it.
 
 Nothing makes that repeatable. Put the same error on a near-zero reference and
 the element fails, and one failing element fails the shape and forfeits the
-speed score entirely. The shipped fp16x3 path sits **210x inside** the same gate
-on its worst historical shape.
+speed score entirely. The shipped fp16x3 path's worst historical error is 9.5e-06
+(K=1024), which sits **210x inside** the same gate, and 2.9e-06 — 699x inside — on
+the other twelve shapes.
 We took the margin. The flag is documented, measured, and yours if you want the
 other side of the trade — full numbers in [`results/ablation.md`](../results/ablation.md).
 
@@ -988,7 +990,8 @@ on the right GPU it is the one we would reach for.
   in fp32 — 7603/131072 elements at the identical `max_abs 0.047`. bf16's ulp
   near 1.0 is 0.0078, four times coarser than `atol=0.002`, so no implementation
   that reorders a single operation can hold that gate in bf16. The graded
-  configuration is fp32 (the harness default), where we sit ~1049x inside it.
+  configuration is fp32 (the harness default), where the shipped path sits 210x inside
+  it at worst and 699x on the other twelve shapes.
 - The packed padding path groups by exact valid length. A batch with many
   distinct lengths pays for many smaller forwards and may be launch-bound;
   `T3_PACK_PADDING=0` keeps the old dense fallback available for comparison.
@@ -1001,11 +1004,24 @@ on the right GPU it is the one we would reach for.
 **Watch it: https://youtu.be/3aAw-jq1oTM**
 
 `build/track3_demo.mp4` (**exactly 3:00**, 1920x1080, subtitles in `.srt`) is
-**generated** from the measured CSVs, not hand-edited:
+rendered by script rather than cut by hand — the results slide and its chart are
+built from `results/results_t4.csv` at render time, while the narration and the
+terminal replay are fixed text transcribed from one recorded run:
 
 ```bash
 python scripts/make_video.py --out build/track3_demo.mp4
 ```
+
+**Which run you are hearing.** The committed `.mp4` and `.srt` were rendered on
+2026-09-01 from that day's sweep (`results/kaggle_t4_run.log`,
+`results/kaggle_t4_shape14.log`), so every number spoken in them is that run's:
+median **2.28x** on the fp32-SGEMM path, shape 13 at 4.44x, shape 14 in 204 s /
+15,676 tok/s / 14.58 GB. Two things landed afterwards — the Dynamo
+recompile-limit fix and fp16x3 becoming the default — and the September figures
+after them are the ones in the results table above: median **2.834x**, shape 13
+at 5.22x, shape 14 in 184 s / 17,402 tok/s / 14.17 GB. The cut has not been
+re-rendered against them, so read the table, not the soundtrack —
+[`build/README.md`](../build/README.md) puts the two side by side next to the file.
 
 It follows the required submission structure, and the section windows are fixed
 rather than fitted to whatever the narration happens to run to:
@@ -1029,11 +1045,19 @@ access.
 
 ## Report
 
-A rendered version of the technical report, with the figures inline:
-**https://claude.ai/code/artifact/80227d3c-9682-42d0-a957-bf5188704088**
-(print to PDF from the browser). Source: [`report/report.md`](../report/report.md);
-the page is assembled from the measured CSVs by
-`scripts/build_report_page.py`, so its numbers cannot drift from the data.
+The technical report is [`report/report.md`](../report/report.md), which GitHub
+renders in place. [`report/report.html`](../report/report.html) is the September
+report as a single self-contained page with the figures inlined as data URIs —
+clone and open it in a browser, or print it to PDF from there. That page is
+assembled from the measured CSVs by `scripts/build_report_page.py`:
+
+```bash
+python scripts/build_report_page.py report/report_page_template.html report/report.html
+```
+
+so its headline speedup cannot drift from `results/results_t4.csv`;
+`tests/test_reported_numbers.py` fails the build if the committed page or the
+September tables in this record stop matching that file.
 
 ## AI tooling
 

@@ -26,7 +26,7 @@ ExactSwap — Drop-in GPU Transformer Layer
 ## 3. Elevator pitch（一句话简介，199 字符）
 
 ```
-A drop-in Transformer layer 2.83x faster on all 13 graded shapes at fp32-class accuracy (error-compensated tensor-core GEMMs); it runs the 100,000-token shape whose reference needs 20.5 TB.
+A drop-in Transformer layer: 2.83x median over 13 graded shapes (1.57x-5.22x) at fp32-class accuracy from error-compensated tensor-core GEMMs; it runs the 100,000-token shape needing 20.5 TB.
 ```
 
 ---
@@ -122,7 +122,7 @@ No GPU holds that. The baseline does not run *slowly* on shape 14 — it does no
 
 $$\frac{0.002}{9.54 \times 10^{-6}} \approx 210$$
 
-inside the tolerance gate on the GEMM-bound shape, and about 297× on the other twelve.
+inside the tolerance gate on the GEMM-bound shape, and about 699× on the other twelve.
 
 **And shape 14 runs.** The full 100,000-token forward completes in **184 s at 17,402 tokens/s, peaking at 14.17 GB** — on a card that only has 15.64 GB in total. Against a reference needing 20.5 TB, the meaningful result is not a ratio; it is the difference between *cannot run* and *runs*.
 
@@ -158,7 +158,7 @@ committed before a single activation. Correctness for shape 14 is therefore esta
 
 **2. The Kaggle API silently gives you the wrong GPU.** `torch.compile` and fp16 tensor cores were both marked "not measured" for most of this project, because the API-allocated card is a Tesla **P100** (`sm_60`) where Triton will not build. The kernels API *does* let you choose — `machine_shape` / `--accelerator` — but the accepted values (`NvidiaTeslaT4`, `NvidiaTeslaP100`, `Tpu1VmV38`) appear only in the SDK docstring for `ApiSaveKernelRequest`, and **anything unrecognised is silently normalised back to a P100**. Our first two guesses looked like successful requests and were not. We confirmed the right one by pushing a throwaway kernel that printed `get_device_name`.
 
-**3. Two GPUs make an accidental ablation.** The same code scores 2.065× on the P100 (SDPA alone, no tensor cores) and 2.499× on the T4 (SDPA + fp16x3 tensor-core GEMMs + first-forward autotune). Worth stating plainly: the T4's *baselines* are **slower** than the P100's — 324.6 ms against 168.6 ms on shape 13 — because the P100 has more fp32 throughput and roughly twice the memory bandwidth. Our ratio improves on the T4 anyway, because the optimized path gains compilation there while the baseline stays bandwidth-bound. A speedup is a ratio, and it matters which side moved. And every T4 number here is the median of three independent runs (run medians 2.828/2.912/2.834), with per-shape spread up to 18% on the smallest shapes — differences below that between configurations are noise, and we call them that. One more correction we owe: earlier drafts credited the T4 with "FlashAttention". We probed every SDPA backend for every dtype and head dimension on both cards, and **flash was never available** — it is fp16-only and needs sm_80+. Every run used the memory-efficient backend, whose $O(S)$ memory is the property shape 14 depends on. Right mechanism, wrong name, now fixed.
+**3. Two GPUs make an accidental ablation.** The same code scores 2.065× on the P100 (SDPA alone, no tensor cores) and 2.834× on the T4 (SDPA + fp16x3 tensor-core GEMMs + first-forward autotune). Worth stating plainly: the T4's *baselines* are **slower** than the P100's — 324.6 ms against 168.6 ms on shape 13 — because the P100 has more fp32 throughput and roughly twice the memory bandwidth. Our ratio improves on the T4 anyway, because the optimized path gains compilation there while the baseline stays bandwidth-bound. A speedup is a ratio, and it matters which side moved. And every T4 number here is the median of three independent runs (run medians 2.828/2.912/2.834), with per-shape spread up to 18% on the smallest shapes — differences below that between configurations are noise, and we call them that. One more correction we owe: earlier drafts credited the T4 with "FlashAttention". We probed every SDPA backend for every dtype and head dimension on both cards, and **flash was never available** — it is fp16-only and needs sm_80+. Every run used the memory-efficient backend, whose $O(S)$ memory is the property shape 14 depends on. Right mechanism, wrong name, now fixed.
 
 **4. We wrote the kernel, and it lost where it counted.** The track is named "implement a GPU kernel", so composing `scaled_dot_product_attention` with `torch.compile` — however well measured — leaves an obvious gap. `kernels/fused_layernorm.py` closes it: a fused **residual-add + LayerNorm** in Triton. The target was picked on purpose. `nn.LayerNorm` alone is already a tuned CUDA kernel and rewriting it is a predictable loss; what eager PyTorch does *not* fuse is the pre-norm pattern a block repeats twice per layer, $x = x + \mathrm{sublayer}(\mathrm{norm}(x))$, where the add and the norm each traverse the full $[B, S, D]$ activation. Fusing them takes four passes down to two.
 
@@ -195,7 +195,7 @@ End to end: $1.929\times \to 2.190\times$ with registration, against $2.282\time
 
 ## Challenges we ran into
 
-**We shipped a claim we had never measured, and measuring it proved us wrong.** The repository asserted for most of its life that internal fp16 "breaks the strict $\texttt{atol}=0.002$ gate". Once we had a T4 and ran it, fp16 **passed all 13 shapes**, at a median **4.014×** — nearly double the shipped path. The assertion was simply false.
+**We shipped a claim we had never measured, and measuring it proved us wrong.** The repository asserted for most of its life that internal fp16 "breaks the strict $\texttt{atol}=0.002$ gate". Once we had a T4 and ran it, fp16 **passed all 13 shapes**, at a median **4.014×** — 1.76× the fp32-SGEMM path it was measured against that session (2.286×, `results_t4_graph.csv`), and 1.4× the fp16x3 path we ship (2.834×). The assertion was simply false.
 
 The conclusion survived anyway, for a better reason. fp16's worst absolute error is $2.0388 \times 10^{-3}$ on shape 6, which has **already crossed** $\texttt{atol} = 2 \times 10^{-3}$. It passes only via the second branch of the gate, which requires
 
@@ -203,11 +203,11 @@ $$0.02\,|r_i| \;\ge\; 2.0388\times10^{-3} \quad\Longrightarrow\quad |r_i| \;\ge\
 
 — that element happened to have a large enough reference value. Nothing makes that repeatable: put the same error on a near-zero reference and the element fails, and one failing element forfeits the shape. The trade is therefore
 
-$$\underbrace{2\times \text{ speed}}_{\text{4.014}\times\text{ vs }2.286\times} \quad\text{for}\quad \underbrace{\frac{0.002}{2.0388\times10^{-3}} \approx 0.98}_{\text{margin, i.e. none}} \quad\text{instead of}\quad 1049$$
+$$\underbrace{1.4\times \text{ speed}}_{\text{4.014}\times\text{ vs }2.834\times} \quad\text{for}\quad \underbrace{\frac{0.002}{2.0388\times10^{-3}} \approx 0.98}_{\text{margin, i.e. none}} \quad\text{instead of}\quad 210$$
 
 We took the margin and left fp16 as a documented, measured flag. **The conclusion was right and the reasoning behind it was wrong, and only running it revealed which.**
 
-**We ran an adversarial audit against our own documentation, and it found four wrong claims.** Multiple agents cross-checked every number in the README, report, ablation and Devpost draft against `results/*.csv` and the raw kernel logs, and every finding was independently verified before being accepted. Confirmed and fixed: shape 14's headline numbers were fp16 while every document framed the run as fp32; the Devpost draft credited speedups to "tensor cores + compilation" on a run whose GPU had neither; a "$\approx 2000\times$ inside tolerance" figure was arithmetic on a number no shape actually hit (the real margin is $\approx 1049\times$); and the README pointed at a `kernels/` directory that never existed. The audit also found a real bug in our own tooling — the log parser raised `NameError` on any log containing a shape-level error — and, with some irony, one audit agent triggered the exact hazard it had just reported, by running the sweep on this CPU-only machine and overwriting the committed GPU results. Nothing reached the remote, the file regenerates from the committed log exactly, and the script now refuses that write.
+**We ran an adversarial audit against our own documentation, and it found four wrong claims.** Multiple agents cross-checked every number in the README, report, ablation and Devpost draft against `results/*.csv` and the raw kernel logs, and every finding was independently verified before being accepted. Confirmed and fixed: shape 14's headline numbers were fp16 while every document framed the run as fp32; the Devpost draft credited speedups to "tensor cores + compilation" on a run whose GPU had neither; a "$\approx 2000\times$ inside tolerance" figure was arithmetic on a number no shape actually hit (the real margin on that P100 run is $\approx 1049\times$; the T4 path we ship is 210×); and the README pointed at a `kernels/` directory that never existed. The audit also found a real bug in our own tooling — the log parser raised `NameError` on any log containing a shape-level error — and, with some irony, one audit agent triggered the exact hazard it had just reported, by running the sweep on this CPU-only machine and overwriting the committed GPU results. Nothing reached the remote, the file regenerates from the committed log exactly, and the script now refuses that write.
 
 **Two findings turned out not to be defects, and proving that mattered.** `--dtype bfloat16` fails the gate: 6131 of 131072 elements, `max_abs` $= 0.047$. So does **the reference compared against itself** recomputed in fp32 — 7603 elements, identical `max_abs`. The reason is arithmetic, not implementation:
 
@@ -282,12 +282,6 @@ Split-K for the fp16x3 GEMMs, with the partial sums reduced in IEEE fp32 outside
 | 数字 | 来源 |
 |---|---|
 | T4 中位 2.834× / 13-13 PASS(默认 fp16x3,3 次独立运行逐 shape 取中位数) | `results/results_t4.csv`、`results/results_t4_runs.csv`、`results/kaggle_t4_{x3force2,def2,def3}_run.log` |
-| T4 fp32 SGEMM 对照 2.300×(3 次运行) | `results/results_t4_fp32.csv`、`results/kaggle_t4_{fix1,fp32b,fp32c}_run.log` |
-| T4 `T3_LINEAR=auto` 两次 2.299× / 2.214× | `results/results_t4_x3v4.csv`、`results/results_t4_x3v4b.csv` |
-| fp16x3 算子级对比、误差 | `results/kaggle_t4_x3v3_run.log`;kernel 级 profile `results/kaggle_t4_profile_run.log` |
-| T4 fp32 SGEMM 对照 2.300×(3 次运行) | `results/results_t4_fp32.csv`、`results/kaggle_t4_{fix1,fp32b,fp32c}_run.log` |
-| T4 `T3_LINEAR=auto` 两次 2.299× / 2.214× | `results/results_t4_x3v4.csv`、`results/results_t4_x3v4b.csv` |
-| fp16x3 算子级对比、误差 | `results/kaggle_t4_x3v3_run.log`;kernel 级 profile `results/kaggle_t4_profile_run.log` |
 | T4 fp32 SGEMM 对照 2.300×(3 次运行) | `results/results_t4_fp32.csv`、`results/kaggle_t4_{fix1,fp32b,fp32c}_run.log` |
 | T4 `T3_LINEAR=auto` 两次 2.299× / 2.214× | `results/results_t4_x3v4.csv`、`results/results_t4_x3v4b.csv` |
 | fp16x3 算子级对比、误差 | `results/kaggle_t4_x3v3_run.log`;kernel 级 profile `results/kaggle_t4_profile_run.log` |

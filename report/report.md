@@ -2,8 +2,9 @@
 ### TikTok TechJam 2026
 
 Historical rendered version (figures inline, print-to-PDF from the browser;
-the maintained runtime audit below is newer):
-[Rendered historical report](https://claude.ai/code/artifact/80227d3c-9682-42d0-a957-bf5188704088)
+the maintained runtime audit below is newer): [`report/report.html`](report.html),
+the September report as one self-contained page, rebuilt from the measured CSVs
+by `scripts/build_report_page.py`.
 
 ## 1. Environment
 
@@ -81,7 +82,7 @@ and `user_optimized.py`.
 
 All 13 gradeable shapes PASS on both cards. The shipped T4 path lands 2.86e-06 from the fp32
 reference on twelve shapes and 9.54e-06 on the K=1024 one (699× and 210× inside the `atol=0.002`
-gate); the fp32-SGEMM path and the P100 sit at ~1.9e-6, ~1049× inside.
+gate); the `T3_LINEAR=fp32` path sits at 3.22e-06 (621× inside) and the P100 at 1.91e-06 (1049× inside).
 
 | regime | median | range | worst `max_abs` | margin vs `atol` |
 |---|---|---|---|---|
@@ -123,14 +124,14 @@ bandwidth-bound — the attention kernel is the same memory-efficient one on bot
 cards (see the probe below). A speedup is a ratio and
 it matters which side moved.
 
-**fp16 is nearly twice as fast and we do not ship it.** `T3_AUTOCAST=fp16`
+**fp16 is 1.4× the shipped path and we do not ship it.** `T3_AUTOCAST=fp16`
 passes all 13 shapes at a median 4.014×. But its worst absolute error,
 `max_abs = 0.0020388` on shape 6, has *already crossed* `atol=0.002`; it survives
 only because the gate is `abs<=0.002` **OR** `rel<=0.02` and that element's
 reference happened to be large enough (`|ref| >= 0.102`) for the relative branch.
 Move the same error onto a near-zero reference and the element fails -- and one
 failing element fails the shape and forfeits the speed score entirely. We took
-the 2.286× that sits 1049× inside tolerance and left fp16 as a documented,
+the shipped 2.834× that sits 210× inside tolerance at worst and left fp16 as a documented,
 measured flag. This is the one place where our earlier reasoning was wrong: the
 repo previously asserted fp16 "breaks the gate", which measurement disproved --
 the conclusion survived, the justification did not.

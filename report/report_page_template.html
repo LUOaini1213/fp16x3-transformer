@@ -283,8 +283,8 @@
     </div>
     <div class="kpi">
       <p class="kpi-label">Tolerance margin</p>
-      <p class="kpi-value">1049&times;</p>
-      <p class="kpi-note">inside the <code>atol=0.002</code> gate</p>
+      <p class="kpi-value">210&times;</p>
+      <p class="kpi-note">worst shape, inside the <code>atol=0.002</code> gate &middot; 699&times; on the other twelve</p>
     </div>
     <div class="kpi">
       <p class="kpi-label">Shape 14</p>
@@ -468,7 +468,7 @@
 </section>
 
 <section>
-  <div class="sec-head"><span class="sec-num">05</span><h2>fp16 is nearly twice as fast. We ship fp32.</h2></div>
+  <div class="sec-head"><span class="sec-num">05</span><h2>fp16 is 1.4&times; the shipped path. We ship fp32.</h2></div>
   <div class="col">
     <p>Turning on internal fp16 (<code>T3_AUTOCAST=fp16</code>) passes all 13 shapes at a median
     <strong>4.014&times;</strong>, up to 11.53&times; on shape 13. It is one environment variable.
@@ -477,12 +477,12 @@
 
   <div class="gauge">
     <div class="gauge-row">
-      <div class="gauge-name">fp32 &mdash; shipped
-        <small>worst <span class="mono">max_abs</span> 1.91e-6</small></div>
+      <div class="gauge-name">fp32-class &mdash; shipped
+        <small>worst <span class="mono">max_abs</span> 9.5e-06</small></div>
       <div class="gauge-track">
         <div class="gauge-fill safe" style="width:33%"></div>
         <div class="gate" style="left:calc(100% - 2px)"></div>
-        <span class="gauge-val">1049&times; inside the gate</span>
+        <span class="gauge-val">210&times; inside the gate</span>
       </div>
     </div>
     <div class="gauge-row">
@@ -510,7 +510,7 @@
     <p>Nothing makes that repeatable. Put the same error on a near-zero reference and the element
     fails &mdash; and one failing element fails the shape and forfeits the speed score entirely.
     The trade is roughly twice the speed for a correctness margin of essentially zero on a hard
-    gate. We took the 2.29&times; that sits 1049&times; inside tolerance and left fp16 as a
+    gate. We took the shipped 2.834&times; that sits 210&times; inside tolerance at worst and left fp16 as a
     documented, measured flag. The apparent middle ground &mdash; fp16 attention with fp32 FFN and
     LayerNorm &mdash; was measured too: 2.953&times; at a worst error of 1.72e-03, a margin of
     1.17&times;. Moving everything after the attention to fp32 recovered almost nothing,
@@ -694,8 +694,8 @@
     compared against <em class="term">itself</em> recomputed in fp32 &mdash; 7603 elements, the
     identical <code>max_abs</code>. bf16's ulp near 1.0 is 0.0078, four times coarser than
     <code>atol=0.002</code>, so no implementation that reorders a single operation can hold that
-    gate in bf16. The graded configuration is fp32, where we sit three orders of magnitude
-    inside it.</p>
+    gate in bf16. The graded configuration is fp32, where the shipped path sits 210&times; inside
+    it at worst and 699&times; on the other twelve shapes.</p>
 
     <h3>The padded path rebuilds an <code>O(S&sup2;)</code> tensor</h3>
     <p>True. When a real padding mask is supplied, the fallback materializes a dense
