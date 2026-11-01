@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "reference_revision": "6a52565d25dd0455a0425b1d7a8f79039267c4db",
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "timing": "official benchmark_once, interleaved three-model order",
+    "repeats": 50,
+    "rounds": 3,
+    "accuracy_trials": 3
+  },
+  "results": [
+    {
+      "shape": 1,
+      "status": "PASS",
+      "reference_ms": 9.826800346374512,
+      "previous_ms": 3.628320097923279,
+      "current_ms": 3.58406400680542,
+      "previous_speedup": 2.7083609166674742,
+      "current_speedup": 2.7418038092275654,
+      "improvement": 1.0123480191854346,
+      "previous_wall_ms": 3.6693162999995366,
+      "current_wall_ms": 3.615622800001006,
+      "max_abs": 2.1457672119140625e-06
+    },
+    {
+      "shape": 2,
+      "status": "PASS",
+      "reference_ms": 3.3720799684524536,
+      "previous_ms": 0.5771200060844421,
+      "current_ms": 0.5139040052890778,
+      "previous_speedup": 5.842944158756234,
+      "current_speedup": 6.5616923272579175,
+      "improvement": 1.1230113020033858,
+      "previous_wall_ms": 0.413429200000337,
+      "current_wall_ms": 0.37242870000113726,
+      "max_abs": 1.6689300537109375e-06
+    },
+    {
+      "shape": 3,
+      "status": "PASS",
+      "reference_ms": 3.446784019470215,
+      "previous_ms": 0.6910400092601776,
+      "current_ms": 0.6316800117492676,
+      "previous_speedup": 4.987821216256807,
+      "current_speedup": 5.4565348837384855,
+      "improvement": 1.09397162551737,
+      "previous_wall_ms": 0.4336165999973218,
+      "current_wall_ms": 0.390718599999218,
+      "max_abs": 1.430511474609375e-06
+    },
+    {
+      "shape": 4,
+      "status": "PASS",
+      "reference_ms": 3.4416799545288086,
+      "previous_ms": 0.9537439942359924,
+      "current_ms": 0.9330879747867584,
+      "previous_speedup": 3.608599346710231,
+      "current_speedup": 3.6884838809709737,
+      "improvement": 1.02213726894718,
+      "previous_wall_ms": 1.0323082000013528,
+      "current_wall_ms": 0.9851478000030056,
+      "max_abs": 1.9073486328125e-06
+    },
+    {
+      "shape": 7,
+      "status": "PASS",
+      "reference_ms": 6.218847990036011,
+      "previous_ms": 1.2759040594100952,
+      "current_ms": 1.2144479751586914,
+      "previous_speedup": 4.874071795736153,
+      "current_speedup": 5.120719962683784,
+      "improvement": 1.0506041308549041,
+      "previous_wall_ms": 1.292547299999569,
+      "current_wall_ms": 1.2518257000010635,
+      "max_abs": 1.430511474609375e-06
+    },
+    {
+      "shape": 8,
+      "status": "PASS",
+      "reference_ms": 171.71571350097656,
+      "previous_ms": 101.73796844482422,
+      "current_ms": 105.08338928222656,
+      "previous_speedup": 1.687823298674413,
+      "current_speedup": 1.634089980099452,
+      "improvement": 0.9681641326925855,
+      "previous_wall_ms": 110.09619229999998,
+      "current_wall_ms": 109.59055449999937,
+      "max_abs": 9.953975677490234e-06
+    },
+    {
+      "shape": 11,
+      "status": "PASS",
+      "reference_ms": 23.184271812438965,
+      "previous_ms": 6.024480104446411,
+      "current_ms": 5.971072196960449,
+      "previous_speedup": 3.848343991596494,
+      "current_speedup": 3.8827652802859807,
+      "improvement": 1.008944441755896,
+      "previous_wall_ms": 6.0403011000005336,
+      "current_wall_ms": 5.990848999999798,
+      "max_abs": 2.384185791015625e-06
+    },
+    {
+      "shape": 12,
+      "status": "PASS",
+      "reference_ms": 3.3783199787139893,
+      "previous_ms": 1.0054720044136047,
+      "current_ms": 1.002511978149414,
+      "previous_speedup": 3.359934402832269,
+      "current_speedup": 3.3698549766459602,
+      "improvement": 1.0029526093739596,
+      "previous_wall_ms": 1.0733295999955317,
+      "current_wall_ms": 1.0753335999993396,
+      "max_abs": 2.1457672119140625e-06
+    }
+  ],
+  "summary": {
+    "shapes": 8,
+    "all_passed": true,
+    "median_previous_speedup": 3.728471669153363,
+    "median_current_speedup": 3.785624580628477,
+    "median_improvement": 1.0172426440663074
+  }
+}

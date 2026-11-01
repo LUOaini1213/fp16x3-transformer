@@ -1,0 +1,17 @@
+{
+  "shape": 14,
+  "status": "FULL_FINITE_PREFIX_PASS",
+  "dtype": "float16",
+  "cold_seconds": 157.56774324100002,
+  "peak_allocated_bytes": 14373979136,
+  "chunk_bs": 1,
+  "prefix_tokens_checked": 512,
+  "prefix_batches_checked": 1,
+  "prefix_max_abs": 0.0021080970764160156,
+  "prefix_failed_elements": 0,
+  "source_sha256": "e7de5c0af13c821fc854c3a2a806d93142a886518354f3913d47b340468f41bb",
+  "reference_revision": "6a52565d25dd0455a0425b1d7a8f79039267c4db",
+  "torch": "2.11.0+cu128",
+  "gpu": "Tesla T4",
+  "correctness_scope": "all output elements finite; first batch's causal prefix compared against fp32 reference; not full-length numerical equivalence"
+}

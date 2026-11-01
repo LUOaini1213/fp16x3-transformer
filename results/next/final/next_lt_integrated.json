@@ -1,0 +1,133 @@
+{
+  "metadata": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "capability": [
+      7,
+      5
+    ],
+    "source_manifest": {
+      "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304",
+      "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983",
+      "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360",
+      "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8",
+      "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01",
+      "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32",
+      "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee",
+      "scripts/benchmark_next.py": "e7181b505778c3ba1a31485e396ad27d30cefca853010f134243b43fc6fea8fe",
+      "scripts/build_kaggle_selfcontained.py": "856dbb610b27a90513790f78c9104f28b475c42073e3c374dd7cd3263f5f76e4",
+      "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e",
+      "user_optimized.py": "d5523d070a97391544e2d01e88bc07b6dabce892f74387be83cbb58e5ceac6ff"
+    },
+    "reference_revision": "46154d19ceeba0c50af2588a0247ce43b56c0465"
+  },
+  "results": {
+    "shape": 8,
+    "max_abs": 1.1682510375976562e-05,
+    "timing": {
+      "current": {
+        "event_round_ms": [
+          75.66963195800781,
+          77.70577621459961,
+          80.4002571105957
+        ],
+        "wall_round_ms": [
+          75.16842916666633,
+          78.63183169999957,
+          80.54859983333245
+        ],
+        "event_ms": 77.70577621459961,
+        "wall_ms": 78.63183169999957
+      },
+      "lt_opt_in": {
+        "event_round_ms": [
+          70.90100860595703,
+          72.10092544555664,
+          75.61564636230469
+        ],
+        "wall_round_ms": [
+          71.47613563333455,
+          72.43031286666717,
+          76.01243243333329
+        ],
+        "event_ms": 72.10092544555664,
+        "wall_ms": 72.43031286666717
+      }
+    },
+    "mode": {
+      "current_graph": true,
+      "lt_graph": true,
+      "current_compiled": false,
+      "lt_compiled": false
+    },
+    "algorithm_search": [
+      {
+        "key": "(0, (8192, 3104), (3072, 3104), 3104, 3104)",
+        "round_ms": {
+          "torch": [
+            7.89845339457194,
+            7.776682535807292,
+            7.903021494547526
+          ],
+          "0": [
+            7.68067741394043,
+            7.234823862711589,
+            7.478394826253255
+          ],
+          "1": [
+            7.5400746663411455,
+            7.507343928019206,
+            7.95088259379069
+          ],
+          "2": [
+            7.74348513285319,
+            7.814733505249023,
+            7.846453348795573
+          ]
+        },
+        "median_ms": {
+          "torch": 7.89845339457194,
+          "0": 7.478394826253255,
+          "1": 7.5400746663411455,
+          "2": 7.814733505249023
+        },
+        "selected": 0,
+        "descriptors": [
+          [
+            0,
+            0,
+            5,
+            23,
+            1,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            5,
+            20,
+            1,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            5,
+            23,
+            1,
+            0,
+            0,
+            7
+          ]
+        ]
+      }
+    ],
+    "total_peak_bytes": 1512842240,
+    "ownership": "PASS"
+  }
+}

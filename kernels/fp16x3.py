@@ -64,6 +64,15 @@ from typing import Optional
 import torch
 import torch.nn.functional as F
 
+_X3_BLAS = os.environ.get("T3_X3_BLAS", "torch").strip().lower()
+if _X3_BLAS == "lt":
+    try:
+        from .cublaslt_backend import lt_candidate_matmul
+    except ImportError:
+        # Single-file cloud builds inline the provider before this module.
+        if "lt_candidate_matmul" not in globals():
+            _X3_BLAS = "torch"
+
 try:
     import triton
     import triton.language as tl
@@ -356,7 +365,10 @@ def _x3_probe_cublas(device) -> bool:
 
 
 def _x3_linear_cuda(a3, w3, bias, inv, apply_scale=True):
-    if _X3_SPLITK == 1:
+    chosen = lt_candidate_matmul(a3, w3) if _X3_BLAS == "lt" and _X3_SPLITK == 1 else None
+    if chosen is not None:
+        out = chosen
+    elif _X3_SPLITK == 1:
         # One bare mm: the bias is inside K and the scale is the consumer's.
         out = torch.mm(a3, w3.t(), out_dtype=torch.float32)
     else:

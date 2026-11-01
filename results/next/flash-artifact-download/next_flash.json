@@ -1,0 +1,380 @@
+{
+  "metadata": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "capability": [
+      7,
+      5
+    ],
+    "source_manifest": {
+      "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304",
+      "kernels/cublaslt_probe.cpp": "c12e34d040917ce6be10992eb81652b2e944c6c9711a198dbe880046ce13daeb",
+      "kernels/fp16x3.py": "fc0488821f3134ce49946cd2c2b1eb6d43e825d55c89822b7c113dd492bc45f4",
+      "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01",
+      "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32",
+      "scripts/benchmark_next.py": "61c3ae0697818df4a2a7ada738c66d27c2725fd21dd704342c518ce83363cb1e",
+      "scripts/build_kaggle_selfcontained.py": "ef44de301c98212ac9d7978479556a1defcdeb0aa281d08bf9e2984528db632c",
+      "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e",
+      "user_optimized.py": "e7de5c0af13c821fc854c3a2a806d93142a886518354f3913d47b340468f41bb"
+    },
+    "reference_revision": "46154d19ceeba0c50af2588a0247ce43b56c0465"
+  },
+  "results": {
+    "external_revision": "9ef98fcb506bb1e2fe3cece50935e2935bf6b124",
+    "external_repository": "https://github.com/ssiu/flash-attention-turing",
+    "license_note": "no top-level LICENSE at pinned revision; fetched only for private experiment, not vendored",
+    "attention": [
+      {
+        "seq": 128,
+        "head_dim": 64,
+        "max_abs": 0.00048828125,
+        "failed": 0,
+        "passed": true,
+        "fp32_oracle_max_abs": 0.00095367431640625,
+        "timing": {
+          "sdpa": {
+            "event_round_ms": [
+              0.04559999890625477,
+              0.038943998515605927,
+              0.038575999438762665
+            ],
+            "wall_round_ms": [
+              0.03148170000031314,
+              0.03012755000213474,
+              0.030544599997028854
+            ],
+            "event_ms": 0.038943998515605927,
+            "wall_ms": 0.030544599997028854
+          },
+          "flash_guarded_copies_included": {
+            "event_round_ms": [
+              0.1088000014424324,
+              0.1096160002052784,
+              0.10672000050544739
+            ],
+            "wall_round_ms": [
+              0.10224400000424794,
+              0.11162824999928489,
+              0.10132419999990816
+            ],
+            "event_ms": 0.1088000014424324,
+            "wall_ms": 0.10224400000424794
+          }
+        }
+      },
+      {
+        "seq": 1024,
+        "head_dim": 64,
+        "max_abs": 0.00048828125,
+        "failed": 0,
+        "passed": true,
+        "fp32_oracle_max_abs": 0.0009250640869140625,
+        "timing": {
+          "sdpa": {
+            "event_round_ms": [
+              0.4363040030002594,
+              0.4441920071840286,
+              0.43721601366996765
+            ],
+            "wall_round_ms": [
+              0.43993395000256896,
+              0.4406284999959098,
+              0.4367258000002039
+            ],
+            "event_ms": 0.43721601366996765,
+            "wall_ms": 0.43993395000256896
+          },
+          "flash_guarded_copies_included": {
+            "event_round_ms": [
+              0.39292798936367035,
+              0.39265599846839905,
+              0.392192006111145
+            ],
+            "wall_round_ms": [
+              0.39399689999868315,
+              0.3952909500014812,
+              0.39524234999817054
+            ],
+            "event_ms": 0.39265599846839905,
+            "wall_ms": 0.39524234999817054
+          }
+        }
+      },
+      {
+        "seq": 8192,
+        "head_dim": 64,
+        "max_abs": 0.00048828125,
+        "failed": 0,
+        "passed": true,
+        "timing": {
+          "sdpa": {
+            "event_round_ms": [
+              10.14790391921997,
+              10.299327850341797,
+              10.275551795959473
+            ],
+            "wall_round_ms": [
+              10.21862019999844,
+              10.304822049999984,
+              10.40696239999761
+            ],
+            "event_ms": 10.275551795959473,
+            "wall_ms": 10.304822049999984
+          },
+          "flash_guarded_copies_included": {
+            "event_round_ms": [
+              6.335423946380615,
+              6.336528062820435,
+              6.318144083023071
+            ],
+            "wall_round_ms": [
+              6.370111149999502,
+              6.356006149997029,
+              6.398723349997226
+            ],
+            "event_ms": 6.335423946380615,
+            "wall_ms": 6.370111149999502
+          }
+        }
+      },
+      {
+        "seq": 100000,
+        "head_dim": 64,
+        "max_abs": 0.00048828125,
+        "failed": 0,
+        "passed": true,
+        "timing": {
+          "sdpa": {
+            "event_round_ms": [
+              1934.6781005859375,
+              2033.1939697265625,
+              2043.68994140625
+            ],
+            "wall_round_ms": [
+              1938.9232093333248,
+              2046.1938420000176,
+              2083.633665999969
+            ],
+            "event_ms": 2033.1939697265625,
+            "wall_ms": 2046.1938420000176
+          },
+          "flash_guarded_copies_included": {
+            "event_round_ms": [
+              1076.941650390625,
+              1087.1173095703125,
+              1110.4747314453125
+            ],
+            "wall_round_ms": [
+              1077.6848566666786,
+              1086.1900960000337,
+              1112.2216539999954
+            ],
+            "event_ms": 1087.1173095703125,
+            "wall_ms": 1086.1900960000337
+          }
+        }
+      },
+      {
+        "seq": 128,
+        "head_dim": 96,
+        "max_abs": 0.00048828125,
+        "failed": 0,
+        "passed": true,
+        "fp32_oracle_max_abs": 0.0009641647338867188,
+        "timing": {
+          "sdpa": {
+            "event_round_ms": [
+              0.032575998455286026,
+              0.03174399957060814,
+              0.030896000564098358
+            ],
+            "wall_round_ms": [
+              0.017679300003692333,
+              0.01888194999537518,
+              0.01716589999887219
+            ],
+            "event_ms": 0.03174399957060814,
+            "wall_ms": 0.017679300003692333
+          },
+          "flash_guarded_copies_included": {
+            "event_round_ms": [
+              0.11099199950695038,
+              0.10876800119876862,
+              0.11281599849462509
+            ],
+            "wall_round_ms": [
+              0.0930979999907322,
+              0.0916756500032534,
+              0.09223324999538818
+            ],
+            "event_ms": 0.11099199950695038,
+            "wall_ms": 0.09223324999538818
+          }
+        }
+      },
+      {
+        "seq": 128,
+        "head_dim": 128,
+        "max_abs": 0.00048828125,
+        "failed": 0,
+        "passed": true,
+        "fp32_oracle_max_abs": 0.0010116100311279297,
+        "timing": {
+          "sdpa": {
+            "event_round_ms": [
+              0.03585599921643734,
+              0.03214399889111519,
+              0.031247999519109726
+            ],
+            "wall_round_ms": [
+              0.01961744999334769,
+              0.017972249997910694,
+              0.017947950004781887
+            ],
+            "event_ms": 0.03214399889111519,
+            "wall_ms": 0.017972249997910694
+          },
+          "flash_guarded_copies_included": {
+            "event_round_ms": [
+              0.11648000031709671,
+              0.11195200309157372,
+              0.11281600221991539
+            ],
+            "wall_round_ms": [
+              0.1012626500028091,
+              0.10204719999364897,
+              0.09665814999380018
+            ],
+            "event_ms": 0.11281600221991539,
+            "wall_ms": 0.1012626500028091
+          }
+        }
+      },
+      {
+        "seq": 128,
+        "head_dim": 32,
+        "max_abs": 0.0,
+        "failed": 0,
+        "passed": true,
+        "fp32_oracle_max_abs": 0.0010268688201904297,
+        "timing": {
+          "sdpa": {
+            "event_round_ms": [
+              0.031727999448776245,
+              0.03126399964094162,
+              0.03155199997127056
+            ],
+            "wall_round_ms": [
+              0.0183885500064207,
+              0.017414949991234607,
+              0.01809084999422339
+            ],
+            "event_ms": 0.03155199997127056,
+            "wall_ms": 0.01809084999422339
+          },
+          "flash_guarded_copies_included": {
+            "event_round_ms": [
+              0.03617599979043007,
+              0.036447999998927116,
+              0.03598400019109249
+            ],
+            "wall_round_ms": [
+              0.020787549999568,
+              0.02204994999601695,
+              0.020958300001439056
+            ],
+            "event_ms": 0.03617599979043007,
+            "wall_ms": 0.020958300001439056
+          }
+        }
+      },
+      {
+        "seq": 128,
+        "head_dim": 256,
+        "max_abs": 0.0,
+        "failed": 0,
+        "passed": true,
+        "fp32_oracle_max_abs": 0.0010251998901367188,
+        "timing": {
+          "sdpa": {
+            "event_round_ms": [
+              0.042688000947237015,
+              0.04286399856209755,
+              0.04153599962592125
+            ],
+            "wall_round_ms": [
+              0.03224109999564462,
+              0.03233635000015056,
+              0.032208000004629866
+            ],
+            "event_ms": 0.042688000947237015,
+            "wall_ms": 0.03224109999564462
+          },
+          "flash_guarded_copies_included": {
+            "event_round_ms": [
+              0.05190399847924709,
+              0.04710400104522705,
+              0.04707200080156326
+            ],
+            "wall_round_ms": [
+              0.033154100003685016,
+              0.032479549997788126,
+              0.03300175000049421
+            ],
+            "event_ms": 0.04710400104522705,
+            "wall_ms": 0.03300175000049421
+          }
+        }
+      }
+    ],
+    "full": {
+      "sdpa": {
+        "warmup_seconds": 138.51976451099995,
+        "round_seconds": [
+          138.18807789999983,
+          138.60495391099994,
+          137.94734499700007
+        ],
+        "peak_bytes": [
+          14603990016,
+          14603990016,
+          14603990016
+        ],
+        "median_seconds": 138.18807789999983
+      },
+      "flash": {
+        "warmup_seconds": 77.46006439200005,
+        "round_seconds": [
+          77.87181934099999,
+          77.13283411900011,
+          77.10790545000009
+        ],
+        "peak_bytes": [
+          14603990016,
+          14603990016,
+          14603990016
+        ],
+        "median_seconds": 77.13283411900011
+      },
+      "speedup": 1.7915597096666256
+    },
+    "contracts": "PASS (strided QKV, unsupported heads, fp32, non-default stream)",
+    "counters": {
+      "flash": 898,
+      "fallback": 250
+    },
+    "full_equivalence": {
+      "failed": 0,
+      "max_abs": 0.0078125,
+      "elements": 3276800000,
+      "reference": "native-fp16 SDPA model, not original full fp32"
+    },
+    "fp32_causal_prefix": {
+      "tokens": 512,
+      "batches": 1,
+      "max_abs": 0.005517482757568359,
+      "failed": 0
+    }
+  }
+}

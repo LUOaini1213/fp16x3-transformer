@@ -1,0 +1,1820 @@
+{
+  "metadata": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "capability": [
+      7,
+      5
+    ],
+    "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]",
+    "git_commit": "b335fb64a0fc76ad4105abf58e23589ef8af80ae",
+    "source_manifest": {
+      "user_optimized.py": "d5523d070a97391544e2d01e88bc07b6dabce892f74387be83cbb58e5ceac6ff",
+      "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e",
+      "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8",
+      "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01",
+      "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304",
+      "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32",
+      "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983",
+      "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360",
+      "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee",
+      "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb",
+      "scripts/build_clean_kaggle.py": "187935da6f64556e8670062de28438ab236a3a399823b5f261bbe53d46c761cb",
+      "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23",
+      "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d",
+      "scripts/run.py": "2cf527acc78ed17597370d1a632fb34234cdd0fc803c4609b752c5bdf6c24ceb",
+      "scripts/benchmark_usability.py": "ffde82469f4c0c8ec206c60bef537527f118ee5433553738cde30c60776f4a87",
+      "scripts/workspace_provider.py": "4726cdbd8daf7cdece566162e848ad9ffea50257117ca95f5109ffb680d4ea12"
+    },
+    "normal_imports": {
+      "official": "/tmp/track3-clean-yr0or0jk/repository/torch_transformer_benchmark.py",
+      "production": "/tmp/track3-clean-yr0or0jk/repository/user_optimized.py"
+    },
+    "protocol": "quick: one fresh process per mode/shape, first forward and 10 synchronized wall samples; workspace: three rotated paired event/wall rounds, normal public-forward dispatch",
+    "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold"
+  },
+  "results": [
+    {
+      "shape": 1,
+      "profiles": {
+        "quick": {
+          "shape": 1,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.3582413270000018,
+          "steady_wall_ms": 8.107639499996822,
+          "steady_wall_samples_ms": [
+            8.160804999988613,
+            8.131230000003598,
+            8.110230999989199,
+            8.11310000000276,
+            8.100521000017125,
+            8.076448999986496,
+            8.105048000004444,
+            8.102831000002197,
+            8.090871000007382,
+            8.124782999999525
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.1920928955078125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 1,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 19.74694720900004,
+          "steady_wall_ms": 3.3951855000111664,
+          "steady_wall_samples_ms": [
+            3.2259949999797755,
+            3.26677599997538,
+            3.390857999988839,
+            3.3910760000139817,
+            3.383986999949684,
+            3.399295000008351,
+            3.5778359999767417,
+            3.7656259999607755,
+            3.9275780000025406,
+            3.972706000013204
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 2,
+      "profiles": {
+        "steady": {
+          "shape": 2,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 8.49336217199999,
+          "steady_wall_ms": 0.7203159999846775,
+          "steady_wall_samples_ms": [
+            0.7299040000248169,
+            0.7186489999639889,
+            0.7096839999576332,
+            0.7163679999848682,
+            0.7104959999537641,
+            0.7636800000341282,
+            0.7115519999842945,
+            0.7219830000053662,
+            0.7319829999801186,
+            0.7384919999822159
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 2,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.05517338300001029,
+          "steady_wall_ms": 1.329029999993736,
+          "steady_wall_samples_ms": [
+            1.3454919999844606,
+            1.2724760000537572,
+            1.2633500000447384,
+            1.4675349999606624,
+            1.4037820000112333,
+            1.3821619999703216,
+            1.2385539999968387,
+            1.4405819999865344,
+            1.3125680000030115,
+            1.2203929999827778
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 9.5367431640625e-07
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 7.152557373046875e-07
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 3,
+      "profiles": {
+        "quick": {
+          "shape": 3,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.05435553800003845,
+          "steady_wall_ms": 1.2337249999916367,
+          "steady_wall_samples_ms": [
+            1.2335789999724511,
+            1.2829579999902307,
+            1.259711999978208,
+            1.2930080000046473,
+            1.2463330000400674,
+            1.2338710000108222,
+            1.2274170000523554,
+            1.2266179999755877,
+            1.231727000003957,
+            1.2256219999926543
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 9.5367431640625e-07
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 3,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 6.787905941999952,
+          "steady_wall_ms": 1.0343729999817697,
+          "steady_wall_samples_ms": [
+            1.06537900001058,
+            1.1039780000032806,
+            1.0295669999891288,
+            1.0218339999710224,
+            1.0170480000510906,
+            1.0203530000012506,
+            1.0170689999995375,
+            1.1088669999708145,
+            1.1829190000298695,
+            1.0391789999744105
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.9073486328125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 4,
+      "profiles": {
+        "steady": {
+          "shape": 4,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 6.952396108999949,
+          "steady_wall_ms": 1.8255335000105788,
+          "steady_wall_samples_ms": [
+            1.8375120000087009,
+            1.840754999989258,
+            1.8314029999828563,
+            1.835774000028323,
+            1.8244720000097914,
+            1.821316000018669,
+            1.806793000014295,
+            1.8036209999650055,
+            1.8265950000113662,
+            1.8159319999995205
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.9073486328125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.7881393432617188e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 4,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.056700928999987354,
+          "steady_wall_ms": 2.1562440000195693,
+          "steady_wall_samples_ms": [
+            2.160891000016818,
+            2.1468780000191146,
+            2.171860000032666,
+            2.150834000019586,
+            2.1436669999843616,
+            2.1515970000223206,
+            2.1632030000091618,
+            2.1322279999935745,
+            2.1625339999786775,
+            2.163173999974788
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.1920928955078125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 5,
+      "profiles": {
+        "quick": {
+          "shape": 5,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.07135558499999206,
+          "steady_wall_ms": 14.693480500000078,
+          "steady_wall_samples_ms": [
+            14.753149000000576,
+            14.760414999955174,
+            14.76480899998478,
+            14.751515999989806,
+            14.752208999993854,
+            14.63544500001035,
+            9.9779870000134,
+            9.92259299999887,
+            9.7577170000136,
+            9.752240000011625
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.1920928955078125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 5,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 7.128412320999985,
+          "steady_wall_ms": 7.290823499971566,
+          "steady_wall_samples_ms": [
+            7.3775359999785906,
+            7.336798999972416,
+            7.34171400000605,
+            7.350562999988597,
+            7.310503999974571,
+            7.264755000051082,
+            7.271142999968561,
+            7.2573250000118605,
+            7.256304000009095,
+            7.255463000035434
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 6,
+      "profiles": {
+        "steady": {
+          "shape": 6,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 30.22516036799999,
+          "steady_wall_ms": 569.1983785000048,
+          "steady_wall_samples_ms": [
+            571.7108619999749,
+            569.358201,
+            570.9951430000046,
+            567.9805559999522,
+            567.89209599998,
+            568.7222419999785,
+            571.2735999999836,
+            572.0137749999594,
+            569.0385560000095,
+            566.3635489999592
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.86102294921875e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.6226043701171875e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.86102294921875e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.384185791015625e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 6,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.8262025059999587,
+          "steady_wall_ms": 786.217755000024,
+          "steady_wall_samples_ms": [
+            781.5492690000383,
+            785.0035399999911,
+            784.995385000002,
+            786.1702060000084,
+            786.0001880000027,
+            786.2653040000396,
+            791.1852180000096,
+            795.2455899999791,
+            792.1369720000371,
+            792.7329990000089
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.6689300537109375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.6689300537109375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.6689300537109375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.6689300537109375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 7,
+      "profiles": {
+        "quick": {
+          "shape": 7,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.056827730999998494,
+          "steady_wall_ms": 4.508880999992471,
+          "steady_wall_samples_ms": [
+            4.522108999992724,
+            4.504757999995945,
+            4.531030999999075,
+            4.5763599999872895,
+            4.50475100001313,
+            4.496011999947314,
+            4.513003999988996,
+            4.51454400001694,
+            4.499577999979465,
+            4.493615999990652
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.1920928955078125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 7,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 8.243520696000019,
+          "steady_wall_ms": 2.519334999988132,
+          "steady_wall_samples_ms": [
+            2.5230370000031144,
+            2.510971000049267,
+            2.52807300000768,
+            2.505187999986447,
+            2.517511000007744,
+            2.5274280000076033,
+            2.512015000036172,
+            2.52115899996852,
+            2.5395900000262372,
+            2.502035999953023
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.430511474609375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 8,
+      "profiles": {
+        "steady": {
+          "shape": 8,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 11.854150892000007,
+          "steady_wall_ms": 82.3537105000014,
+          "steady_wall_samples_ms": [
+            83.73723400001154,
+            81.92699400001402,
+            82.28558700000121,
+            82.94406100003471,
+            85.58079599998791,
+            83.82617199998776,
+            82.42183400000158,
+            81.80973300000005,
+            81.78853900000149,
+            81.88563400000248
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 9.834766387939453e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.834766387939453e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 8.821487426757812e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 8.556991815567017e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 8,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.1973272609999981,
+          "steady_wall_ms": 122.14376950001338,
+          "steady_wall_samples_ms": [
+            124.022889999992,
+            123.24934700001222,
+            123.93256100000372,
+            122.21935399998074,
+            122.110178000014,
+            122.14544900001556,
+            122.11950100004287,
+            122.08180700002913,
+            122.1420900000112,
+            122.1254210000211
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.9073486328125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.6689300537109375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.6689300537109375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 9,
+      "profiles": {
+        "quick": {
+          "shape": 9,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.0573724019999986,
+          "steady_wall_ms": 6.908728999974301,
+          "steady_wall_samples_ms": [
+            7.23020399999541,
+            7.252281999967636,
+            7.230771999957142,
+            7.248237999988305,
+            7.079119999957584,
+            6.671810999989702,
+            6.738337999991018,
+            6.6839920000347774,
+            6.710053000006155,
+            6.681098000001384
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.430511474609375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.3113021850585938e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 9,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 6.901417022000032,
+          "steady_wall_ms": 3.139903000032973,
+          "steady_wall_samples_ms": [
+            2.9836510000222916,
+            2.942415000006804,
+            3.1249940000179777,
+            3.127704000007725,
+            3.159908999975869,
+            3.1449120000388575,
+            3.1348940000270886,
+            3.4492970000314926,
+            3.5585210000022016,
+            3.551110999978846
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.0265579223632812e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 10,
+      "profiles": {
+        "steady": {
+          "shape": 10,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 6.9306146150000245,
+          "steady_wall_ms": 3.229183999991392,
+          "steady_wall_samples_ms": [
+            3.1871329999830778,
+            3.2094410000240714,
+            3.2106950000070356,
+            3.1748700000093777,
+            3.19217399999161,
+            3.247672999975748,
+            3.424233999965054,
+            3.420009000024038,
+            3.413690999991559,
+            3.4162169999945036
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 10,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.059392806000005294,
+          "steady_wall_ms": 7.336460000004763,
+          "steady_wall_samples_ms": [
+            7.341934000010042,
+            7.340851000037674,
+            7.3236300000303345,
+            7.326296999963233,
+            7.317392999993899,
+            7.360748999985844,
+            7.347899000023972,
+            7.335700999988148,
+            7.337219000021378,
+            7.313216000000011
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.430511474609375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 11,
+      "profiles": {
+        "quick": {
+          "shape": 11,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.06390178399999513,
+          "steady_wall_ms": 7.519948500032569,
+          "steady_wall_samples_ms": [
+            12.03716500003793,
+            12.050235000003795,
+            12.029616000006627,
+            11.72952100000657,
+            7.576682000035362,
+            7.463215000029777,
+            7.313614999986839,
+            7.304076000025361,
+            7.168517000025076,
+            7.132815999966624
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.430511474609375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 11,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 6.916182830999958,
+          "steady_wall_ms": 6.062857500012342,
+          "steady_wall_samples_ms": [
+            6.073813000000428,
+            6.039446999977827,
+            6.037788000014643,
+            6.262965000018994,
+            6.322189999991679,
+            6.2474489999999605,
+            6.0314559999596895,
+            6.116652000002887,
+            5.980477000036899,
+            6.051902000024256
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 12,
+      "profiles": {
+        "steady": {
+          "shape": 12,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 6.7465407310000955,
+          "steady_wall_ms": 1.8324039999697561,
+          "steady_wall_samples_ms": [
+            1.8277430000352979,
+            1.8250389999820982,
+            1.8497559999559599,
+            1.8292519999931756,
+            1.8248689999609269,
+            1.8583150000495152,
+            1.9113089999791555,
+            1.882861000012781,
+            1.8355559999463367,
+            1.8127480000202922
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.7881393432617188e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 12,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.05600243700007468,
+          "steady_wall_ms": 2.6513629999840305,
+          "steady_wall_samples_ms": [
+            2.672020999966662,
+            2.6494469999533976,
+            2.6410340000211363,
+            2.6456159999952433,
+            2.6471529999980703,
+            2.6552179999725922,
+            2.6551720000043133,
+            2.6543580000861766,
+            2.6532790000146633,
+            2.6451370000586394
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.1920928955078125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.0728836059570312e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    },
+    {
+      "shape": 13,
+      "profiles": {
+        "quick": {
+          "shape": 13,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.14701301499997044,
+          "steady_wall_ms": 72.29813499998272,
+          "steady_wall_samples_ms": [
+            71.24270700001034,
+            73.8735940000197,
+            71.7431509999642,
+            72.3384589999796,
+            72.5916019999886,
+            72.06883099991046,
+            75.15936800007239,
+            71.73371999999745,
+            72.25781099998585,
+            73.68336399997588
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.430511474609375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 13,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 8.601450731,
+          "steady_wall_ms": 63.29469749994132,
+          "steady_wall_samples_ms": [
+            63.68206799993459,
+            63.33830199992008,
+            63.088517000096545,
+            63.0123350000531,
+            63.251092999962566,
+            63.744544000087444,
+            63.40824699998393,
+            63.16962500000045,
+            62.60279100001753,
+            63.57308799999828
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.384185791015625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.384185791015625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.384185791015625e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": false
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      }
+    }
+  ]
+}

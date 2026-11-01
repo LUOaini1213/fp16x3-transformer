@@ -1,0 +1,1602 @@
+{
+  "metadata": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "capability": [
+      7,
+      5
+    ],
+    "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]",
+    "git_commit": "62bb64c05ce55c27cbe10d034087939c9f1d7fed",
+    "source_manifest": {
+      "user_optimized.py": "d5523d070a97391544e2d01e88bc07b6dabce892f74387be83cbb58e5ceac6ff",
+      "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e",
+      "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8",
+      "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01",
+      "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304",
+      "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32",
+      "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983",
+      "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360",
+      "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee",
+      "scripts/benchmark_release.py": "67ae7a2b780a1d43e60dd77d5971f4df468c45bd767c98287d32fb425645fb01",
+      "scripts/build_clean_kaggle.py": "0ade4cbd97752db08f3c56b9024064274a71bad7630913acdddee78e02541da4",
+      "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23",
+      "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d"
+    },
+    "normal_imports": {
+      "official": "/tmp/track3-clean-ge91xgjr/repository/torch_transformer_benchmark.py",
+      "production": "/tmp/track3-clean-ge91xgjr/repository/user_optimized.py"
+    },
+    "protocol": "three rotated paired steady rounds; separate event/host wall timing; same weights/input",
+    "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold"
+  },
+  "results": [
+    {
+      "shape": 1,
+      "dims": [
+        1,
+        64,
+        128,
+        4,
+        128,
+        4,
+        128
+      ],
+      "cold_seconds": {
+        "baseline": 0.3823116279999965,
+        "default": 17.558891301999978
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 2.1457672119140625e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 2.1457672119140625e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            9.675872325897217,
+            9.672688007354736,
+            9.620207786560059
+          ],
+          "wall_round_ms": [
+            9.62462565000095,
+            9.638870499999541,
+            9.650578249998887
+          ],
+          "event_ms": 9.672688007354736,
+          "wall_ms": 9.638870499999541
+        },
+        "default": {
+          "event_round_ms": [
+            3.4725600481033325,
+            3.4806079864501953,
+            3.3891520500183105
+          ],
+          "wall_round_ms": [
+            3.5140626500009375,
+            3.5151764500000127,
+            3.504018050000468
+          ],
+          "event_ms": 3.4725600481033325,
+          "wall_ms": 3.5140626500009375
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 1,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 5796864,
+          "cold_seconds": 0.226222464999978,
+          "cold_peak_allocated_bytes": 82506752,
+          "steady_peak_allocated_bytes": 82506752,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 1,
+          "variant": "default",
+          "resident_input_weights_bytes": 5796864,
+          "cold_seconds": 4.278053408999995,
+          "cold_peak_allocated_bytes": 96204800,
+          "steady_peak_allocated_bytes": 29358080,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 2,
+      "dims": [
+        2,
+        1,
+        128,
+        4,
+        128,
+        4,
+        128
+      ],
+      "cold_seconds": {
+        "baseline": 0.22226580699998522,
+        "default": 9.774339091000002
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 2.1457672119140625e-06,
+          "failed": 0,
+          "elements": 16384,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 1.430511474609375e-06,
+          "failed": 0,
+          "elements": 16384,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 16384,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            3.4136799573898315,
+            3.3885759115219116,
+            3.3143199682235718
+          ],
+          "wall_round_ms": [
+            3.249374000000671,
+            3.2863802500003203,
+            3.237673099999938
+          ],
+          "event_ms": 3.3885759115219116,
+          "wall_ms": 3.249374000000671
+        },
+        "default": {
+          "event_round_ms": [
+            0.5391840040683746,
+            0.5388160049915314,
+            0.456959992647171
+          ],
+          "wall_round_ms": [
+            0.552436499999942,
+            0.5529365000001008,
+            0.4665130500001169
+          ],
+          "event_ms": 0.5388160049915314,
+          "wall_ms": 0.552436499999942
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 2,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 1660416,
+          "cold_seconds": 0.22070412900001202,
+          "cold_peak_allocated_bytes": 12294656,
+          "steady_peak_allocated_bytes": 12294656,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 2,
+          "variant": "default",
+          "resident_input_weights_bytes": 1660416,
+          "cold_seconds": 4.116761621999956,
+          "cold_peak_allocated_bytes": 31685120,
+          "steady_peak_allocated_bytes": 12835328,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 3,
+      "dims": [
+        3,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128
+      ],
+      "cold_seconds": {
+        "baseline": 0.23589927499995156,
+        "default": 7.927096788999961
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 65536,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 1.430511474609375e-06,
+          "failed": 0,
+          "elements": 65536,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 1.430511474609375e-06,
+          "failed": 0,
+          "elements": 65536,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            3.3944000005722046,
+            3.424512028694153,
+            3.4392319917678833
+          ],
+          "wall_round_ms": [
+            3.6707016999997677,
+            3.417944149998675,
+            3.469128199998295
+          ],
+          "event_ms": 3.424512028694153,
+          "wall_ms": 3.469128199998295
+        },
+        "default": {
+          "event_round_ms": [
+            0.8274079859256744,
+            0.6221759915351868,
+            0.5716319978237152
+          ],
+          "wall_round_ms": [
+            0.8380791999996973,
+            0.631523550001134,
+            0.5828319500011503
+          ],
+          "event_ms": 0.6221759915351868,
+          "wall_ms": 0.631523550001134
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 3,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 1857024,
+          "cold_seconds": 0.2219560940000065,
+          "cold_peak_allocated_bytes": 15636992,
+          "steady_peak_allocated_bytes": 15636992,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 3,
+          "variant": "default",
+          "resident_input_weights_bytes": 1857024,
+          "cold_seconds": 4.057953937999969,
+          "cold_peak_allocated_bytes": 34757120,
+          "steady_peak_allocated_bytes": 13621760,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 4,
+      "dims": [
+        4,
+        16,
+        128,
+        4,
+        128,
+        4,
+        128
+      ],
+      "cold_seconds": {
+        "baseline": 0.22455722199998718,
+        "default": 8.113971225
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 1.7881393432617188e-06,
+          "failed": 0,
+          "elements": 262144,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 262144,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 262144,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            3.3716959953308105,
+            3.405951976776123,
+            3.3863680362701416
+          ],
+          "wall_round_ms": [
+            3.361067049999633,
+            3.2832802000001493,
+            3.279656149999255
+          ],
+          "event_ms": 3.3863680362701416,
+          "wall_ms": 3.2832802000001493
+        },
+        "default": {
+          "event_round_ms": [
+            1.3784160017967224,
+            0.9205119907855988,
+            0.833296000957489
+          ],
+          "wall_round_ms": [
+            1.0802895000011858,
+            0.9378371499991545,
+            0.8925583000007009
+          ],
+          "event_ms": 0.9205119907855988,
+          "wall_ms": 0.9378371499991545
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 4,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 2644992,
+          "cold_seconds": 0.22140489500003468,
+          "cold_peak_allocated_bytes": 29010944,
+          "steady_peak_allocated_bytes": 29010944,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 4,
+          "variant": "default",
+          "resident_input_weights_bytes": 2644992,
+          "cold_seconds": 4.04027911899999,
+          "cold_peak_allocated_bytes": 47046656,
+          "steady_peak_allocated_bytes": 16769024,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 5,
+      "dims": [
+        5,
+        128,
+        128,
+        4,
+        128,
+        4,
+        128
+      ],
+      "cold_seconds": {
+        "baseline": 0.23358163099999274,
+        "default": 8.334964511999999
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 2.1457672119140625e-06,
+          "failed": 0,
+          "elements": 2097152,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 2.1457672119140625e-06,
+          "failed": 0,
+          "elements": 2097152,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 2097152,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            18.86068820953369,
+            18.863727569580078,
+            18.87510395050049
+          ],
+          "wall_round_ms": [
+            18.837568649999525,
+            18.883996400001024,
+            18.833851349998554
+          ],
+          "event_ms": 18.863727569580078,
+          "wall_ms": 18.837568649999525
+        },
+        "default": {
+          "event_round_ms": [
+            7.171568155288696,
+            7.212912082672119,
+            7.203360080718994
+          ],
+          "wall_round_ms": [
+            7.198871100001725,
+            7.201689850001003,
+            7.226999550002233
+          ],
+          "event_ms": 7.203360080718994,
+          "wall_ms": 7.201689850001003
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 5,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 9999360,
+          "cold_seconds": 0.23783287599997038,
+          "cold_peak_allocated_bytes": 153834496,
+          "steady_peak_allocated_bytes": 153834496,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 5,
+          "variant": "default",
+          "resident_input_weights_bytes": 9999360,
+          "cold_seconds": 4.479152678999981,
+          "cold_peak_allocated_bytes": 161748992,
+          "steady_peak_allocated_bytes": 46143488,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 6,
+      "dims": [
+        6,
+        10000,
+        128,
+        4,
+        128,
+        4,
+        128
+      ],
+      "cold_seconds": {
+        "baseline": 1.531675473000007,
+        "default": 31.107487651999975
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 2.6226043701171875e-06,
+          "failed": 0,
+          "elements": 163840000,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 2.86102294921875e-06,
+          "failed": 0,
+          "elements": 163840000,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 2.384185791015625e-06,
+          "failed": 0,
+          "elements": 163840000,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            1480.0629272460938,
+            1509.7960815429688,
+            1541.2518310546875
+          ],
+          "wall_round_ms": [
+            1487.3831956666663,
+            1522.887976166667,
+            1561.253493999999
+          ],
+          "event_ms": 1509.7960815429688,
+          "wall_ms": 1522.887976166667
+        },
+        "default": {
+          "event_round_ms": [
+            607.7059020996094,
+            615.2454833984375,
+            648.5260925292969
+          ],
+          "wall_round_ms": [
+            609.229713999999,
+            619.4120728333322,
+            651.3384775000001
+          ],
+          "event_ms": 615.2454833984375,
+          "wall_ms": 619.4120728333322
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": false,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 6,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 658234368,
+          "cold_seconds": 1.6629423329999895,
+          "cold_peak_allocated_bytes": 11156139008,
+          "steady_peak_allocated_bytes": 11156139008,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 6,
+          "variant": "default",
+          "resident_input_weights_bytes": 658234368,
+          "cold_seconds": 32.06628131299999,
+          "cold_peak_allocated_bytes": 8944180224,
+          "steady_peak_allocated_bytes": 8944180224,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 7,
+      "dims": [
+        7,
+        64,
+        32,
+        4,
+        128,
+        4,
+        32
+      ],
+      "cold_seconds": {
+        "baseline": 0.22814581299996917,
+        "default": 9.594696663000036
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 1.430511474609375e-06,
+          "failed": 0,
+          "elements": 262144,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 1.430511474609375e-06,
+          "failed": 0,
+          "elements": 262144,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 1.430511474609375e-06,
+          "failed": 0,
+          "elements": 262144,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            7.464895963668823,
+            6.375280141830444,
+            6.399872064590454
+          ],
+          "wall_round_ms": [
+            6.409469800001943,
+            6.391090049999093,
+            6.377899999995407
+          ],
+          "event_ms": 6.399872064590454,
+          "wall_ms": 6.391090049999093
+        },
+        "default": {
+          "event_round_ms": [
+            1.2859840393066406,
+            1.3060320019721985,
+            1.3058239817619324
+          ],
+          "wall_round_ms": [
+            1.3227853999978834,
+            1.3086389500017503,
+            1.3228640500017264
+          ],
+          "event_ms": 1.3058239817619324,
+          "wall_ms": 1.3227853999978834
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 7,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 1176576,
+          "cold_seconds": 0.2243062990000908,
+          "cold_peak_allocated_bytes": 52720640,
+          "steady_peak_allocated_bytes": 52720640,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 7,
+          "variant": "default",
+          "resident_input_weights_bytes": 1176576,
+          "cold_seconds": 4.091505955999992,
+          "cold_peak_allocated_bytes": 43685888,
+          "steady_peak_allocated_bytes": 13015040,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 8,
+      "dims": [
+        8,
+        64,
+        1024,
+        4,
+        128,
+        4,
+        1024
+      ],
+      "cold_seconds": {
+        "baseline": 0.3611580890000141,
+        "default": 13.524909371000035,
+        "lt": 36.797426642000005
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 9.834766387939453e-06,
+          "failed": 0,
+          "elements": 8388608,
+          "passed": true
+        },
+        {
+          "seed": 0,
+          "variant": "lt",
+          "max_abs": 9.834766387939453e-06,
+          "failed": 0,
+          "elements": 8388608,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 8.821487426757812e-06,
+          "failed": 0,
+          "elements": 8388608,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "lt",
+          "max_abs": 8.821487426757812e-06,
+          "failed": 0,
+          "elements": 8388608,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 8.556991815567017e-06,
+          "failed": 0,
+          "elements": 8388608,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "lt",
+          "max_abs": 8.556991815567017e-06,
+          "failed": 0,
+          "elements": 8388608,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            143.15769958496094,
+            148.27833557128906,
+            151.67581939697266
+          ],
+          "wall_round_ms": [
+            144.92604570000367,
+            148.74599839999973,
+            153.02883950000137
+          ],
+          "event_ms": 148.27833557128906,
+          "wall_ms": 148.74599839999973
+        },
+        "default": {
+          "event_round_ms": [
+            89.45065689086914,
+            91.7719497680664,
+            98.3064956665039
+          ],
+          "wall_round_ms": [
+            90.38699260000271,
+            91.96867429999998,
+            98.62806449999653
+          ],
+          "event_ms": 91.7719497680664,
+          "wall_ms": 91.96867429999998
+        },
+        "lt": {
+          "event_round_ms": [
+            83.6714096069336,
+            86.12475204467773,
+            88.75089645385742
+          ],
+          "wall_round_ms": [
+            84.6729971000002,
+            86.42205740000009,
+            88.90756330000045
+          ],
+          "event_ms": 86.12475204467773,
+          "wall_ms": 86.42205740000009
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        },
+        "lt": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [
+        {
+          "key": "(0, (8192, 3104), (3072, 3104), 3104, 3104)",
+          "round_ms": {
+            "torch": [
+              9.300938924153646,
+              9.231306711832682,
+              9.261909484863281
+            ],
+            "0": [
+              8.52998161315918,
+              8.416674931844076,
+              8.576728185017904
+            ],
+            "1": [
+              8.978866577148438,
+              8.773607889811197,
+              9.30941073099772
+            ],
+            "2": [
+              9.239765167236328,
+              9.05350430806478,
+              9.211389541625977
+            ]
+          },
+          "median_ms": {
+            "torch": 9.261909484863281,
+            "0": 8.52998161315918,
+            "1": 8.978866577148438,
+            "2": 9.211389541625977
+          },
+          "selected": 0,
+          "descriptors": [
+            [
+              0,
+              0,
+              5,
+              23,
+              1,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              5,
+              20,
+              1,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              5,
+              23,
+              1,
+              0,
+              0,
+              7
+            ]
+          ]
+        }
+      ],
+      "memory": {
+        "baseline": {
+          "shape": 8,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 134397952,
+          "cold_seconds": 0.3559998059999998,
+          "cold_peak_allocated_bytes": 445988864,
+          "steady_peak_allocated_bytes": 445988864,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 8,
+          "variant": "default",
+          "resident_input_weights_bytes": 134397952,
+          "cold_seconds": 7.736821313000064,
+          "cold_peak_allocated_bytes": 799851520,
+          "steady_peak_allocated_bytes": 395363328,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "lt": {
+          "shape": 8,
+          "variant": "lt",
+          "resident_input_weights_bytes": 134397952,
+          "cold_seconds": 9.192209684999966,
+          "cold_peak_allocated_bytes": 992657408,
+          "steady_peak_allocated_bytes": 395363328,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 9,
+      "dims": [
+        9,
+        64,
+        128,
+        1,
+        128,
+        4,
+        128
+      ],
+      "cold_seconds": {
+        "baseline": 0.20841440900005637,
+        "default": 8.134280747999924
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 2.0265579223632812e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 2.1457672119140625e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            6.8792479038238525,
+            7.012399911880493,
+            6.7613279819488525
+          ],
+          "wall_round_ms": [
+            6.7621622000046955,
+            6.768240200000264,
+            6.7576453000015135
+          ],
+          "event_ms": 6.8792479038238525,
+          "wall_ms": 6.7621622000046955
+        },
+        "default": {
+          "event_round_ms": [
+            3.4370720386505127,
+            3.522831916809082,
+            3.490112066268921
+          ],
+          "wall_round_ms": [
+            3.5279865500001506,
+            3.538934649998282,
+            3.5623854499988283
+          ],
+          "event_ms": 3.490112066268921,
+          "wall_ms": 3.538934649998282
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 9,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 5796864,
+          "cold_seconds": 0.21020255800010545,
+          "cold_peak_allocated_bytes": 57340928,
+          "steady_peak_allocated_bytes": 57340928,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 9,
+          "variant": "default",
+          "resident_input_weights_bytes": 5796864,
+          "cold_seconds": 4.356321299000001,
+          "cold_peak_allocated_bytes": 96204800,
+          "steady_peak_allocated_bytes": 29358080,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 10,
+      "dims": [
+        10,
+        64,
+        128,
+        2,
+        128,
+        4,
+        128
+      ],
+      "cold_seconds": {
+        "baseline": 0.22345934199995554,
+        "default": 8.240014932000008
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 2.1457672119140625e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            8.318400382995605,
+            8.323008060455322,
+            8.190048217773438
+          ],
+          "wall_round_ms": [
+            8.227554849997887,
+            8.223931949999042,
+            8.199663149997605
+          ],
+          "event_ms": 8.318400382995605,
+          "wall_ms": 8.223931949999042
+        },
+        "default": {
+          "event_round_ms": [
+            3.273711919784546,
+            3.4535199403762817,
+            3.449344038963318
+          ],
+          "wall_round_ms": [
+            3.4642304500039245,
+            3.473696899999368,
+            3.5038716499968814
+          ],
+          "event_ms": 3.449344038963318,
+          "wall_ms": 3.473696899999368
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 10,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 5796864,
+          "cold_seconds": 0.22593007199998283,
+          "cold_peak_allocated_bytes": 65729536,
+          "steady_peak_allocated_bytes": 65729536,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 10,
+          "variant": "default",
+          "resident_input_weights_bytes": 5796864,
+          "cold_seconds": 4.213577858000008,
+          "cold_peak_allocated_bytes": 96204800,
+          "steady_peak_allocated_bytes": 29358080,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 11,
+      "dims": [
+        11,
+        64,
+        128,
+        16,
+        128,
+        4,
+        128
+      ],
+      "cold_seconds": {
+        "baseline": 0.23670937599990793,
+        "default": 8.353941500000019
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 2.1457672119140625e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 1048576,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            22.53868865966797,
+            22.597968101501465,
+            22.64395236968994
+          ],
+          "wall_round_ms": [
+            22.569314949998898,
+            22.60574195000231,
+            22.662674649996006
+          ],
+          "event_ms": 22.597968101501465,
+          "wall_ms": 22.60574195000231
+        },
+        "default": {
+          "event_round_ms": [
+            5.777472019195557,
+            5.771952152252197,
+            5.78056001663208
+          ],
+          "wall_round_ms": [
+            5.740744449997237,
+            5.738811499998064,
+            5.790799149997383
+          ],
+          "event_ms": 5.777472019195557,
+          "wall_ms": 5.740744449997237
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 11,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 5796864,
+          "cold_seconds": 0.2358324189999621,
+          "cold_peak_allocated_bytes": 183170048,
+          "steady_peak_allocated_bytes": 183170048,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 11,
+          "variant": "default",
+          "resident_input_weights_bytes": 5796864,
+          "cold_seconds": 4.315067910999915,
+          "cold_peak_allocated_bytes": 96204800,
+          "steady_peak_allocated_bytes": 29358080,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 12,
+      "dims": [
+        12,
+        64,
+        128,
+        4,
+        32,
+        4,
+        128
+      ],
+      "cold_seconds": {
+        "baseline": 0.22114343099997313,
+        "default": 8.073096908000025
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 1.9073486328125e-06,
+          "failed": 0,
+          "elements": 262144,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 2.1457672119140625e-06,
+          "failed": 0,
+          "elements": 262144,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 1.7881393432617188e-06,
+          "failed": 0,
+          "elements": 262144,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            3.663040041923523,
+            3.3931039571762085,
+            3.3724639415740967
+          ],
+          "wall_round_ms": [
+            3.467811000001575,
+            3.4242766500028665,
+            3.430725200001916
+          ],
+          "event_ms": 3.3931039571762085,
+          "wall_ms": 3.430725200001916
+        },
+        "default": {
+          "event_round_ms": [
+            1.7544159889221191,
+            0.9568159878253937,
+            0.8299199938774109
+          ],
+          "wall_round_ms": [
+            0.9861502999967797,
+            0.9790251499964597,
+            0.8857835000014802
+          ],
+          "event_ms": 0.9568159878253937,
+          "wall_ms": 0.9790251499964597
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": true,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 12,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 2644992,
+          "cold_seconds": 0.22519087099999524,
+          "cold_peak_allocated_bytes": 22704128,
+          "steady_peak_allocated_bytes": 22704128,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 12,
+          "variant": "default",
+          "resident_input_weights_bytes": 2644992,
+          "cold_seconds": 4.074768995999989,
+          "cold_peak_allocated_bytes": 47046656,
+          "steady_peak_allocated_bytes": 16769024,
+          "mode": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    },
+    {
+      "shape": 13,
+      "dims": [
+        13,
+        64,
+        128,
+        4,
+        1024,
+        4,
+        128
+      ],
+      "cold_seconds": {
+        "baseline": 0.48961132500005533,
+        "default": 9.938315789000058
+      },
+      "accuracy": [
+        {
+          "seed": 0,
+          "variant": "default",
+          "max_abs": 2.1457672119140625e-06,
+          "failed": 0,
+          "elements": 8388608,
+          "passed": true
+        },
+        {
+          "seed": 1,
+          "variant": "default",
+          "max_abs": 2.384185791015625e-06,
+          "failed": 0,
+          "elements": 8388608,
+          "passed": true
+        },
+        {
+          "seed": 2,
+          "variant": "default",
+          "max_abs": 2.384185791015625e-06,
+          "failed": 0,
+          "elements": 8388608,
+          "passed": true
+        }
+      ],
+      "output_ownership": "PASS",
+      "timing": {
+        "baseline": {
+          "event_round_ms": [
+            324.7703094482422,
+            324.20631408691406,
+            323.8738250732422
+          ],
+          "wall_round_ms": [
+            324.69182584999885,
+            324.3036808499994,
+            323.8142605500002
+          ],
+          "event_ms": 324.20631408691406,
+          "wall_ms": 324.3036808499994
+        },
+        "default": {
+          "event_round_ms": [
+            63.05187225341797,
+            63.23616027832031,
+            65.16071701049805
+          ],
+          "wall_round_ms": [
+            63.13609025000346,
+            63.470534300000736,
+            65.09985429999574
+          ],
+          "event_ms": 63.23616027832031,
+          "wall_ms": 63.470534300000736
+        }
+      },
+      "mode": {
+        "default": {
+          "graph": false,
+          "compiled": false,
+          "x3": true
+        }
+      },
+      "lt_search": [],
+      "memory": {
+        "baseline": {
+          "shape": 13,
+          "variant": "baseline",
+          "resident_input_weights_bytes": 35214336,
+          "cold_seconds": 0.4932760489999737,
+          "cold_peak_allocated_bytes": 2461881344,
+          "steady_peak_allocated_bytes": 2461881344,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        },
+        "default": {
+          "shape": 13,
+          "variant": "default",
+          "resident_input_weights_bytes": 35214336,
+          "cold_seconds": 5.848327734000009,
+          "cold_peak_allocated_bytes": 470864896,
+          "steady_peak_allocated_bytes": 470864896,
+          "mode": {
+            "graph": false,
+            "compiled": false,
+            "x3": true
+          },
+          "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+        }
+      }
+    }
+  ]
+}

@@ -5,7 +5,7 @@
 `results/kaggle_t4_shape14.log`. Every figure spoken in the narration and shown
 in the terminal replay is that run's:
 
-| in the video | that run | current, `results/results_t4.csv` |
+| in the video | that run | after the September fixes, `results/results_t4.csv` |
 |---|---|---|
 | median speedup | **2.282x** (fp32-SGEMM path) | **2.834x** (fp16x3 default) |
 | shape 1 | 2.282x | 2.702x |
@@ -15,8 +15,9 @@ in the terminal replay is that run's:
 
 Two changes landed after the render and moved all of it: the Dynamo
 recompile-limit fix (the sweep had been running with `torch.compile` silently
-inactive from the fifth shape on — see the README section "A measurement bug we
-found late") and fp16x3 becoming the shipped default for the linear layers.
+inactive from the fifth shape on — see "A measurement bug we found late" in
+[`docs/EXPERIMENT_HISTORY.md`](../docs/EXPERIMENT_HISTORY.md)) and fp16x3 becoming
+the shipped default for the linear layers.
 
 The cut has not been re-rendered against the new numbers. Re-rendering is not a
 matter of re-running the script: `scripts/make_video.py` reads
@@ -25,6 +26,8 @@ matter of re-running the script: `scripts/make_video.py` reads
 the logs above, so those have to be rewritten first or the video would say one
 number and show another.
 
-The maintained figures are the results table in the top-level `README.md` and
-the CSVs under `results/`; `tests/test_reported_numbers.py` recomputes them from
-those CSVs on every CI run.
+The September figures after those fixes are the results table in
+[`docs/EXPERIMENT_HISTORY.md`](../docs/EXPERIMENT_HISTORY.md) and the CSVs under
+`results/`; `tests/test_reported_numbers.py` recomputes them from those CSVs on
+every CI run. The top-level `README.md` now leads with the October T4 sessions
+under `results/next/`, a later protocol kept separate from both columns above.

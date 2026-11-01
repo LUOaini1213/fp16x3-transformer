@@ -31,5 +31,15 @@ jobs:
           T3_TRITON=1 T3_ATTN=triton python scripts/smoke_cpu.py
           T3_LINEAR=fp16x3 python scripts/smoke_cpu.py
           T3_LINEAR=fp32 python scripts/smoke_cpu.py
+          T3_ATTN=turing python scripts/smoke_cpu.py
+          T3_X3_BLAS=lt python scripts/smoke_cpu.py
       - name: fp16x3 unit tests (exact CPU emulation)
-        run: pytest -q tests/
+        run: python -m pytest -q tests/
+      - name: Complete GPU evidence receipts, current sources and runtime report
+        run: python -m scripts.verify_next_evidence --maintained-runtime
+      - name: One-command entry point and explicit runtime profiles
+        run: |
+          python -m scripts.run --check-only --device cpu --output /tmp/doctor.json
+          python -m scripts.run --mode quick --device cpu --shape 2 --repeats 1 --output /tmp/quick.json
+          python -m scripts.run --mode balanced --device cpu --shape 2 --repeats 1 --output /tmp/balanced.json
+          python -m scripts.run --mode steady --device cpu --shape 2 --repeats 1 --output /tmp/steady.json

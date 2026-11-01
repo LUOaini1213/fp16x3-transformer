@@ -7,6 +7,12 @@ TL;DR table, 2.28x in the demo video, 2.834x in the results table) because the
 only thing keeping them in step was remembering to. This file is the thing that
 remembers.
 
+Since the October homepage rewrite, the September tables, the TL;DR row, the
+fp16 paragraph and the demo-video notes live in docs/EXPERIMENT_HISTORY.md; the
+README keeps one sentence of September figures and leads with the October
+results/next/ sessions, whose generated reports scripts/verify_next_evidence.py
+checks. Both documents are held to the CSVs here.
+
 Rounding conventions match the documents: speedups to 3 decimals in the results
 tables and 2 in prose, errors to 2 significant digits, tolerance margins to the
 nearest integer.
@@ -54,6 +60,8 @@ T4_GRAPH = _stats("results_t4_graph.csv")
 FP16 = _stats("results_t4_fp16.csv")
 
 README = _text("README.md")
+# the September record the homepage used to carry, moved out of README.md
+HISTORY = _text("docs/EXPERIMENT_HISTORY.md")
 REPORT = _text("report/report.md")
 ABLATION = _text("results/ablation.md")
 HANDOFF = _text("docs/DEVPOST_HANDOFF.md")
@@ -89,23 +97,37 @@ def _fmt(x, nd=3):
     return f"{x:.{nd}f}"
 
 
-def test_readme_results_table_matches_csv():
+def test_september_results_table_matches_csv():
     for s in (f"**{_fmt(T4['median'])}x**", f"{_fmt(T4['min'])}x - {_fmt(T4['max'])}x",
               f"{_fmt(P100['median'])}x", f"{_fmt(T4_FP32['median'])}x"):
-        assert s in README, f"README lost {s!r}"
+        assert s in HISTORY, f"docs/EXPERIMENT_HISTORY.md lost {s!r}"
 
 
-def test_readme_tldr_row_matches_csv():
+def _shape8(name):
+    return float(next(r["speedup"] for r in _rows(name) if r["shape"] == "8"))
+
+
+def test_readme_september_sentence_matches_csv():
+    """The one place the streamlined README still quotes the September sweep."""
+    assert (f"from {_fmt(T4_FP32['median'], 2)}× to {_fmt(T4['median'], 2)}×"
+            in README)                                                      # 2.30x -> 2.83x
+    assert (f"from {_fmt(_shape8('results_t4_fp32.csv'), 2)}× to "
+            f"{_fmt(_shape8('results_t4.csv'), 2)}×" in README)            # 1.09x -> 1.57x
+
+
+def test_tldr_row_matches_csv():
     """The TL;DR row that describes the shipped default -- the one a reader
     hits first, and the one that carried 2.50x / 1.60x / 4.1e-05 for a week."""
-    row = [ln for ln in README.splitlines()
+    row = [ln for ln in HISTORY.splitlines()
            if "fp16x3 linear layers" in ln and "**default**" in ln]
     assert len(row) == 1
     row = row[0]
-    shape8 = float(next(r["speedup"] for r in _rows("results_t4.csv") if r["shape"] == "8"))
-    assert f"**{_fmt(T4['median'], 2)}x**" in row          # 2.83x
+    shape8 = _shape8("results_t4.csv")
+    assert (f"**{_fmt(T4['median'])}x**" in row                             # 2.834x
+            or f"**{_fmt(T4['median'], 2)}x**" in row)                      # 2.83x
     assert f"{_fmt(shape8, 2)}x" in row                    # 1.57x
-    assert f"{T4['worst_abs']:.1e}" in row                 # 9.5e-06
+    assert (f"{T4['worst_abs']:.2e}" in row                                 # 9.54e-06
+            or f"{T4['worst_abs']:.1e}" in row)                             # 9.5e-06
     # the values this row used to carry, scoped to this row so the correct
     # 1.60x in the qkv micro-benchmark tables below is not caught by mistake
     for stale in ("2.50x", "1.60x", "4.1e-05"):
@@ -185,7 +207,8 @@ def test_no_superseded_measurements_in_the_prose():
     """Values from runs that later fixes invalidated. Each is anchored to the
     sentence that used to carry it, not grepped repo-wide, because some of
     these digits are correct elsewhere (1.60x is a real qkv micro-benchmark)."""
-    assert "4.1e-05" not in README and "4.1e-5" not in README
+    for doc in (README, HISTORY):
+        assert "4.1e-05" not in doc and "4.1e-5" not in doc
     assert "4.1e-05" not in REPORT and "297" not in REPORT.split("## 5. Results")[1][:900]
     assert "2.499" not in HANDOFF
     assert "median 2.282x" not in _text("report/devpost.md")
@@ -215,13 +238,13 @@ def test_shape14_figures_come_from_the_final_rerun():
         note = list(csv.DictReader(f))[13]["notes"]
     for s in ("183884.9 ms", "17,402 tok/s", "14.17 GB"):
         assert s in note
-    assert "17,402 tok/s" in README and "14.17 GB" in README
+    assert "17,402 tok/s" in HISTORY and "14.17 GB" in HISTORY
     # every place the superseded 204 s / 14.58 GB figures still appear must say
-    # which run they are from
-    for rel in ("README.md", "build/README.md"):
+    # which run they are from; the video notes themselves must keep them
+    for rel in ("README.md", "docs/EXPERIMENT_HISTORY.md", "build/README.md"):
         body = _text(rel)
         hits = list(re.finditer(r"14\.58 GB", body))
-        assert hits, f"{rel}: lost the pointer to the video's own figures"
+        assert hits or rel == "README.md", f"{rel}: lost the pointer to the video's own figures"
         for m in hits:
             window = body[max(0, m.start() - 900):m.start()]
             assert "2026-09-01" in window, f"{rel}: undated 14.58 GB figure"

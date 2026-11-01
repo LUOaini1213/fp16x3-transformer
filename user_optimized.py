@@ -14,9 +14,9 @@ atol=0.002 OR rtol=0.02, checked per-element):
      PyTorch's flash backend is fp16-only and needs sm_80+, so it never ran here) -> O(S) memory instead of the baseline's
      O(S^2) materialized score matrix. This is what makes the seq_len=100000
      shape possible at all (the baseline would need ~20.5 TB for its scores).
-  2. Internal fp16 autocast even when the grader runs float32 -> lights up the
-     Turing/Ampere tensor cores. rtol=0.02 (2%) leaves ~40x margin over fp16
-     rounding; reductions (LayerNorm, softmax) stay in fp32.
+  2. Optional internal fp16 autocast. Disabled by default: accumulated rounding
+     can cross the per-element correctness gate. The shipped fp16x3 GEMMs
+     use tensor cores with error compensation instead.
   3. Self-applied ``torch.compile`` (does not depend on the grader passing
      --compile-user); mode chosen per shape (reduce-overhead for launch-bound
      small shapes, default otherwise).
@@ -33,11 +33,18 @@ Ablation / robustness toggles via environment variables (see README):
                                                   once, on the real input, keep the winner)
   T3_CUDAGRAPH  = 1 | 0                          (default 1; the eager path captured into a
                                                   CUDA graph is a third autotune candidate)
+  T3_TUNE_CACHE = <JSON path>                    (opt-in eager/graph hints; keyed by source,
+                                                  environment and layout; fresh capture and
+                                                  validation, never cached model outputs)
   T3_COMPILE_MODE = default | reduce-overhead | max-autotune  (override)
   T3_FP32_FFN   = 1 | 0                          (default 0; force FFN+LN fp32)
   T3_CHUNK_BS   = <int>                          (override batch chunk size)
   T3_FUSED_QKV  = 1 | 0                          (default 0; one [3D,D] GEMM for q,k,v)
-  T3_ATTN       = sdpa | triton                  (default sdpa; tensor-core attention
+  T3_ATTN       = sdpa | triton | turing         (default sdpa; turing is optional,
+                                                  native-fp16 long-sequence inference only)
+  T3_X3_BLAS    = torch | lt                     (default torch; opt-in zero-workspace
+                                                  cuBLASLt search for the wide QKV GEMM)
+                                                (triton: tensor-core attention
                                                   kernel with fp32 statistics)
   T3_ATTN_SPLIT = 1 | 3                          (default 3; operand splitting for
                                                   fp32-class error on fp16 MMAs)
@@ -65,6 +72,13 @@ Ablation / robustness toggles via environment variables (see README):
                                                   kernels/fp16x3.py)
   T3_X3_SPLITK  = 1 | 2 | 4                       (chunks of the tripled K combined in the
                                                   fp32 epilogue; accuracy option, off)
+  T3_MASK_CACHE = 1 | 0                          (default 1: reuse mask validity only
+                                                  while tensor identity, metadata and
+                                                  mutation counter are unchanged;
+                                                  inference tensors are never cached)
+  T3_PACK_PADDING = 1 | 0                        (default 1: group and compact valid
+                                                  tokens before attention, then scatter
+                                                  outputs; avoids a dense S-by-S mask)
 """
 
 from __future__ import annotations
@@ -81,7 +95,7 @@ from torch_transformer_benchmark import BaselineTransformer
 # --- kernels import (begin) --- the Kaggle builder replaces this block
 try:
     from kernels import (HAVE_TRITON_OP, can_fuse, fused_add_layernorm,
-                         triton_attention, can_use_attention,
+                         triton_attention, can_use_attention, turing_attention,
                          x3_available, x3_prepare, x3_linear, x3_ln_split,
                          x3_add_ln_split, x3_act_split, x3_ln, x3_add_ln)
     HAVE_KERNELS = True
@@ -89,6 +103,7 @@ except Exception:  # the package is optional; the model works without it
     HAVE_KERNELS = False
     HAVE_TRITON_OP = False
     triton_attention = can_use_attention = None
+    turing_attention = None
     x3_available = x3_prepare = x3_linear = None
     x3_ln_split = x3_add_ln_split = x3_act_split = x3_ln = x3_add_ln = None
 # --- kernels import (end) ---
@@ -127,6 +142,10 @@ class UserOptimizedTransformer(BaselineTransformer):
         self._compile_ok = self._compile_policy != "off"
         self._tuned = False          # T3_COMPILE=auto: decided once, first forward
         self._tune_result = None     # (eager_ms, compiled_ms[, graph_ms]) when it ran
+        self._tune_cache_path = os.environ.get("T3_TUNE_CACHE") or None
+        self._tune_cache_attempted = False
+        self._tune_cache_context = None
+        self._tune_cache_status = "disabled" if self._tune_cache_path is None else "not-used"
         # Manual CUDA-graph capture of the *eager* path. For launch-bound shapes
         # the remaining cost is CPU launch overhead; a captured graph replays the
         # same kernels with none of it, and without the Inductor guard/dispatch
@@ -136,6 +155,14 @@ class UserOptimizedTransformer(BaselineTransformer):
         self._graph = None
         self._g_x = self._g_m = self._g_out = None
         self._g_key = None
+        self._mask_cache = _env_flag("T3_MASK_CACHE", True)
+        self._mask_tensor = None
+        self._mask_key = None
+        self._mask_valid = False
+        self._pack_padding = _env_flag("T3_PACK_PADDING", True)
+        self._padding_key = None
+        self._padding_tensor = None
+        self._padding_groups = None
         self._can_compile = False  # set in _plan: Triton needs CUDA capability >= 7.0
         self._fp32_ffn = _env_flag("T3_FP32_FFN", False)
         # One [3D, D] GEMM for q, k and v instead of three [D, D] ones: fewer
@@ -167,8 +194,8 @@ class UserOptimizedTransformer(BaselineTransformer):
             self._compile_ok = False
         # fp16x3 linear layers (kernels/fp16x3.py): every GEMM on the fp16
         # tensor cores with hi/lo operand compensation, fp32 accumulation and
-        # fp32 output. Default, measured: median 2.834x against 2.300x for
-        # SGEMM on the T4, worst error 9.5e-06 (K=1024) against a 2e-3 gate.
+        # fp32 output. Default, measured: median 2.44x against 2.26x for
+        # SGEMM on the T4, worst error 4.1e-5 (K=1024) against a 2e-3 gate.
         # A per-shape first-forward tuner ('auto') was measured twice and
         # retired: its seven-sample verdicts sit at the noise floor on the
         # sub-millisecond shapes, and the static default scored higher.
@@ -198,6 +225,7 @@ class UserOptimizedTransformer(BaselineTransformer):
             self._x3_guard = "static+first"
         self._x3_checked = False     # first-forward finiteness check done
         self._x3_bound = None        # static activation bound from the weights
+        self._x3_norm_key = None
         raw = os.environ.get("T3_X3_SITES", "auto").strip().lower()
         if raw == "auto":
             # Measured: the operator-level table has the split losing at the
@@ -298,6 +326,12 @@ class UserOptimizedTransformer(BaselineTransformer):
         # Only now. Setting it up front means a throw anywhere above would leave
         # planning permanently "done" with _chunk_bs still None -- which for the
         # seq_len=1e5 shape is the difference between chunking and an OOM.
+        if (self._attn_impl == "turing" and x.device.type == "cuda"
+                and x.dtype == torch.float16 and s >= 8192):
+            # Upstream launches on the default stream. Keep this explicit
+            # opt-in native-fp16 path eager, never capture its raw launches.
+            self._compile_ok = False
+            self._cudagraph = False
         self._planned = True
 
     def _chunk_budget(self, x: torch.Tensor) -> int:
@@ -333,9 +367,9 @@ class UserOptimizedTransformer(BaselineTransformer):
         for layer in self.layers:
             attn = layer.attention
             parts = (attn.q_proj, attn.k_proj, attn.v_proj)
-            key = tuple(m.weight._version for m in parts) + tuple(
-                (m.bias._version if m.bias is not None else -1) for m in parts
-            ) + (str(attn.q_proj.weight.device), str(attn.q_proj.weight.dtype))
+            key = tuple(self._tensor_key(m.weight) for m in parts) + tuple(
+                self._tensor_key(m.bias) for m in parts
+            )
             if getattr(attn, "_qkv_key", None) == key:
                 continue
             with torch.no_grad():
@@ -344,7 +378,7 @@ class UserOptimizedTransformer(BaselineTransformer):
                                else torch.cat([m.bias for m in parts], dim=0))
             attn._qkv_key = key
             # A captured graph replays the old tensors by address.
-            self._drop_graph()
+            self._invalidate_dispatch()
 
     def _x3_static_bound(self) -> float:
         """Largest value any split activation can take, from the weights alone.
@@ -378,7 +412,7 @@ class UserOptimizedTransformer(BaselineTransformer):
         print(f"[user_optimized] fp16x3 GEMMs off: {why}; using fp32 SGEMM")
         self._x3_on = False
         self._linear_policy = "fp32"
-        self._drop_graph()
+        self._invalidate_dispatch()
 
     def _refresh_x3(self) -> None:
         """(Re)build the split fp16 weights for the fp16x3 path if they changed.
@@ -389,12 +423,19 @@ class UserOptimizedTransformer(BaselineTransformer):
         graph (it would replay the old tensors) and re-checks the static bound.
         """
         changed = False
+        norms = [norm for layer in self.layers for norm in (layer.norm1, layer.norm2)]
+        norms.append(self.final_norm)
+        norm_key = tuple(self._tensor_key(p) for norm in norms
+                         for p in (norm.weight, norm.bias))
+        if norm_key != self._x3_norm_key:
+            self._x3_norm_key = norm_key
+            changed = True
         for layer in self.layers:
             attn = layer.attention
             parts = (attn.q_proj, attn.k_proj, attn.v_proj)
-            key = tuple(m.weight._version for m in parts) + tuple(
-                (m.bias._version if m.bias is not None else -1) for m in parts
-            ) + (str(attn.q_proj.weight.device), str(attn.q_proj.weight.dtype))
+            key = tuple(self._tensor_key(m.weight) for m in parts) + tuple(
+                self._tensor_key(m.bias) for m in parts
+            )
             if "qkv" in self._x3_sites and getattr(attn, "_x3_qkv_key", None) != key:
                 with torch.no_grad():
                     w = torch.cat([m.weight for m in parts], dim=0)
@@ -407,21 +448,98 @@ class UserOptimizedTransformer(BaselineTransformer):
                               ("ffn_out", layer.ffn_out)):
                 if site not in self._x3_sites:
                     continue
-                key = (lin.weight._version,
-                       lin.bias._version if lin.bias is not None else -1,
-                       str(lin.weight.device), str(lin.weight.dtype))
+                key = (self._tensor_key(lin.weight), self._tensor_key(lin.bias))
                 if getattr(lin, "_x3_key", None) != key:
                     # tail-free weight: the consumer kernel adds the bias
                     lin._x3 = x3_prepare(lin.weight, lin.bias, fold_bias=False)
                     lin._x3_key = key
                     changed = True
         if changed:
-            self._drop_graph()
+            self._invalidate_dispatch()
+            self._x3_checked = False
             if self._x3_guard != "off":
                 self._x3_bound = self._x3_static_bound()
                 if not (self._x3_bound < 32768.0):
                     self._x3_disable(f"activations may reach {self._x3_bound:.3g} "
                                      f"(fp16 range is 65504)")
+
+    @staticmethod
+    def _tensor_key(tensor):
+        """Replacing a Parameter can preserve its version; identity matters too."""
+        if tensor is None:
+            return None
+        return (id(tensor), tensor._version, tensor.data_ptr(), tensor.device,
+                tensor.dtype)
+
+    def _all_valid(self, mask):
+        """Cache a reduction, never the mask's contents or a model output.
+
+        Ordinary tensors share a mutation counter with their views. Inference
+        tensors have no such counter, so they must be reduced on every call.
+        Writes through .data, NumPy or an external raw pointer bypass PyTorch's
+        counter; callers using those must set T3_MASK_CACHE=0.
+        """
+        if mask is None:
+            return True
+        if not self._mask_cache or mask.is_inference():
+            return bool(mask.all())
+        key = self._tensor_key(mask) + (tuple(mask.shape), tuple(mask.stride()))
+        if mask is not self._mask_tensor or key != self._mask_key:
+            valid = bool(mask.all())
+            self._mask_tensor, self._mask_key, self._mask_valid = mask, key, valid
+        return self._mask_valid
+
+    def _padded_groups(self, mask):
+        """Valid positions in original order, grouped by sequence length.
+
+        Compaction preserves causal order and is exact for this model: there
+        are no position-dependent operators, and masked tokens are never keys
+        for valid queries. Cache only indices, using the same mutation rules
+        as the mask reduction; the activations are gathered afresh every time.
+        """
+        cacheable = self._mask_cache and not mask.is_inference()
+        key = self._tensor_key(mask) if cacheable else None
+        if (cacheable and self._padding_tensor is mask
+                and key == self._padding_key):
+            return self._padding_groups
+        lengths = mask.sum(dim=1).tolist()
+        positions = mask.nonzero(as_tuple=False)[:, 1]
+        offsets = [0]
+        by_length = {}
+        for row, length in enumerate(lengths):
+            offsets.append(offsets[-1] + length)
+            if length:
+                by_length.setdefault(length, []).append(row)
+        groups = []
+        for rows in by_length.values():
+            token_ids = torch.stack([positions[offsets[r]:offsets[r + 1]] for r in rows])
+            row_ids = torch.tensor(rows, dtype=torch.long, device=mask.device)
+            groups.append((row_ids, token_ids))
+        if cacheable:
+            self._padding_tensor, self._padding_key, self._padding_groups = mask, key, groups
+        return groups
+
+    def _forward_padded(self, x, mask, causal, autocast_dtype):
+        """O(B*S*D) packing storage, no [B,1,S,S] padding/causal bias.
+
+        All-invalid rows remain zero, as in the reference. Different lengths
+        never attend to one another; equal lengths share a batch. The compact
+        kernels use the normal all-valid arithmetic, including fp16x3 when
+        available, but do not replay a graph captured for the original shape.
+        """
+        out = torch.zeros_like(x)
+        for rows, tokens in self._padded_groups(mask):
+            chunk = self._chunk_bs or len(rows)
+            for start in range(0, len(rows), chunk):
+                rr, tt = rows[start:start + chunk], tokens[start:start + chunk]
+                packed = x[rr[:, None], tt]
+                if autocast_dtype is None:
+                    result = self._run_full(packed, None, causal, True)
+                else:
+                    with torch.autocast("cuda", dtype=autocast_dtype):
+                        result = self._run_full(packed, None, causal, True)
+                out[rr[:, None], tt] = result.to(x.dtype)
+        return out
 
     # ---- compute ------------------------------------------------------------
     def _attention(self, attn, x, mask, causal, all_valid):
@@ -441,7 +559,10 @@ class UserOptimizedTransformer(BaselineTransformer):
         if all_valid:
             # Graded hot path: no padding. A dense [S,S] mask is impossible for
             # S=1e5, so causality MUST go through is_causal (kernel-generated).
-            if self._attn_impl == "triton" and can_use_attention(q):
+            if (self._attn_impl == "turing" and x.dtype == torch.float16
+                    and turing_attention is not None):
+                out = turing_attention(q, k, v, attn.scale, causal)
+            elif self._attn_impl == "triton" and can_use_attention(q):
                 out = triton_attention(q, k, v, attn.scale, causal, self._attn_split)
             else:
                 out = F.scaled_dot_product_attention(
@@ -591,9 +712,29 @@ class UserOptimizedTransformer(BaselineTransformer):
             self._refresh_x3()
         causal = self.config.causal
         # Device->host sync kept OUTSIDE any compiled region / CUDA graph.
-        all_valid = valid_token_mask is None or bool(valid_token_mask.all())
+        all_valid = self._all_valid(valid_token_mask)
         ad = self._autocast_dtype
         b = x.shape[0]
+
+        if not all_valid and self._pack_padding:
+            out = self._forward_padded(x, valid_token_mask, causal, ad)
+            return self._check_x3_output(
+                out, lambda: self._forward_padded(x, valid_token_mask, causal, ad))
+
+        def _invoke(fn, xin, m, av):
+            if ad is not None:
+                with torch.autocast("cuda", dtype=ad):
+                    return fn(xin, m, causal, av)
+            return fn(xin, m, causal, av)
+
+        # Hints only affect dispatch, after current weights/precision guards
+        # were refreshed. They never bypass mask or mutable-parameter checks.
+        if (not self._tuned and not self._tune_cache_attempted and self._tune_cache_path
+                and x.device.type == "cuda" and all_valid
+                and b * x.shape[1] <= 16384 and self._cudagraph
+                and self._compile_policy in ("off", "auto")
+                and (self._chunk_bs is None or self._chunk_bs >= b)):
+            self._try_cached_dispatch(x, valid_token_mask, all_valid, _invoke)
 
         # Lazily build the compiled callable on the first CUDA forward.
         if (self._compiled is None and self._compile_ok and self._can_compile):
@@ -626,12 +767,6 @@ class UserOptimizedTransformer(BaselineTransformer):
                 self._compile_ok = False
                 self._compiled = None
 
-        def _invoke(fn, xin, m, av):
-            if ad is not None:
-                with torch.autocast("cuda", dtype=ad):
-                    return fn(xin, m, causal, av)
-            return fn(xin, m, causal, av)
-
         # First-forward autotune (T3_COMPILE=auto). The stage ablation showed
         # compilation *losing* on the launch-bound shape -- 2.29x eager against
         # 1.46x compiled at S=32 -- because Inductor's guard and dispatch cost
@@ -639,14 +774,17 @@ class UserOptimizedTransformer(BaselineTransformer):
         # microseconds. Rather than guess a threshold, time both on the actual
         # input once and keep the winner. It runs inside the harness' warmup,
         # so the cost is invisible to the graded timing.
-        if (not self._tuned and x.device.type == "cuda" and b * x.shape[1] <= 16384
+        if (not self._tuned and x.device.type == "cuda"
+                and (self._chunk_bs is None or self._chunk_bs >= b)
+                and (b * x.shape[1] <= 16384 or self._compile_policy == "auto")
                 and (self._compile_policy == "auto" or self._cudagraph)
                 and (self._compiled is not None or self._cudagraph)):
             self._tuned = True
             self._pick_faster(x, valid_token_mask, all_valid, _invoke)
 
         def core(xin, m, av):
-            fn = self._compiled if self._compiled is not None else self._run_full
+            using_compiled = self._compiled is not None
+            fn = self._compiled if using_compiled else self._run_full
             try:
                 return _invoke(fn, xin, m, av)
             except _OOM:
@@ -654,7 +792,7 @@ class UserOptimizedTransformer(BaselineTransformer):
                 # _forward_chunked see it and shrink the chunk.
                 raise
             except Exception:
-                if fn is self._run_full:
+                if not using_compiled:
                     raise
                 # Compiled path failed at CALL time (e.g. Triton needs sm>=7.0,
                 # or an inductor edge case) -> permanently fall back to eager.
@@ -673,6 +811,10 @@ class UserOptimizedTransformer(BaselineTransformer):
             if self._graph_output and out.data_ptr() != x.data_ptr():
                 out = out.clone()
 
+        return self._check_x3_output(
+            out, lambda: core(x, valid_token_mask, all_valid).to(x.dtype))
+
+    def _check_x3_output(self, out, retry):
         # The split cannot represent an activation beyond fp16 range; the
         # static bound refuses the path for weights that could get there, and
         # this check catches an input that does anyway. Once, on the first
@@ -683,7 +825,7 @@ class UserOptimizedTransformer(BaselineTransformer):
             self._x3_checked = True
             if not bool(torch.isfinite(out).all()):
                 self._x3_disable("non-finite output (an activation left fp16 range)")
-                out = core(x, valid_token_mask, all_valid).to(x.dtype)
+                out = retry()
         return out
 
     def _drop_graph(self):
@@ -693,6 +835,60 @@ class UserOptimizedTransformer(BaselineTransformer):
         self._graph = None
         self._g_x = self._g_m = self._g_out = None
         self._g_key = None
+
+    def _invalidate_dispatch(self):
+        """Retune once after rebuilt weights, not after ordinary graph rejection."""
+        self._drop_graph()
+        self._tuned = False
+        self._tune_result = None
+        self._tune_cache_attempted = False
+        self._tune_cache_context = None
+        self._tune_cache_status = "disabled" if self._tune_cache_path is None else "invalidated"
+
+    def _try_cached_dispatch(self, x, mask, all_valid, invoke):
+        self._tune_cache_attempted = True
+        try:
+            from kernels.dispatch_cache import context, lookup
+            self._tune_cache_context = context(self, x, all_valid)
+            choice = lookup(self._tune_cache_path, self._tune_cache_context)
+            self._tune_cache_status = "miss"
+            if choice is None:
+                return
+            with torch.no_grad():
+                reference = invoke(self._run_full, x, mask, all_valid)
+                valid = bool(torch.isfinite(reference).all())
+                if choice == "graph":
+                    if not self._capture_graph(x, mask, invoke):
+                        self._tune_cache_status = "rejected"
+                        return
+                    candidate = self._replay(x, mask)
+                    # Same eager kernels: require bitwise equality, not a new
+                    # approximate accuracy shortcut against an internal oracle.
+                    valid = valid and torch.equal(reference, candidate)
+                    del candidate
+                del reference
+            if not valid:
+                self._drop_graph()
+                self._tune_cache_status = "rejected"
+                return
+            self._compiled = None
+            self._compile_ok = False
+            self._graph_output = False
+            self._tuned = True
+            self._tune_cache_status = "hit-validated-" + choice
+        except Exception:
+            self._drop_graph()
+            self._tune_cache_status = "unavailable"
+
+    def _remember_dispatch(self, choice):
+        if self._tune_cache_context is None or not self._tune_cache_path:
+            return
+        try:
+            from kernels.dispatch_cache import remember
+            stored = remember(self._tune_cache_path, self._tune_cache_context, choice)
+            self._tune_cache_status = "stored-" + choice if stored else "not-stored"
+        except Exception:
+            self._tune_cache_status = "unavailable"
 
     def _pick_faster(self, x, mask, all_valid, invoke, warm=6, iters=7):
         """Keep the fastest of eager / compiled / captured-eager on this input.
@@ -712,7 +908,11 @@ class UserOptimizedTransformer(BaselineTransformer):
             cands = [("eager", lambda: invoke(self._run_full, x, mask, all_valid))]
             if self._compiled is not None:
                 cands.append(("compiled", lambda: invoke(self._compiled, x, mask, all_valid)))
-            if self._cudagraph and all_valid and self._capture_graph(x, mask, invoke):
+            # Large shapes still need eager-vs-compiled tuning: compiler
+            # versions can make opaque GEMMs slower. Their graph's static
+            # input/output copies and private pool, however, can exhaust VRAM.
+            if (self._cudagraph and all_valid and x.shape[0] * x.shape[1] <= 16384
+                    and self._capture_graph(x, mask, invoke)):
                 cands.append(("graph", lambda: self._replay(x, mask)))
             start = torch.cuda.Event(enable_timing=True)
             end = torch.cuda.Event(enable_timing=True)
@@ -750,12 +950,14 @@ class UserOptimizedTransformer(BaselineTransformer):
             self._compiled = None
             self._compile_ok = False
             self._graph_output = False
+            self._remember_dispatch("graph")
         else:
             self._drop_graph()
             if eager_ms < compiled_ms:
                 self._compiled = None
                 self._compile_ok = False
                 self._graph_output = False
+                self._remember_dispatch("eager")
 
     def _capture_graph(self, x, mask, invoke):
         """Record the eager forward into a CUDA graph over static input copies.
@@ -766,7 +968,10 @@ class UserOptimizedTransformer(BaselineTransformer):
         """
         try:
             self._g_x = x.detach().clone()
-            self._g_m = None if mask is None else mask.detach().clone()
+            # all_valid=True makes the compute independent of mask storage.
+            # Capturing with None avoids an unused static mask and a copy on
+            # every replay. The caller revalidates the real mask first.
+            self._g_m = None
             side = torch.cuda.Stream(x.device)
             side.wait_stream(torch.cuda.current_stream(x.device))
             with torch.cuda.stream(side), torch.no_grad():
@@ -786,8 +991,6 @@ class UserOptimizedTransformer(BaselineTransformer):
 
     def _replay(self, x, mask):
         self._g_x.copy_(x)
-        if self._g_m is not None and mask is not None:
-            self._g_m.copy_(mask)
         self._graph.replay()
         # The next replay rewrites the output buffer; hand back a tensor the
         # caller owns.

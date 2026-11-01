@@ -8,6 +8,10 @@
 # Triton ships with the Linux CUDA build of torch; torch.compile needs it and a
 # GPU of compute capability >= 7.0. Nothing else is required at runtime.
 
+# This is the fallback/API floor, not a promise of the measured accelerated path.
+# Current normal-import T4 evidence pins torch 2.11.0+cu128 on Linux. The run
+# command probes mm(out_dtype=float32), checks CUDA, and reports missing Triton;
+# older builds may run the correct FP32 fallback without the headline speedup.
 torch>=2.1
 
 # Only for scripts/make_figures.py, which regenerates report/figures/*.png.

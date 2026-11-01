@@ -8,11 +8,11 @@ it, so the standard harness (which runs baseline first) dies before timing.
 
 This script demonstrates the value of the optimization:
   A) TIMING: run ONLY the optimized model at the full seq_len=100000 (fp16,
-     batch-chunked, FlashAttention via SDPA) and report latency + tokens/s.
-  B) CORRECTNESS-BY-CONSTRUCTION: at a truncated seq_len the baseline CAN run,
+     batch-chunked, memory-efficient SDPA) and report latency + tokens/s.
+  B) TRUNCATED CORRECTNESS: at a truncated seq_len the baseline CAN run,
      compare optimized vs baseline element-wise with the official tolerances.
-     SDPA attention is mathematically identical regardless of S, so passing at
-     the truncated length evidences correctness at S=100000.
+     This does not prove full-length numerical equivalence, and the truncated
+     fp32 check is separate from the full fp16 capacity/timing demonstration.
 
 Run on a 16 GB GPU (Kaggle T4/P100 recommended). Example:
     python scripts/shape14_optimized_only.py --trunc-seq 2048
@@ -58,7 +58,11 @@ def timing_full(args, device):
     free0, total0 = torch.cuda.mem_get_info(device)
     print(f"  vram free={free0/1e9:.2f} GB / total={total0/1e9:.2f} GB")
     try:
-        _, optimized = build_pair(cfg, device, dtype)
+        baseline = bench.BaselineTransformer(cfg)  # keep unused reference on CPU
+        optimized = UserOptimizedTransformer(cfg)
+        bench.copy_model_weights(baseline, optimized, strict=True)
+        del baseline
+        optimized = optimized.to(device=device, dtype=dtype).eval()
         x, mask = bench.generate_random_case(cfg, device, dtype, seed=1234,
                                              padding_ratio=0.0, input_scale=1.0)
         with torch.inference_mode():
@@ -81,11 +85,13 @@ def timing_full(args, device):
         print(f"  median={med:.2f} ms | tokens/call={tokens} | "
               f"throughput={tokens*1000.0/med:,.0f} tok/s | peak_vram={peak:.2f} GB")
         print(f"  chunk_bs={optimized._chunk_bs} autocast={optimized._autocast_dtype}")
+        return True
     except RuntimeError as e:
         if "out of memory" in str(e).lower():
             peak = torch.cuda.max_memory_allocated(device) / 1e9
             print(f"  [OOM] full seq_len did not fit (peak {peak:.2f} GB): {e}")
             print("  -> set T3_CHUNK_BS=1, or use a GPU with more VRAM.")
+            return False
         else:
             raise
 
@@ -113,10 +119,14 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--trunc-seq", type=int, default=2048)
     ap.add_argument("--layers", type=int, default=2)
-    ap.add_argument("--warmup", type=int, default=5)
-    ap.add_argument("--iters", type=int, default=20)
+    ap.add_argument("--warmup", type=int, default=1,
+                    help="untimed full forwards (default 1; each takes minutes on a T4)")
+    ap.add_argument("--iters", type=int, default=3,
+                    help="timed full forwards (default 3)")
     ap.add_argument("--skip-full", action="store_true")
     args = ap.parse_args()
+    if args.warmup < 0 or args.iters < 1:
+        ap.error("warmup must be nonnegative and iters must be positive")
 
     if not torch.cuda.is_available():
         print("CUDA required. Run on Colab/Kaggle GPU.")
@@ -125,11 +135,14 @@ def main() -> int:
     print(f"gpu={torch.cuda.get_device_name(device)} torch={torch.__version__}")
 
     ok = correctness_truncated(args, device)
-    if not args.skip_full:
-        timing_full(args, device)
-    print("\nSummary: correctness(truncated)=" + ("PASS" if ok else "FAIL")
-          + "; full-seq timing above (baseline is infeasible by construction).")
-    return 0 if ok else 2
+    if not ok:
+        print("\nSummary: correctness(truncated)=FAIL; full timing skipped.")
+        return 2
+    full_ok = None if args.skip_full else timing_full(args, device)
+    full_status = "SKIPPED" if full_ok is None else "COMPLETE" if full_ok else "FAILED"
+    print(f"\nSummary: correctness(truncated)=PASS; full-seq={full_status} "
+          "(fp16 capacity/timing only, no full-length reference).")
+    return 1 if full_ok is False else 0
 
 
 if __name__ == "__main__":

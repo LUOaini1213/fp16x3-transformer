@@ -1,0 +1,37 @@
+Cloning into '/tmp/track3-turing-v8qk83bn/source'...
+Note: switching to '9ef98fcb506bb1e2fe3cece50935e2935bf6b124'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 9ef98fc added support for headdim = 96 (#26)
+Submodule 'csrc/cutlass' (https://github.com/NVIDIA/cutlass) registered for path 'csrc/cutlass'
+Cloning into '/tmp/track3-turing-v8qk83bn/source/csrc/cutlass'...
+From https://github.com/NVIDIA/cutlass
+ * branch            df18f5e4f5de76bed8be1de8e4c245f2f5ec3020 -> FETCH_HEAD
+Submodule path 'csrc/cutlass': checked out 'df18f5e4f5de76bed8be1de8e4c245f2f5ec3020'
+Processing /tmp/track3-turing-v8qk83bn/source
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Building wheels for collected packages: flash_attn_turing
+  Building wheel for flash_attn_turing (setup.py): started
+  Building wheel for flash_attn_turing (setup.py): finished with status 'done'
+  Created wheel for flash_attn_turing: filename=flash_attn_turing-0.0.0-cp313-cp313-linux_x86_64.whl size=5944988 sha256=fbb06a1e4c7428b098dfeb8e3c0ec1d4435d4bceae5e8c2ddc09571fabf0d47a
+  Stored in directory: /tmp/pip-ephem-wheel-cache-ucbzt5rb/wheels/68/49/57/03bf4be22a578e8aa20a2019e342e10f0691d5196c6b3f28db
+Successfully built flash_attn_turing
+Installing collected packages: flash_attn_turing
+Successfully installed flash_attn_turing-0.0.0
+Built optional revision 9ef98fcb506bb1e2fe3cece50935e2935bf6b124. Temporary source retained at /tmp/track3-turing-v8qk83bn/source.
+Enable with T3_ATTN=turing; default remains SDPA. Native-fp16 inference only.

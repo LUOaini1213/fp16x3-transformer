@@ -1,0 +1,199 @@
+{
+  "metadata": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "capability": [
+      7,
+      5
+    ],
+    "source_manifest": {
+      "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304",
+      "kernels/cublaslt_probe.cpp": "ec6653306118be2711c39928e52de37963ed135dc456beb6010dd919bb8e5bd9",
+      "kernels/fp16x3.py": "fc0488821f3134ce49946cd2c2b1eb6d43e825d55c89822b7c113dd492bc45f4",
+      "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01",
+      "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32",
+      "scripts/benchmark_next.py": "03d746b09076ba7d50f29e134b73580ba36ccb3d8b6d6f94c66ca634d401111e",
+      "scripts/build_kaggle_selfcontained.py": "ef44de301c98212ac9d7978479556a1defcdeb0aa281d08bf9e2984528db632c",
+      "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e",
+      "user_optimized.py": "e7de5c0af13c821fc854c3a2a806d93142a886518354f3913d47b340468f41bb"
+    },
+    "reference_revision": "46154d19ceeba0c50af2588a0247ce43b56c0465"
+  },
+  "results": [
+    {
+      "shape": 2,
+      "candidates": {
+        "python_wrapper": {
+          "max_abs": 1.4901161193847656e-06,
+          "ownership": "PASS"
+        },
+        "cpp_wrapper": {
+          "max_abs": 1.1920928955078125e-06,
+          "ownership": "PASS"
+        }
+      },
+      "failures": {},
+      "timing": {
+        "current_public": {
+          "event_round_ms": [
+            0.5416480004787445,
+            0.407584011554718,
+            0.31539198756217957
+          ],
+          "wall_round_ms": [
+            0.5437936399994214,
+            0.32562922000010985,
+            0.3201017200001388
+          ],
+          "event_ms": 0.407584011554718,
+          "wall_ms": 0.32562922000010985
+        },
+        "python_wrapper": {
+          "event_round_ms": [
+            2.0172799825668335,
+            2.038848042488098,
+            1.9624800086021423
+          ],
+          "wall_round_ms": [
+            1.9765997600006813,
+            1.9467301999998199,
+            1.9817307599998912
+          ],
+          "event_ms": 2.0172799825668335,
+          "wall_ms": 1.9765997600006813
+        },
+        "cpp_wrapper": {
+          "event_round_ms": [
+            1.260320007801056,
+            1.2169439792633057,
+            1.1767839789390564
+          ],
+          "wall_round_ms": [
+            1.2140526600001067,
+            1.1662231999991945,
+            1.183898640000507
+          ],
+          "event_ms": 1.2169439792633057,
+          "wall_ms": 1.183898640000507
+        }
+      }
+    },
+    {
+      "shape": 3,
+      "candidates": {
+        "python_wrapper": {
+          "max_abs": 1.430511474609375e-06,
+          "ownership": "PASS"
+        },
+        "cpp_wrapper": {
+          "max_abs": 9.5367431640625e-07,
+          "ownership": "PASS"
+        }
+      },
+      "failures": {},
+      "timing": {
+        "current_public": {
+          "event_round_ms": [
+            0.8295679986476898,
+            0.34436801075935364,
+            0.34750398993492126
+          ],
+          "wall_round_ms": [
+            0.831577080000443,
+            0.3468428999997286,
+            0.3498850799996944
+          ],
+          "event_ms": 0.34750398993492126,
+          "wall_ms": 0.3498850799996944
+        },
+        "python_wrapper": {
+          "event_round_ms": [
+            1.938207983970642,
+            1.908415973186493,
+            1.9128479957580566
+          ],
+          "wall_round_ms": [
+            1.9000633999996808,
+            1.920005739999624,
+            1.8751259999999093
+          ],
+          "event_ms": 1.9128479957580566,
+          "wall_ms": 1.9000633999996808
+        },
+        "cpp_wrapper": {
+          "event_round_ms": [
+            1.2175039649009705,
+            1.152575969696045,
+            1.183855950832367
+          ],
+          "wall_round_ms": [
+            1.142042080000465,
+            1.1550009199993383,
+            1.2079245400002492
+          ],
+          "event_ms": 1.183855950832367,
+          "wall_ms": 1.1550009199993383
+        }
+      }
+    },
+    {
+      "shape": 12,
+      "candidates": {
+        "python_wrapper": {
+          "max_abs": 1.7881393432617188e-06,
+          "ownership": "PASS"
+        },
+        "cpp_wrapper": {
+          "max_abs": 1.7881393432617188e-06,
+          "ownership": "PASS"
+        }
+      },
+      "failures": {},
+      "timing": {
+        "current_public": {
+          "event_round_ms": [
+            1.757311999797821,
+            0.8223679959774017,
+            0.8267519772052765
+          ],
+          "wall_round_ms": [
+            1.6199199599986969,
+            0.9418888400000469,
+            0.9420542800012299
+          ],
+          "event_ms": 0.8267519772052765,
+          "wall_ms": 0.9420542800012299
+        },
+        "python_wrapper": {
+          "event_round_ms": [
+            2.5009119510650635,
+            2.00927996635437,
+            2.0978400707244873
+          ],
+          "wall_round_ms": [
+            2.1048771000005218,
+            2.0159119799996006,
+            2.0923360999995566
+          ],
+          "event_ms": 2.0978400707244873,
+          "wall_ms": 2.0923360999995566
+        },
+        "cpp_wrapper": {
+          "event_round_ms": [
+            2.0090880393981934,
+            2.0085760354995728,
+            2.0958240032196045
+          ],
+          "wall_round_ms": [
+            2.014249019998715,
+            2.014734879999196,
+            2.0541926600003535
+          ],
+          "event_ms": 2.0090880393981934,
+          "wall_ms": 2.014734879999196
+        }
+      }
+    }
+  ]
+}

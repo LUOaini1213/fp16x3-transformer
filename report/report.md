@@ -1,9 +1,10 @@
 # Track 3 Technical Report — Implement a GPU Kernel for a Transformer Layer
 ### TikTok TechJam 2026
 
-Rendered version (figures inline, print-to-PDF from the browser):
-[`report/report.html`](report.html), built from this report and the measured
-CSVs by `scripts/build_report_page.py`.
+Historical rendered version (figures inline, print-to-PDF from the browser;
+the maintained runtime audit below is newer): [`report/report.html`](report.html),
+the September report as one self-contained page, rebuilt from the measured CSVs
+by `scripts/build_report_page.py`.
 
 ## 1. Environment
 
@@ -79,9 +80,9 @@ and `user_optimized.py`.
 
 ## 5. Results
 
-All 13 gradeable shapes PASS on both cards. The shipped T4 path lands 2.9e-06 from the fp32
-reference on twelve shapes and 9.5e-06 on the K=1024 one (699× and 210× inside the `atol=0.002`
-gate); the `T3_LINEAR=fp32` path sits at 3.2e-06 (621× inside) and the P100 at 1.9e-06 (1049× inside).
+All 13 gradeable shapes PASS on both cards. The shipped T4 path lands 2.86e-06 from the fp32
+reference on twelve shapes and 9.54e-06 on the K=1024 one (699× and 210× inside the `atol=0.002`
+gate); the `T3_LINEAR=fp32` path sits at 3.22e-06 (621× inside) and the P100 at 1.91e-06 (1049× inside).
 
 | regime | median | range | worst `max_abs` | margin vs `atol` |
 |---|---|---|---|---|
@@ -166,9 +167,9 @@ matmuls — the same forward takes
 **184 s at 17,402 tok/s** with a 14.17 GB peak — on a card with only 15.64 GB
 total, tighter than the P100, and it still fits
 (`results/kaggle_t4_shape14.log`).
-Correctness is established at a truncated `seq_len` where the baseline can run
-(PASS, `max_abs 1.2e-6`); SDPA's math is independent of `S`, so that carries to
-1e5. Getting here required the memory fix in §4.4 — before it, the run died in
+The separate truncated fp32 check passes (`max_abs 1.2e-6`); this does not prove
+full-length fp16 numerical equivalence. Getting here required the memory fix
+in §4.4 — before it, the run died in
 the final `torch.cat`, not in the attention.
 
 **Precision.** The truncated correctness check runs in **fp32**, matching the
@@ -217,9 +218,11 @@ the fp16 range is guarded without a sync in steady state.
   recomputed in fp32 fails identically (7603 vs our 6131 elements, same
   `max_abs 0.047`), because bf16's ulp near 1.0 is 0.0078 against `atol=0.002`.
   The graded configuration is fp32.
-- The padded fallback still builds a dense `[B,1,S,S]` bias, reintroducing the
-  `O(S^2)` allocation SDPA avoids. The graded path (`padding_ratio=0`) never
-  takes it; making it memory-efficient is unfinished work.
+- The maintained padded path (2026-10-09) packs valid tokens by length and
+  scatters outputs, avoiding the previous dense `[B,1,S,S]` bias. It preserves
+  order, supports internal holes and empty rows, and is equivalent here because
+  the model has no position-dependent operators. Many distinct valid lengths
+  require many smaller forwards, so there is still launch-overhead work to do.
 - The fused add+LayerNorm Triton kernel is written, registered as a
   `torch.library` op so it composes with `torch.compile`, and measured
   (`kernels/fused_layernorm.py`). Inside Inductor's graph it is within ±5% of
@@ -258,3 +261,237 @@ session, `git clone`, run — numbers reproduce within free-tier variance.
 ## 8. AI tooling
 
 See `docs/AI_TOOLS.md`.
+
+## 9. Maintained runtime audit (2026-10-09)
+
+The post-submission update caches stable ordinary-mask reductions, drops an
+unused CUDA-graph mask copy, and fixes cached-weight invalidation on Parameter
+replacement and LayerNorm updates. It also packs padding without a dense
+S-by-S bias and extends eager-vs-compiled autotuning to large unchunked shapes;
+manual CUDA graphs remain small-shape-only. The September results above are
+historical and remain intact.
+
+The paired T4 repeat (`results/runtime_repeat.json`, raw log alongside it) uses
+the unmodified official `benchmark_once` loop: 9 rotated rounds of 50 samples
+per model, identical weights and inputs, reference revision `6a52565`, current
+source SHA256 recorded in the result. B=1 latency falls from 0.4383 to 0.3809 ms;
+B=4 falls from 0.4112 to 0.3592 ms. Shapes 8 and 12 are 1.0% and 2.4% slower,
+so this is a small-batch improvement, not a claim that every shape gets faster.
+All four numerical checks pass; separate wall-clock measurements are retained.
+
+The final-code sweep (`results/runtime_full.json`) passes all 13 gradeable
+shapes on three random input trials each. It uses 3 rotated rounds of 30
+official timing samples per model. Extending eager-vs-compiled selection
+recovers a PyTorch 2.11 compiler regression: shape 6 goes from 1479.81 to
+671.80 ms (-54.6%), shape 13 from 109.52 to 68.18 ms (-37.7%), both choosing
+eager. Wall-clock loop latency confirms the gain (1465.55 → 673.68 ms and
+105.44 → 65.50 ms). These are paired improvements over revision `6a52565` in
+the current environment, not extra multipliers over the September headline.
+Worst absolute error is 9.96e-6. Shapes 8 and 9 are slightly slower (0.6% and
+0.4%), and the small-shape repeat above is preserved with its earlier source hash.
+The median of the 13 paired improvements is 1.012×, not the 2.20× of shape 6.
+
+On the 32,768-token irregular-padding case (1,024 valid tokens per row), the
+current model uses 93.5 MB peak additional tensor allocation, compared with an
+8.59 GB theoretical dense bias in the old implementation. Valid outputs pass
+against an independent compact-sequence reference (`max_abs=1.43e-6`) and
+invalid positions are zero. The medium padded comparison in the initial logs
+measured memory after warmup, excluding persistent graph allocations; those
+memory columns must not be used as a total-footprint comparison.
+
+The corrected audit (`results/runtime_memory.json`) measures from before the
+first forward, excluding only the comparison's own temporary tensors. On the
+4×512×128 padded case it records 22.27 MB vs 9.43 MB peak extra allocation and
+2.603 vs 2.266 ms latency. This includes setup caches and persistent CUDA-graph
+allocations. Both implementations pass the official comparison rule.
+The final full-process sweep records a higher previous-model setup peak
+(316.85 MB) while the current packed path remains 9.43 MB. The dedicated and
+full-sweep contexts are retained separately; the old peak is not a constant
+independent of the surrounding run.
+
+The final-code full-length capacity audit (`results/runtime_shape14.json`)
+records one cold fp16 forward at 157.57 s and 14.37 GB peak allocation. All
+outputs are finite. An independent fp32 reference on the same original weights
+checks the first batch's first 512 causal outputs: zero failing elements under
+the official OR gate, `max_abs=0.0021081` (some pass via relative tolerance).
+No numerical equivalence is claimed for the remaining full-length outputs,
+and this single cold timing is not comparable to the historical steady median.
+
+Local regression tests: 51 passed, 1 CUDA-only test skipped. CPU smoke checks
+also pass the 12 CPU-feasible official shapes and two padded cases. The cloud
+audit separately validates graph ownership and mutation/invalidation contracts.
+
+## 10. Follow-up kernel audit (2026-10-09)
+
+The next experiment series refreshes profiling of the actual compensated-GEMM
+path. Shape 8 is 80.2% GEMM time; shape 13 is 69.8% attention time. The previous
+SGEMM profile is not used to infer these current shares.
+
+An opt-in, zero-workspace cuBLASLt algorithm search preserves FP32 accumulation
+and output. Its first public-forward integration reduces shape-8 event latency
+from 71.74 to 67.07 ms, with both models using owned-output CUDA Graphs; wall
+latency confirms 72.07 to 67.26 ms. All 13 FP32 shapes pass three input trials,
+worst absolute error 1.17e-5. This is a paired per-shape result, not an extra
+all-shape multiplier. Default dispatch remains PyTorch; building a native
+extension and tuning its algorithms are explicit opt-in setup costs.
+
+An independent final-code T4 session confirms 77.71 → 72.10 ms CUDA-event
+latency and 78.63 → 72.43 ms synchronized wall latency, with three rotated
+paired rounds. All 13 FP32 shapes pass three inputs again, worst error 1.17e-5.
+Every recorded core-source hash matches the implementation.
+
+Inductor's C++ wrapper was built after repairing Kaggle's missing development
+linker name in a private directory, without changing system libraries. It
+beats the compiler's Python wrapper but not the established manual graph.
+Bulk native parameter metadata reads also lose once traversal, binding and
+key reconstruction are included. Neither becomes a default dependency.
+
+A separate guarded adapter tests a pinned third-party Turing attention backend
+only for native-FP16 causal inference. It checks dtype, shape, device,
+head-width and stream assumptions, makes packed QKV views fully contiguous,
+and falls back on unsupported cases. The FP32 grading path is not downcast.
+Full native-FP16 backend agreement, feasible original-FP32 causal-prefix checks,
+and full-length timings are separate evidence categories, not interchangeable
+accuracy claims.
+
+The isolated integration candidate's full shape-14 paired experiment records
+three steady SDPA forwards at 138.1881/138.6050/137.9473 seconds and three
+Turing forwards at 77.8718/77.1328/77.1079 seconds. Median latency falls
+138.19 → 77.13 seconds (1.7916× throughput, 44.2% less time), including layout
+copies. Setup/build and first forwards are separate. Both record 14.604 GB
+peak GPU allocation in the shared two-model process, not the older
+single-model memory protocol.
+
+All 3,276,800,000 outputs are finite; full agreement with native-FP16 SDPA
+has zero OR-gate failures (max absolute error 0.0078125). The independent
+original-FP32 first-batch 512-token prefix also passes (max error 0.0055175).
+There is no full original-FP32 equivalence claim. Candidate evidence is in
+`results/next/flash-candidate/`; its JSON is recovered from the final printed
+cloud-log payload, with an explicit provenance receipt.
+
+A separate session verifies the actual production adapter on the final core
+source. All 3.277 billion outputs pass native-FP16 SDPA equivalence, the original
+FP32 causal prefix passes, and 73 actual adapter calls are recorded. Nine probes
+cover head widths 64/96/128 and three seeds each. This is a cold verification
+pair only (SDPA 188.12 s, adapter 120.26 s), not another steady-state speedup;
+it is not pooled with the three-round candidate timing. Final local checks are
+72 passed, one CUDA-only skip, plus all CPU-feasible official shapes and two
+padded smoke cases. All recorded final core hashes match the implementation.
+
+Exact methods, raw logs, repaired/invalid trials and primary-source links are in
+[`docs/NEXT_OPTIMIZATION_AUDIT.md`](../docs/NEXT_OPTIMIZATION_AUDIT.md). Earlier
+reported results and the frozen submission are retained unchanged.
+
+## 11. Clean repository release verification (2026-10-09)
+
+A fresh T4 session clones an exact GitHub commit and normally imports the real
+benchmark/model/kernel modules. The current FP32 baseline/default sweep passes
+all 13 shapes on three inputs each, maximum absolute error 9.8348e-6. Three
+rotated steady rounds give an unweighted median shape speedup of **3.546×**.
+First public-forward costs and cold/steady memory peaks are separate; memory
+workers isolate one model per process rather than retaining comparison models.
+These results are not pooled with the September headline.
+
+The normal-import wide-QKV Lt gate confirms **91.77 → 86.12 ms** event latency,
+**91.97 → 86.42 ms** synchronized wall, zero original-reference failures and a
+36.80-second first call. Its dependency/setup cost and narrow geometry keep it
+opt-in. Seven FP32 attention layout/dispatch candidates all pass accuracy but
+lose end-to-end: current 66.53 ms, alternatives 67.48–70.94 ms in the paired
+eager experiment. No new layout becomes a default.
+
+Exact protocols and failed-instrumentation repairs are documented in
+[`docs/RELEASE_VERIFICATION.md`](../docs/RELEASE_VERIFICATION.md). JSON, exact
+launchers, raw normalized logs and independent file hashes are retained in
+`results/next/release-fp32/` and `results/next/release-attention/`.
+
+The production Turing adapter also finishes a separate normal-import steady
+gate: SDPA rounds 171.4410/172.2202/170.8376 seconds, adapter rounds
+92.3080/94.3196/95.0371 seconds. Median latency is **171.44 → 94.32 s**, **1.818×**.
+Its 618.26-second build and 156.18/95.07-second cold calls are not in those
+medians. All 3.277 billion outputs pass native-FP16 SDPA equivalence, every
+complete output is finite, and the independent original-FP32 causal prefix
+passes. The 256 adapter calls prove the opt-in kernel executes. Shared-process
+steady peak is 13.601 GiB. This remains a native-FP16 result, not a full-original-
+FP32 grading claim. Earlier isolated-candidate timing is not pooled with it.
+Both sides are eager with compile/graphs disabled and batch chunks of one;
+these are synchronized wall timings to isolate the attention backend, not an
+autotuned-native-SDPA comparison or a separate CUDA-event series.
+
+The [unified generated table](../results/next/clean_release_summary.md) includes
+all successful release results and is checked against the source JSON by tests.
+
+## 12. Reproducibility, startup cost and focused workspace audit
+
+Two additional normal-import T4 sessions at exact commit `38e191d9ba1778b7f837b790f79abe941ee98c66`
+match all nine production-core hashes. Session median speedups are
+3.546× / 2.801× / 2.875×. The median of per-shape paired ratios over all three,
+then the median over shapes, is **2.875×**. All **117** original-FP32 checks pass,
+max error 9.8348e-6. Observed session ranges are published rather than using the
+best session as a reproducibility claim. Historical Torch 2.10 results are not
+pooled with this Torch 2.11 protocol.
+
+The new explicit `quick` CLI profile uses eager FP32 GEMMs + SDPA with no
+Inductor/manual-graph/native-build/Triton startup; `steady` retains the shipped
+dispatch. Each verifies strict weight compatibility and three deterministic
+inputs. Fresh-child profile measurements separate first public forward from
+steady-wall latency and estimate how many forwards amortize setup. Process
+imports and environment CUDA initialization are excluded from first-forward
+timing. The one-command runner never upgrades or installs dependencies.
+All **78** profile/input comparisons pass; first public forwards are
+**0.054–0.826 s** for quick versus **6.75–30.23 s** for steady. Shape 8's
+0.197/11.85-second first calls and 122.14/82.35-ms steady wall imply an
+approximate 294-call setup crossover under this protocol.
+
+A targeted wide-QKV pilot tries five workspace budgets and includes
+scratch allocation and public-forward overhead. It allocated the whole budget,
+not the selected algorithm's actual requirement. Its 2.57% isolated paired
+improvement is retained as a pilot, not used as the final adoption decision.
+A fresh confirmation at commit `c00bc91d711f0c7502883d5693e39f5d0e9cdc17`
+allocates only the actual selected `workspaceSize`: all 21 input/variant checks
+pass, but every experimental budget loses to existing opt-in Lt
+(91.24 ms vs 93.22–97.07 ms event). No provider clears the predeclared
+5%-on-both-metrics gate or is promoted. Core files and the frozen submission remain
+unchanged. See the [generated combined report](../results/next/usability_summary.md)
+and [methods](../docs/RELEASE_VERIFICATION.md).
+
+## 13. Balanced runtime, recovery, dispatch hints and rejected FFN fusion
+
+The next maintained revision (`c8fe1cf7807d5633a1b75773d2ab03461318cb22`)
+adds an explicit balanced CLI profile, one-time dispatch re-selection after
+weight/norm changes and opt-in source/environment/layout-keyed JSON hints.
+It keeps FP32 input/output, compensated tensor-core GEMMs, FP32 SDPA, exact
+GELU and strict reference parameter compatibility. No graph pointers, outputs
+or compiled functions are serialized; cache hits recapture and validate against
+fresh eager output. Existing direct-model and CLI defaults are unchanged.
+
+A clean normal-import T4 sweep passes **234/234** profile/input checks across
+13 shapes. Balanced skips Inductor, reducing first public-forward cost to
+**3.707–6.404 s**, versus steady **10.609–34.542 s** under empty per-mode
+compiler caches. These are not total application startup costs. Its strict
+performance gate clears **12/13** shapes; shape 2 has **+6.95% wall time**.
+A new T4 session repeats that shape with three fresh processes, three paired
+rounds of 200 calls and all 27 additional accuracy checks passing: **2/3**
+comparisons meet the steady gate, while one has **+3.63% event time**. Both
+misses remain published; balanced stays opt-in rather than becoming a default.
+
+Real graph contracts pass in two sessions, including weight recovery, stable
+weights, masks, owned outputs and sequential alternate-stream use. Cache hits
+save an observed **23.5 / 71.4 ms** first-forward cost against warmed uncached
+controls, with no steady-throughput win established. Concurrent calls on one
+mutable graph instance are not claimed.
+
+A fresh shape-6 profile motivates four FFN GEMM + exact-GELU + operand-split
+fusion variants. All 15 variant/input checks pass, but each is slower than
+the baseline (**647.95 ms** versus **1117.71–4631.51 ms** event latency).
+None is promoted. Negative results, exact launchers, raw logs and source hashes
+are included in the [generated audit](../results/next/improvements_summary.md);
+this revision's single-session figures do not replace earlier independent
+three-session results or the frozen competition submission.
+
+A separate fresh-checkout portfolio-full T4 session at the same `c8fe1cf` sources
+passes 234/234 profile/input checks and 13/13 startup/steady gates. First public
+forwards are 3.998–8.016 s for balanced versus 11.220–37.740 s for steady,
+with the same setup exclusions. Its [separate generated report](../results/next/portfolio_runtime_summary.md)
+retains cache controls and GPU recovery contracts. It does not replace the
+12/13 full-sweep gate or the targeted repeat's 2/3 comparisons above; the
+variation supports keeping balanced opt-in rather than claiming a universal win.

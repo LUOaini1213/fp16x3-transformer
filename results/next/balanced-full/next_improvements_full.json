@@ -1,0 +1,4994 @@
+{
+  "metadata": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "capability": [
+      7,
+      5
+    ],
+    "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]",
+    "git_commit": "c8fe1cf7807d5633a1b75773d2ab03461318cb22",
+    "source_manifest": {
+      "user_optimized.py": "c43450b4e8e8b334256acb59bd3b13fe438e33419449012826f4d53729b38434",
+      "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e",
+      "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8",
+      "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01",
+      "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304",
+      "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32",
+      "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983",
+      "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360",
+      "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee",
+      "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb",
+      "scripts/build_clean_kaggle.py": "6f368e252c01eca22afbe8dda4cc1ec4658c9e1d3d5b8a494618026b144f4e81",
+      "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23",
+      "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d",
+      "scripts/run.py": "e408a4ebc4931c4a64d2e815ea32cdcc30caac1f6e08936b8573a1521abf3f76",
+      "scripts/benchmark_improvements.py": "4ecf4cf6f3d8e567e5b1cebb7d673392ecbb87c1cabdc5f722ba5f055780adcb",
+      "kernels/dispatch_cache.py": "486bdbe8fba3a91acdca279b1c060f7d33fc20b7024b253ac07126705b1d97e2",
+      "kernels/ffn_fusion.py": "07833649812e079983d5c2c14131f1ce686a754c9d964e573ec45ed658c540a3"
+    },
+    "normal_imports": {
+      "official": "/tmp/track3-clean-dlefqjyv/repository/torch_transformer_benchmark.py",
+      "production": "/tmp/track3-clean-dlefqjyv/repository/user_optimized.py"
+    },
+    "protocol": "Source-pinned T4 validation: profiles, cache/recovery contracts, FFN fusion.\n\nCold profiles have separate empty compiler directories. Cache-hit and uncached\ncontrols share warmed compiler directories but run in fresh processes. Neither\ntiming includes Python imports/context probes. Production defaults are unchanged.\n",
+    "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold",
+    "clean_checkout": true
+  },
+  "results": [
+    {
+      "shape": 1,
+      "cold": {
+        "quick": {
+          "shape": 1,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.1770276150000143,
+          "steady_wall_ms": 8.111629000012499,
+          "steady_wall_samples_ms": [
+            8.12089900000501,
+            8.123914000009336,
+            8.113320000006752,
+            8.137167000001,
+            8.109938000018246,
+            8.09723100002202,
+            8.102009000026555,
+            8.115964000012355,
+            8.077351999986604,
+            8.103581000000304
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.1920928955078125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 1,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 5.854523465,
+          "steady_wall_ms": 3.622548500004541,
+          "steady_wall_samples_ms": [
+            3.6422880000088753,
+            3.6116000000276927,
+            3.633731000007856,
+            3.6161629999753586,
+            3.6107670000262715,
+            3.6174049999999625,
+            3.604154000015569,
+            3.6276920000091195,
+            3.7120700000059514,
+            3.655992000005881
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 1,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 15.174921218000009,
+          "steady_wall_ms": 3.4612354999978834,
+          "steady_wall_samples_ms": [
+            3.3778510000104234,
+            3.3662680000077216,
+            3.3671060000131092,
+            3.3889050000084353,
+            3.3868740000002617,
+            3.536127000018041,
+            3.546342000021241,
+            3.537810000011632,
+            3.553836000008914,
+            3.5335659999873315
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 1,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              9.727744102478027,
+              9.731056213378906,
+              9.693039894104004
+            ],
+            "wall_round_ms": [
+              9.656826200000523,
+              9.632673850001083,
+              9.658181399998966
+            ],
+            "event_ms": 9.727744102478027,
+            "wall_ms": 9.656826200000523
+          },
+          "quick": {
+            "event_round_ms": [
+              4.941087961196899,
+              5.036703824996948,
+              4.95196795463562
+            ],
+            "wall_round_ms": [
+              4.91677750000008,
+              4.956978699999581,
+              4.932962800000951
+            ],
+            "event_ms": 4.95196795463562,
+            "wall_ms": 4.932962800000951
+          },
+          "balanced": {
+            "event_round_ms": [
+              3.441696047782898,
+              3.429136037826538,
+              3.460863947868347
+            ],
+            "wall_round_ms": [
+              3.4873349999998027,
+              3.4972310499995274,
+              3.5269627499985745
+            ],
+            "event_ms": 3.441696047782898,
+            "wall_ms": 3.4972310499995274
+          },
+          "steady": {
+            "event_round_ms": [
+              3.48580801486969,
+              3.466032028198242,
+              3.4971519708633423
+            ],
+            "wall_round_ms": [
+              3.4973072500008584,
+              3.5122626499997978,
+              3.5241704000014806
+            ],
+            "event_ms": 3.48580801486969,
+            "wall_ms": 3.5122626499997978
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.20921276899997565,
+          "quick": 0.02308612800004539,
+          "balanced": 3.9245743879999964,
+          "steady": 7.656119942999965
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 2,
+      "cold": {
+        "steady": {
+          "shape": 2,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 10.681170743999985,
+          "steady_wall_ms": 0.730478000008361,
+          "steady_wall_samples_ms": [
+            0.7745180000142682,
+            0.7651339999483753,
+            0.7334870000477167,
+            0.7350019999989854,
+            0.7274689999690054,
+            0.701859000002969,
+            0.7181540000260611,
+            0.7233310000174242,
+            0.7469720000017332,
+            0.710448000006636
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 2,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 3.8833172910000258,
+          "steady_wall_ms": 0.7007900000246536,
+          "steady_wall_samples_ms": [
+            0.7173239999929137,
+            0.6999990000053913,
+            0.7106760000397117,
+            0.701581000043916,
+            0.7088639999892621,
+            0.6856489999904625,
+            0.7042610000098648,
+            0.6895500000041466,
+            0.6823639999993247,
+            0.6842450000021927
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 2,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.060423009999965416,
+          "steady_wall_ms": 1.2639750000005279,
+          "steady_wall_samples_ms": [
+            1.3308620000316296,
+            1.2752370000157498,
+            1.180373000011059,
+            1.1872500000436048,
+            1.1997480000331961,
+            1.2200630000052115,
+            1.2655240000185586,
+            1.2624259999824972,
+            1.285211000038089,
+            1.2876659999960793
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 9.5367431640625e-07
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 7.152557373046875e-07
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 2,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 9.5367431640625e-07,
+            "failed": 0,
+            "elements": 16384,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 16384,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 16384,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 9.5367431640625e-07,
+            "failed": 0,
+            "elements": 16384,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 16384,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 16384,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 7.152557373046875e-07,
+            "failed": 0,
+            "elements": 16384,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 16384,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 16384,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              3.0891520977020264,
+              3.0982398986816406,
+              2.9967041015625
+            ],
+            "wall_round_ms": [
+              2.9806705500021735,
+              2.9274351999987402,
+              2.933126049998691
+            ],
+            "event_ms": 3.0891520977020264,
+            "wall_ms": 2.933126049998691
+          },
+          "quick": {
+            "event_round_ms": [
+              1.3914240002632141,
+              1.2852479815483093,
+              1.2883519530296326
+            ],
+            "wall_round_ms": [
+              1.2404777999989847,
+              1.2581121500005565,
+              1.2785474999986945
+            ],
+            "event_ms": 1.2883519530296326,
+            "wall_ms": 1.2581121500005565
+          },
+          "balanced": {
+            "event_round_ms": [
+              0.5402719974517822,
+              0.37596800923347473,
+              0.374783992767334
+            ],
+            "wall_round_ms": [
+              0.549435199999948,
+              0.38458989999980986,
+              0.41175874999908046
+            ],
+            "event_ms": 0.37596800923347473,
+            "wall_ms": 0.41175874999908046
+          },
+          "steady": {
+            "event_round_ms": [
+              0.5426720082759857,
+              0.37750400602817535,
+              0.3760639876127243
+            ],
+            "wall_round_ms": [
+              0.549993699999618,
+              0.38499114999979156,
+              0.3837091500002998
+            ],
+            "event_ms": 0.37750400602817535,
+            "wall_ms": 0.38499114999979156
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.1966946609999809,
+          "quick": 0.01787566699999843,
+          "balanced": 2.1361604770000326,
+          "steady": 6.298025576000043
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 3,
+      "cold": {
+        "quick": {
+          "shape": 3,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.05581688600000234,
+          "steady_wall_ms": 1.3418759999979102,
+          "steady_wall_samples_ms": [
+            1.3648670000065977,
+            1.3916279999648395,
+            1.3188849999892227,
+            1.231583999981467,
+            1.3163940000140428,
+            1.4071100000023762,
+            1.3694030000124258,
+            1.3724589999810632,
+            1.2931670000284612,
+            1.2295050000261654
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 9.5367431640625e-07
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 3,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 3.7992425509999634,
+          "steady_wall_ms": 0.9836264999876221,
+          "steady_wall_samples_ms": [
+            1.0360109999965061,
+            0.9853880000036952,
+            0.9787420000293423,
+            0.981864999971549,
+            0.9864859999879627,
+            0.9740560000182086,
+            0.9806409999555399,
+            0.9768259999987094,
+            1.008846999980051,
+            1.0107100000027458
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.9073486328125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 3,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 10.723868406000008,
+          "steady_wall_ms": 1.0203530000012506,
+          "steady_wall_samples_ms": [
+            1.034038000000237,
+            1.018048999981147,
+            1.007619999995768,
+            1.0151079999900503,
+            1.0262559999887344,
+            1.0205739999946672,
+            1.020132000007834,
+            1.0246140000162995,
+            1.0263319999808118,
+            1.0145010000428556
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.9073486328125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 3,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 9.5367431640625e-07,
+            "failed": 0,
+            "elements": 65536,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 65536,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 65536,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 9.5367431640625e-07,
+            "failed": 0,
+            "elements": 65536,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 65536,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 65536,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 9.5367431640625e-07,
+            "failed": 0,
+            "elements": 65536,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 65536,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 65536,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              3.082240104675293,
+              2.999295949935913,
+              3.0229440927505493
+            ],
+            "wall_round_ms": [
+              3.4960243000000446,
+              2.918160350000676,
+              3.061173899999403
+            ],
+            "event_ms": 3.0229440927505493,
+            "wall_ms": 3.061173899999403
+          },
+          "quick": {
+            "event_round_ms": [
+              1.3720479607582092,
+              1.3281760215759277,
+              1.3138880133628845
+            ],
+            "wall_round_ms": [
+              1.346109450000199,
+              1.2649855000006482,
+              1.3120364499997095
+            ],
+            "event_ms": 1.3281760215759277,
+            "wall_ms": 1.3120364499997095
+          },
+          "balanced": {
+            "event_round_ms": [
+              0.8315680027008057,
+              0.48681600391864777,
+              0.3999039977788925
+            ],
+            "wall_round_ms": [
+              0.8407783499990273,
+              0.49412759999825084,
+              0.4084660000017948
+            ],
+            "event_ms": 0.48681600391864777,
+            "wall_ms": 0.49412759999825084
+          },
+          "steady": {
+            "event_round_ms": [
+              0.8314560055732727,
+              0.48396800458431244,
+              0.3989280015230179
+            ],
+            "wall_round_ms": [
+              0.8405409999994617,
+              0.49843044999988706,
+              0.40868204999924274
+            ],
+            "event_ms": 0.48396800458431244,
+            "wall_ms": 0.49843044999988706
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.20211163400000487,
+          "quick": 0.01737281300000859,
+          "balanced": 1.4602687380000248,
+          "steady": 5.601291071999981
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 4,
+      "cold": {
+        "steady": {
+          "shape": 4,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 10.818051392999962,
+          "steady_wall_ms": 1.9553305000101773,
+          "steady_wall_samples_ms": [
+            1.951658999985284,
+            1.938377000044511,
+            1.9604340000114462,
+            1.9690350000018952,
+            1.9341459999964172,
+            1.9424949999802266,
+            1.9590020000350705,
+            1.9699180000429806,
+            1.9263620000060655,
+            1.9653080000239243
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.9073486328125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.7881393432617188e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 4,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 3.877689253000028,
+          "steady_wall_ms": 1.906141500001013,
+          "steady_wall_samples_ms": [
+            1.9076119999681396,
+            1.9046710000338862,
+            1.8811589999927492,
+            1.8877449999763485,
+            1.870520000011311,
+            1.9138650000058988,
+            1.9110429999500411,
+            1.9097399999736808,
+            1.9397959999878367,
+            1.8998979999764742
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.9073486328125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.7881393432617188e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 4,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.05686063100000638,
+          "steady_wall_ms": 2.6835969999865483,
+          "steady_wall_samples_ms": [
+            2.693077000003541,
+            2.684446999978718,
+            2.6895160000321994,
+            2.6709179999784283,
+            2.679454999963582,
+            2.675855000006777,
+            2.6827469999943787,
+            2.6721700000393867,
+            2.6888149999990674,
+            2.696229000036965
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.1920928955078125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 4,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 1.7881393432617188e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 1.7881393432617188e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 9.5367431640625e-07,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              3.5100640058517456,
+              3.853551983833313,
+              3.190448045730591
+            ],
+            "wall_round_ms": [
+              3.1283767000019225,
+              4.8908435000015515,
+              3.0488027999979295
+            ],
+            "event_ms": 3.5100640058517456,
+            "wall_ms": 3.1283767000019225
+          },
+          "quick": {
+            "event_round_ms": [
+              1.358847975730896,
+              1.4339999556541443,
+              1.378928005695343
+            ],
+            "wall_round_ms": [
+              1.3332044999998516,
+              1.5085158499999807,
+              1.3777112000013858
+            ],
+            "event_ms": 1.378928005695343,
+            "wall_ms": 1.3777112000013858
+          },
+          "balanced": {
+            "event_round_ms": [
+              0.8814400136470795,
+              0.8783360123634338,
+              0.8110719919204712
+            ],
+            "wall_round_ms": [
+              0.9318104499982383,
+              0.9146338999983072,
+              0.8514071999996986
+            ],
+            "event_ms": 0.8783360123634338,
+            "wall_ms": 0.9146338999983072
+          },
+          "steady": {
+            "event_round_ms": [
+              0.925823986530304,
+              0.9163359999656677,
+              0.904015988111496
+            ],
+            "wall_round_ms": [
+              0.9412913999994998,
+              0.9359196499985956,
+              0.9681014999983972
+            ],
+            "event_ms": 0.9163359999656677,
+            "wall_ms": 0.9412913999994998
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.2001901439999756,
+          "quick": 0.018877416999998786,
+          "balanced": 1.4714811160000068,
+          "steady": 5.65184137
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 5,
+      "cold": {
+        "quick": {
+          "shape": 5,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.06878577499998073,
+          "steady_wall_ms": 14.679704499968693,
+          "steady_wall_samples_ms": [
+            14.767589999962638,
+            14.768195999977252,
+            14.77022000000261,
+            14.751408999984505,
+            14.7628720000057,
+            14.607999999952881,
+            10.473531999991792,
+            10.296319000019594,
+            10.229764999962754,
+            10.068486000022858
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.1920928955078125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 5,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 3.9866989289999992,
+          "steady_wall_ms": 7.42364499998871,
+          "steady_wall_samples_ms": [
+            7.36700199996676,
+            7.373723999990034,
+            7.344009000007645,
+            7.458270999961769,
+            7.447672000012062,
+            7.446263000019826,
+            7.426710999993702,
+            7.457955999996102,
+            7.420578999983718,
+            7.369826999990892
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 5,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 11.262176012999987,
+          "steady_wall_ms": 7.45878250000942,
+          "steady_wall_samples_ms": [
+            7.710379000002376,
+            7.6472439999974995,
+            7.494177000012314,
+            7.456442000034258,
+            7.461122999984582,
+            7.451215000003231,
+            7.461388999956853,
+            7.416104000014911,
+            7.416809999995166,
+            7.445302999997239
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 5,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 2097152,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 2097152,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 2097152,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 2097152,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 2097152,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 2097152,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 2097152,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 2097152,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 2097152,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              19.10734462738037,
+              19.141200065612793,
+              19.279888153076172
+            ],
+            "wall_round_ms": [
+              19.09772445000044,
+              19.19696644999931,
+              19.267968150001025
+            ],
+            "event_ms": 19.141200065612793,
+            "wall_ms": 19.19696644999931
+          },
+          "quick": {
+            "event_round_ms": [
+              10.153823852539062,
+              10.192512035369873,
+              9.969648361206055
+            ],
+            "wall_round_ms": [
+              10.13677644999973,
+              10.1071034499995,
+              10.136382849998427
+            ],
+            "event_ms": 10.153823852539062,
+            "wall_ms": 10.136382849998427
+          },
+          "balanced": {
+            "event_round_ms": [
+              7.275920152664185,
+              7.317183971405029,
+              7.35865592956543
+            ],
+            "wall_round_ms": [
+              7.338662500001192,
+              7.346475399998553,
+              7.3504113499978985
+            ],
+            "event_ms": 7.317183971405029,
+            "wall_ms": 7.346475399998553
+          },
+          "steady": {
+            "event_round_ms": [
+              7.310335874557495,
+              7.326591968536377,
+              7.353584051132202
+            ],
+            "wall_round_ms": [
+              7.327116299998693,
+              7.370522299999038,
+              7.324997649999432
+            ],
+            "event_ms": 7.326591968536377,
+            "wall_ms": 7.327116299998693
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.2123086599999624,
+          "quick": 0.02763429500004122,
+          "balanced": 1.6475609070000132,
+          "steady": 6.190525461999982
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 6,
+      "cold": {
+        "steady": {
+          "shape": 6,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 34.54212846399997,
+          "steady_wall_ms": 641.9128905000093,
+          "steady_wall_samples_ms": [
+            635.3055760000075,
+            641.8970430000286,
+            642.3199660000023,
+            633.3002450000436,
+            646.415807999972,
+            642.6901749999843,
+            634.1966120000393,
+            646.595919000049,
+            641.9287379999901,
+            634.0513220000048
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.86102294921875e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.6226043701171875e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.86102294921875e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.384185791015625e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 6,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 4.084386757000004,
+          "steady_wall_ms": 602.8196194999396,
+          "steady_wall_samples_ms": [
+            601.4767399999528,
+            597.3354710000649,
+            601.3787619999675,
+            603.5331619999624,
+            602.1060769999167,
+            598.7458200000901,
+            604.45292899999,
+            610.1538619999474,
+            606.4154140000255,
+            607.259835999912
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.86102294921875e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.6226043701171875e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.86102294921875e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.384185791015625e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 6,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.8616307190000043,
+          "steady_wall_ms": 794.8684020000201,
+          "steady_wall_samples_ms": [
+            797.897005999971,
+            794.4684160000861,
+            790.8319680000204,
+            793.9874600000394,
+            793.995028999916,
+            793.0046430000175,
+            799.0869149999753,
+            797.2330869999951,
+            795.268387999954,
+            795.6177849999904
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.6689300537109375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.6689300537109375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.6689300537109375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.6689300537109375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 6,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 1.6689300537109375e-06,
+            "failed": 0,
+            "elements": 163840000,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 2.6226043701171875e-06,
+            "failed": 0,
+            "elements": 163840000,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 2.6226043701171875e-06,
+            "failed": 0,
+            "elements": 163840000,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 1.6689300537109375e-06,
+            "failed": 0,
+            "elements": 163840000,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 2.86102294921875e-06,
+            "failed": 0,
+            "elements": 163840000,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 2.86102294921875e-06,
+            "failed": 0,
+            "elements": 163840000,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 1.6689300537109375e-06,
+            "failed": 0,
+            "elements": 163840000,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 2.384185791015625e-06,
+            "failed": 0,
+            "elements": 163840000,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 2.384185791015625e-06,
+            "failed": 0,
+            "elements": 163840000,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              1482.1038208007812,
+              1494.7317504882812,
+              1493.9012451171875
+            ],
+            "wall_round_ms": [
+              1480.5438175000063,
+              1492.1918946666701,
+              1492.471036999992
+            ],
+            "event_ms": 1493.9012451171875,
+            "wall_ms": 1492.1918946666701
+          },
+          "quick": {
+            "event_round_ms": [
+              790.9007568359375,
+              792.7989196777344,
+              794.4516906738281
+            ],
+            "wall_round_ms": [
+              791.6311661666668,
+              793.6078655000074,
+              792.9781885000011
+            ],
+            "event_ms": 792.7989196777344,
+            "wall_ms": 792.9781885000011
+          },
+          "balanced": {
+            "event_round_ms": [
+              599.4931030273438,
+              602.3125610351562,
+              606.9778442382812
+            ],
+            "wall_round_ms": [
+              600.73171483333,
+              605.0917948333373,
+              605.4690604999943
+            ],
+            "event_ms": 602.3125610351562,
+            "wall_ms": 605.0917948333373
+          },
+          "steady": {
+            "event_round_ms": [
+              601.9860534667969,
+              602.8911743164062,
+              607.3311462402344
+            ],
+            "wall_round_ms": [
+              601.4159178333216,
+              606.4235408333426,
+              607.9611630000082
+            ],
+            "event_ms": 602.8911743164062,
+            "wall_ms": 606.4235408333426
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 1.5694973130000562,
+          "quick": 0.7918470509999906,
+          "balanced": 1.9399981090000438,
+          "steady": 31.11720426699992
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": false,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": false,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 7,
+      "cold": {
+        "quick": {
+          "shape": 7,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.059035197000071093,
+          "steady_wall_ms": 4.585946499958027,
+          "steady_wall_samples_ms": [
+            4.594810999947185,
+            4.589559999999437,
+            4.579269000032582,
+            4.585909999946125,
+            4.579437999950642,
+            4.603922999990573,
+            4.57301600010851,
+            4.598266000016338,
+            4.585982999969929,
+            4.578253999966364
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.1920928955078125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.5367431640625e-07
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 7,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 3.859903632000055,
+          "steady_wall_ms": 2.545007499975327,
+          "steady_wall_samples_ms": [
+            2.5516619999734758,
+            2.5545629999896846,
+            2.5523269999894183,
+            2.5692090000575263,
+            2.5118469999370063,
+            2.5386840000010125,
+            2.531692999923507,
+            2.540053999950942,
+            2.5214120000782714,
+            2.549960999999712
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.430511474609375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 7,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 10.608764460999964,
+          "steady_wall_ms": 1.7355585000018436,
+          "steady_wall_samples_ms": [
+            1.766479000025356,
+            1.7355510000243157,
+            1.7355659999793716,
+            1.7291659999045805,
+            1.7487410000285308,
+            1.7440739999301513,
+            1.7185870000275827,
+            1.716364000003523,
+            1.7210709999062601,
+            1.7538160000185599
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.430511474609375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 7,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 9.5367431640625e-07,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 9.5367431640625e-07,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              6.331232070922852,
+              6.29145622253418,
+              6.259664058685303
+            ],
+            "wall_round_ms": [
+              6.243050949996132,
+              6.2418662000027325,
+              6.255096699999285
+            ],
+            "event_ms": 6.29145622253418,
+            "wall_ms": 6.243050949996132
+          },
+          "quick": {
+            "event_round_ms": [
+              2.329424023628235,
+              2.3351359367370605,
+              2.301919937133789
+            ],
+            "wall_round_ms": [
+              2.216011749999325,
+              2.219468049997886,
+              2.209841650000044
+            ],
+            "event_ms": 2.329424023628235,
+            "wall_ms": 2.216011749999325
+          },
+          "balanced": {
+            "event_round_ms": [
+              1.1449919939041138,
+              1.140895962715149,
+              1.2205920219421387
+            ],
+            "wall_round_ms": [
+              1.2250224499950946,
+              1.2064669499977754,
+              1.243317749998596
+            ],
+            "event_ms": 1.1449919939041138,
+            "wall_ms": 1.2250224499950946
+          },
+          "steady": {
+            "event_round_ms": [
+              1.2439200282096863,
+              1.2695519924163818,
+              1.2439200282096863
+            ],
+            "wall_round_ms": [
+              1.2537685999973291,
+              1.277480400000286,
+              1.2531222999996317
+            ],
+            "event_ms": 1.2439200282096863,
+            "wall_ms": 1.2537685999973291
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.20563612299997658,
+          "quick": 0.01994072699994831,
+          "balanced": 2.1626539710000543,
+          "steady": 6.4832263580000244
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 8,
+      "cold": {
+        "steady": {
+          "shape": 8,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 14.385300403999963,
+          "steady_wall_ms": 85.81323850000899,
+          "steady_wall_samples_ms": [
+            87.2734690000243,
+            85.7196209999529,
+            83.91551900001559,
+            86.90503799994076,
+            87.38866999999573,
+            84.26392399996985,
+            84.38031300011062,
+            86.93990500000837,
+            85.88115500003823,
+            85.74532199997975
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 9.834766387939453e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.834766387939453e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 8.821487426757812e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 8.556991815567017e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 8,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 6.4039507219999905,
+          "steady_wall_ms": 87.40669299999126,
+          "steady_wall_samples_ms": [
+            87.52433500001189,
+            86.84750299994448,
+            85.43089600004805,
+            87.28905099997064,
+            87.63946900000974,
+            85.85045099994204,
+            88.70877300000757,
+            88.22231700003158,
+            85.75472799998352,
+            87.83525700005157
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 9.834766387939453e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 9.834766387939453e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 8.821487426757812e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 8.556991815567017e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 8,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.20024097500004245,
+          "steady_wall_ms": 128.6865254999725,
+          "steady_wall_samples_ms": [
+            128.9968859999817,
+            128.16523700007565,
+            128.1421930000306,
+            128.48922699993182,
+            128.12782899993636,
+            128.48645999997643,
+            128.8838240000132,
+            128.89216500002476,
+            129.13002599998435,
+            129.0638379999791
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.9073486328125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.6689300537109375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.6689300537109375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 8,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 1.6689300537109375e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 9.834766387939453e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 9.834766387939453e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 1.6689300537109375e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 8.821487426757812e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 8.821487426757812e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 8.556991815567017e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 8.556991815567017e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              148.85884857177734,
+              138.02635192871094,
+              135.11593627929688
+            ],
+            "wall_round_ms": [
+              150.34393800000316,
+              137.1344568999973,
+              135.08554360000176
+            ],
+            "event_ms": 138.02635192871094,
+            "wall_ms": 137.1344568999973
+          },
+          "quick": {
+            "event_round_ms": [
+              138.7343521118164,
+              131.14430236816406,
+              123.6253433227539
+            ],
+            "wall_round_ms": [
+              137.94245794999824,
+              129.771240849999,
+              123.9250881500027
+            ],
+            "event_ms": 131.14430236816406,
+            "wall_ms": 129.771240849999
+          },
+          "balanced": {
+            "event_round_ms": [
+              94.37990188598633,
+              89.12081527709961,
+              84.35445022583008
+            ],
+            "wall_round_ms": [
+              93.37670534999916,
+              88.02029159999734,
+              84.51614310000082
+            ],
+            "event_ms": 89.12081527709961,
+            "wall_ms": 88.02029159999734
+          },
+          "steady": {
+            "event_round_ms": [
+              92.55374526977539,
+              87.66534423828125,
+              85.0361442565918
+            ],
+            "wall_round_ms": [
+              91.59885125000073,
+              87.27191010000297,
+              85.09549369999831
+            ],
+            "event_ms": 87.66534423828125,
+            "wall_ms": 87.27191010000297
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.3186943630000769,
+          "quick": 0.14001995399996758,
+          "balanced": 4.947303057999989,
+          "steady": 10.418751465000014
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": false,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 9,
+      "cold": {
+        "quick": {
+          "shape": 9,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.06023053000001255,
+          "steady_wall_ms": 7.139873499966143,
+          "steady_wall_samples_ms": [
+            7.417184000019006,
+            7.4107990000129575,
+            7.380475000104525,
+            7.295194999983323,
+            7.113656000001356,
+            7.1277710000003935,
+            7.142715999975735,
+            7.137030999956551,
+            7.12649699994472,
+            7.113266999908774
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.430511474609375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.3113021850585938e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 9,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 3.9051158059999125,
+          "steady_wall_ms": 4.380434000040623,
+          "steady_wall_samples_ms": [
+            4.399328999966201,
+            4.4339319999835425,
+            4.372848000002705,
+            4.366308000044228,
+            4.372098999965601,
+            4.375073000005614,
+            4.385795000075632,
+            4.397943999947529,
+            4.587160000028234,
+            4.363947999991069
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.0265579223632812e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 9,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 11.097494457000039,
+          "steady_wall_ms": 3.1604119999997238,
+          "steady_wall_samples_ms": [
+            3.0423480000081327,
+            3.0852740000000267,
+            3.1252569999651314,
+            3.1661649999250585,
+            3.163232000019889,
+            3.1857580000860253,
+            3.1575919999795588,
+            3.15686999999798,
+            3.2699020000563905,
+            3.3171090000223558
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.0265579223632812e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 9,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 2.0265579223632812e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 2.0265579223632812e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 1.3113021850585938e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              6.37940788269043,
+              6.373455762863159,
+              6.54035210609436
+            ],
+            "wall_round_ms": [
+              6.356418450002366,
+              6.3521771000011995,
+              6.362439549997134
+            ],
+            "event_ms": 6.37940788269043,
+            "wall_ms": 6.356418450002366
+          },
+          "quick": {
+            "event_round_ms": [
+              4.934096097946167,
+              5.169695854187012,
+              4.927520036697388
+            ],
+            "wall_round_ms": [
+              4.94286015000398,
+              4.952671550000787,
+              4.929237049998392
+            ],
+            "event_ms": 4.934096097946167,
+            "wall_ms": 4.94286015000398
+          },
+          "balanced": {
+            "event_round_ms": [
+              3.2225600481033325,
+              3.189072012901306,
+              3.1883039474487305
+            ],
+            "wall_round_ms": [
+              3.341123199999174,
+              3.3307817999968847,
+              3.321370450004224
+            ],
+            "event_ms": 3.189072012901306,
+            "wall_ms": 3.3307817999968847
+          },
+          "steady": {
+            "event_round_ms": [
+              3.315168023109436,
+              3.288032054901123,
+              3.3113759756088257
+            ],
+            "wall_round_ms": [
+              3.295605450000494,
+              3.274625350002225,
+              3.323258449995592
+            ],
+            "event_ms": 3.3113759756088257,
+            "wall_ms": 3.295605450000494
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.20394505199999458,
+          "quick": 0.022835949999944205,
+          "balanced": 1.521048217999919,
+          "steady": 5.8040669890000345
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 10,
+      "cold": {
+        "steady": {
+          "shape": 10,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 10.78716393000002,
+          "steady_wall_ms": 3.2034140000405387,
+          "steady_wall_samples_ms": [
+            3.033430999948905,
+            3.0046340000353666,
+            3.1427070000518142,
+            3.2268989999693076,
+            3.2023900000694994,
+            3.204438000011578,
+            3.2056779999720675,
+            3.201241999931881,
+            3.340347999937876,
+            3.4728550000409086
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 10,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 3.831487132999996,
+          "steady_wall_ms": 3.4290764999695966,
+          "steady_wall_samples_ms": [
+            3.45308600003591,
+            3.4242819999690255,
+            3.462091000073997,
+            3.441447000000153,
+            3.419169000039801,
+            3.438069999901927,
+            3.4319289999302782,
+            3.424027999926693,
+            3.426224000008915,
+            3.4211749999712993
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 10,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.061884122999913416,
+          "steady_wall_ms": 7.2445100000209095,
+          "steady_wall_samples_ms": [
+            7.498176000012791,
+            7.495787999914683,
+            7.453147000092031,
+            7.220524999979716,
+            7.245458000056715,
+            7.248334999985673,
+            7.230935000052341,
+            7.243561999985104,
+            7.209662000036587,
+            7.235220999973535
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.430511474609375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 10,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              8.034160137176514,
+              8.058303833007812,
+              8.059936046600342
+            ],
+            "wall_round_ms": [
+              7.947432849999814,
+              7.961413499998571,
+              7.962329849999605
+            ],
+            "event_ms": 8.058303833007812,
+            "wall_ms": 7.961413499998571
+          },
+          "quick": {
+            "event_round_ms": [
+              4.897088050842285,
+              5.144432067871094,
+              4.997983932495117
+            ],
+            "wall_round_ms": [
+              4.996514250001383,
+              5.002706599998419,
+              5.0214277500003845
+            ],
+            "event_ms": 4.997983932495117,
+            "wall_ms": 5.002706599998419
+          },
+          "balanced": {
+            "event_round_ms": [
+              3.280911922454834,
+              3.2902239561080933,
+              3.2488160133361816
+            ],
+            "wall_round_ms": [
+              3.394331350000357,
+              3.3831120499996814,
+              3.3861147000038727
+            ],
+            "event_ms": 3.280911922454834,
+            "wall_ms": 3.3861147000038727
+          },
+          "steady": {
+            "event_round_ms": [
+              3.345423936843872,
+              3.380735993385315,
+              3.3729439973831177
+            ],
+            "wall_round_ms": [
+              3.347440100003496,
+              3.3769296500054224,
+              3.3869952999964426
+            ],
+            "event_ms": 3.3729439973831177,
+            "wall_ms": 3.3769296500054224
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.20434120700008407,
+          "quick": 0.0228217940000377,
+          "balanced": 1.5284796469999264,
+          "steady": 6.0095837329999995
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 11,
+      "cold": {
+        "quick": {
+          "shape": 11,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.06317207899996902,
+          "steady_wall_ms": 7.382187000018803,
+          "steady_wall_samples_ms": [
+            12.2696690000339,
+            12.212438999995356,
+            12.225689000047169,
+            11.220649000051708,
+            7.388601999991806,
+            7.375772000045799,
+            7.17826300001434,
+            7.1072929999900225,
+            7.123377999960212,
+            7.0772540000234585
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.430511474609375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 11,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 3.929391260999978,
+          "steady_wall_ms": 5.6914419999998245,
+          "steady_wall_samples_ms": [
+            5.648661999998694,
+            5.718877999925098,
+            5.751806999910514,
+            5.688878000000841,
+            5.691773000080502,
+            5.67867099994146,
+            5.6769540000232155,
+            5.691110999919147,
+            5.7022739999865735,
+            5.732964000003449
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 11,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 10.720288140000093,
+          "steady_wall_ms": 5.767912500004968,
+          "steady_wall_samples_ms": [
+            5.869639999900755,
+            5.810573999951885,
+            5.79423800013501,
+            5.766440000115836,
+            5.752389999997831,
+            5.7693849998941005,
+            5.780781999874307,
+            5.756222999934835,
+            5.752726999844526,
+            5.743638000012652
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 11,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 1048576,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              22.4585599899292,
+              22.479727745056152,
+              22.505712509155273
+            ],
+            "wall_round_ms": [
+              22.483109749998675,
+              22.52791355000454,
+              22.541402049989756
+            ],
+            "event_ms": 22.479727745056152,
+            "wall_ms": 22.52791355000454
+          },
+          "quick": {
+            "event_round_ms": [
+              7.182512044906616,
+              7.191824197769165,
+              7.213279962539673
+            ],
+            "wall_round_ms": [
+              7.191786650002996,
+              7.202148150008725,
+              7.199680200005787
+            ],
+            "event_ms": 7.191824197769165,
+            "wall_ms": 7.199680200005787
+          },
+          "balanced": {
+            "event_round_ms": [
+              5.614735841751099,
+              5.54751992225647,
+              5.693455934524536
+            ],
+            "wall_round_ms": [
+              5.662896900003034,
+              5.70927369999481,
+              5.682069499994213
+            ],
+            "event_ms": 5.614735841751099,
+            "wall_ms": 5.682069499994213
+          },
+          "steady": {
+            "event_round_ms": [
+              5.699520111083984,
+              5.627120018005371,
+              5.7015039920806885
+            ],
+            "wall_round_ms": [
+              5.647917550004422,
+              5.687553699999626,
+              5.719118200011053
+            ],
+            "event_ms": 5.699520111083984,
+            "wall_ms": 5.687553699999626
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.21040942299987364,
+          "quick": 0.02639961900013077,
+          "balanced": 1.6316239889999906,
+          "steady": 5.819843073000129
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 12,
+      "cold": {
+        "steady": {
+          "shape": 12,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 10.68721666500005,
+          "steady_wall_ms": 1.652739500059397,
+          "steady_wall_samples_ms": [
+            1.7067329999918002,
+            1.6691089999767428,
+            1.663840999981403,
+            1.6433480000159761,
+            1.630415999898105,
+            1.6562519999752112,
+            1.6492270001435827,
+            1.6346880001947284,
+            1.6981359999590495,
+            1.6229610000664252
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.7881393432617188e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 12,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 3.8504860509999617,
+          "steady_wall_ms": 1.9194835000462263,
+          "steady_wall_samples_ms": [
+            1.9618839999111515,
+            1.931266000156029,
+            1.9080109998412809,
+            1.9683210000494,
+            1.9152390000272135,
+            1.9358239999291982,
+            1.9107289999737986,
+            1.90358700001525,
+            1.904471999978341,
+            1.923728000065239
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.1457672119140625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.9073486328125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.7881393432617188e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": true
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "quick": {
+          "shape": 12,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.05573232500000813,
+          "steady_wall_ms": 2.2194054999999935,
+          "steady_wall_samples_ms": [
+            2.2208640000371815,
+            2.2321839999221993,
+            2.216776000068421,
+            2.2157820001211803,
+            2.218049000020983,
+            2.230000000054133,
+            2.220761999979004,
+            2.2459560000243073,
+            2.211235000004308,
+            2.217045999941547
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.1920928955078125e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.1920928955078125e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.0728836059570312e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 12,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 1.9073486328125e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 1.1920928955078125e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 1.0728836059570312e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 1.7881393432617188e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 1.7881393432617188e-06,
+            "failed": 0,
+            "elements": 262144,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              3.1464959383010864,
+              3.1291040182113647,
+              3.0422720909118652
+            ],
+            "wall_round_ms": [
+              3.0274410500055637,
+              3.039574150000135,
+              3.0753197500075657
+            ],
+            "event_ms": 3.1291040182113647,
+            "wall_ms": 3.039574150000135
+          },
+          "quick": {
+            "event_round_ms": [
+              1.8124799728393555,
+              1.4584159851074219,
+              1.3424639701843262
+            ],
+            "wall_round_ms": [
+              1.784205799992833,
+              1.4132779500073411,
+              1.3787762499987366
+            ],
+            "event_ms": 1.4584159851074219,
+            "wall_ms": 1.4132779500073411
+          },
+          "balanced": {
+            "event_round_ms": [
+              1.1291840076446533,
+              0.9196960031986237,
+              0.8360640108585358
+            ],
+            "wall_round_ms": [
+              1.1373855999977422,
+              0.9411888999920848,
+              0.8736899500036088
+            ],
+            "event_ms": 0.9196960031986237,
+            "wall_ms": 0.9411888999920848
+          },
+          "steady": {
+            "event_round_ms": [
+              1.019487977027893,
+              0.9628479778766632,
+              0.9330399930477142
+            ],
+            "wall_round_ms": [
+              0.9848038499967515,
+              0.9805560500012689,
+              1.0115488999986155
+            ],
+            "event_ms": 0.9628479778766632,
+            "wall_ms": 0.9848038499967515
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.19868301499991503,
+          "quick": 0.017957531000092786,
+          "balanced": 1.4432385650000015,
+          "steady": 5.701399246999927
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": true,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    },
+    {
+      "shape": 13,
+      "cold": {
+        "quick": {
+          "shape": 13,
+          "mode": "quick",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "0",
+            "T3_LINEAR": "fp32"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 0.14910998699997435,
+          "steady_wall_ms": 71.94084849993487,
+          "steady_wall_samples_ms": [
+            71.02063199999975,
+            71.94442199988771,
+            71.2419219998992,
+            73.9756530001614,
+            70.89774299993223,
+            73.03982300004463,
+            71.93727499998204,
+            72.42698499999278,
+            72.73059900012413,
+            70.98116800011667
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 1.430511474609375e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 1.430511474609375e-06
+            }
+          ],
+          "dispatch": {
+            "x3": false,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "balanced": {
+          "shape": 13,
+          "mode": "balanced",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "0",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 3.707015828000067,
+          "steady_wall_ms": 62.23276199989414,
+          "steady_wall_samples_ms": [
+            61.58899999991263,
+            61.97906900001726,
+            62.55238799985818,
+            62.24438699996426,
+            62.22113699982401,
+            62.130588999934844,
+            61.82075399988207,
+            62.56855700007691,
+            62.590335000095365,
+            62.69712299990715
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.384185791015625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.384185791015625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.384185791015625e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        },
+        "steady": {
+          "shape": 13,
+          "mode": "steady",
+          "profile": {
+            "T3_AUTOCAST": "off",
+            "T3_ATTN": "sdpa",
+            "T3_X3_BLAS": "torch",
+            "T3_FUSED_QKV": "0",
+            "T3_TRITON": "0",
+            "T3_X3_GUARD": "static+first",
+            "T3_X3_ORDER": "lhh",
+            "T3_X3_SPLITK": "1",
+            "T3_X3_SITES": "auto",
+            "T3_MASK_CACHE": "1",
+            "T3_PACK_PADDING": "1",
+            "T3_COMPILE": "auto",
+            "T3_CUDAGRAPH": "1",
+            "T3_LINEAR": "fp16x3"
+          },
+          "device": "cuda",
+          "first_forward_seconds": 12.473531421999951,
+          "steady_wall_ms": 62.605353499975536,
+          "steady_wall_samples_ms": [
+            63.19143400014582,
+            62.294809999912104,
+            62.57859900006224,
+            62.712183000030564,
+            62.622599999940576,
+            62.588107000010496,
+            62.63465000006363,
+            62.66440500007775,
+            62.21600500020941,
+            62.570129000050656
+          ],
+          "accuracy": {
+            "passed": true,
+            "failed": 0,
+            "max_abs": 2.384185791015625e-06
+          },
+          "accuracy_trials": [
+            {
+              "seed": 20261009,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.1457672119140625e-06
+            },
+            {
+              "seed": 20261010,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.384185791015625e-06
+            },
+            {
+              "seed": 20261011,
+              "passed": true,
+              "failed": 0,
+              "max_abs": 2.384185791015625e-06
+            }
+          ],
+          "dispatch": {
+            "x3": true,
+            "compiled": false,
+            "graph": false
+          },
+          "tune_cache": {
+            "enabled": false,
+            "status": "disabled"
+          },
+          "timing_scope": "first public forward excludes process/import/model/input setup; synchronized wall; no paired speedup claim"
+        }
+      },
+      "paired": {
+        "shape": 13,
+        "accuracy": [
+          {
+            "variant": "quick",
+            "seed": 0,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 0,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 0,
+            "max_abs": 2.1457672119140625e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 1,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 1,
+            "max_abs": 2.384185791015625e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 1,
+            "max_abs": 2.384185791015625e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "quick",
+            "seed": 2,
+            "max_abs": 1.430511474609375e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "balanced",
+            "seed": 2,
+            "max_abs": 2.384185791015625e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          },
+          {
+            "variant": "steady",
+            "seed": 2,
+            "max_abs": 2.384185791015625e-06,
+            "failed": 0,
+            "elements": 8388608,
+            "passed": true
+          }
+        ],
+        "timing": {
+          "baseline": {
+            "event_round_ms": [
+              324.3199005126953,
+              324.59210205078125,
+              320.23291015625
+            ],
+            "wall_round_ms": [
+              324.083531149995,
+              322.534480249999,
+              320.11494104999656
+            ],
+            "event_ms": 324.3199005126953,
+            "wall_ms": 322.534480249999
+          },
+          "quick": {
+            "event_round_ms": [
+              74.4807357788086,
+              72.6572151184082,
+              70.7932014465332
+            ],
+            "wall_round_ms": [
+              73.92065615000547,
+              72.89890619999824,
+              70.88217474999965
+            ],
+            "event_ms": 72.6572151184082,
+            "wall_ms": 72.89890619999824
+          },
+          "balanced": {
+            "event_round_ms": [
+              63.192176818847656,
+              62.219120025634766,
+              60.738542556762695
+            ],
+            "wall_round_ms": [
+              62.96414615000003,
+              62.182368750006844,
+              60.79710225000099
+            ],
+            "event_ms": 62.219120025634766,
+            "wall_ms": 62.182368750006844
+          },
+          "steady": {
+            "event_round_ms": [
+              62.829023361206055,
+              62.02143859863281,
+              60.934160232543945
+            ],
+            "wall_round_ms": [
+              62.76292754999986,
+              62.00456269999677,
+              60.89855095000303
+            ],
+            "event_ms": 62.02143859863281,
+            "wall_ms": 62.00456269999677
+          }
+        },
+        "shared_process_setup_seconds": {
+          "baseline": 0.4828819360000125,
+          "quick": 0.08451449399990452,
+          "balanced": 1.3954633309999736,
+          "steady": 7.318682856000123
+        },
+        "dispatch": {
+          "baseline": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "quick": {
+            "graph": false,
+            "compiled": false,
+            "x3": false
+          },
+          "balanced": {
+            "graph": false,
+            "compiled": false,
+            "x3": true
+          },
+          "steady": {
+            "graph": false,
+            "compiled": false,
+            "x3": true
+          }
+        },
+        "output_ownership": "PASS",
+        "cache": "disabled",
+        "memory_scope": "paired models share a process; not isolated deployment memory"
+      }
+    }
+  ]
+}

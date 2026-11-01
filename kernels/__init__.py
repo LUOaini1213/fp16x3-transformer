@@ -1,5 +1,7 @@
 """Hand-written Triton kernels for the optimized Transformer layer."""
 
+from .turing_attention import turing_attention, turing_eligible  # noqa: F401
+
 from .fused_layernorm import (  # noqa: F401
     HAVE_TRITON,
     HAVE_TRITON_OP,

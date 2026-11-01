@@ -1,0 +1,48 @@
+{
+  "metadata": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "capability": [
+      7,
+      5
+    ],
+    "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]",
+    "git_commit": "38e191d9ba1778b7f837b790f79abe941ee98c66",
+    "source_manifest": {
+      "user_optimized.py": "d5523d070a97391544e2d01e88bc07b6dabce892f74387be83cbb58e5ceac6ff",
+      "torch_transformer_benchmark.py": "5529c96a80799b51f68092e1444a30b17994554dffdf52da98ba701489a7f36e",
+      "kernels/fp16x3.py": "562120439ad396ec323eebcf5091ee7ffb7a55429f0d663524a72ae8a576b4b8",
+      "kernels/fp16x3_int8.py": "8ec131f4d9d19fa95560eb3c5ea03d7a00258293d49b2dd246abee08d01b1c01",
+      "kernels/attention.py": "f65b905597692f0789309fb387abca767a7d0ea200318f81c28b819e3a923304",
+      "kernels/fused_layernorm.py": "bb7c11420cff1f47fddc9723fdfd189007f0adabf6a0b8d427bb7d4f5a69df32",
+      "kernels/cublaslt_backend.py": "90f93b31d2b3271070387aff5b0759ad3a2c28fc2b1074ab0b7cc24101019983",
+      "kernels/cublaslt_probe.cpp": "47b5e88ed20e07cd77fef18a62331369a15102950590ea3f8cd7b954cb9a4360",
+      "kernels/turing_attention.py": "0ce4cfba82fc8ce839d0a1b729baaebb2dc4772d2ce69d4da3173fff6b9887ee",
+      "scripts/benchmark_release.py": "dc56d2c7b98ceb5ba1f1ed85a1c14237be698ae8635cc1f98e598fceb08b58eb",
+      "scripts/build_clean_kaggle.py": "0ade4cbd97752db08f3c56b9024064274a71bad7630913acdddee78e02541da4",
+      "scripts/benchmark_next.py": "f4d6b6cd874ee4779e73a0940a5d88820fd3264b78031e699fbc591695149c23",
+      "scripts/benchmark_runtime.py": "9b11d561f3422e7029b6f28e1f99526787c4909ddcfa56dd56965f48f078670d"
+    },
+    "normal_imports": {
+      "official": "/tmp/track3-clean-30sr4adr/repository/torch_transformer_benchmark.py",
+      "production": "/tmp/track3-clean-30sr4adr/repository/user_optimized.py"
+    },
+    "protocol": "FP32/attention: three rotated paired CUDA-event and separate synchronized-wall rounds; flash: complete synchronized-wall forwards; memory: isolated single-model child peaks; same paired weights/input",
+    "cache_scope": "fresh job caches, shared across subprocesses; cold costs are first public forward, not machine cold"
+  },
+  "results": {
+    "shape": 8,
+    "variant": "baseline",
+    "resident_input_weights_bytes": 134397952,
+    "cold_seconds": 0.3412662860000637,
+    "cold_peak_allocated_bytes": 445988864,
+    "steady_peak_allocated_bytes": 445988864,
+    "mode": {
+      "graph": false,
+      "compiled": false,
+      "x3": false
+    },
+    "memory_scope": "isolated single model; input, output and graph pools included; oracle excluded"
+  }
+}
