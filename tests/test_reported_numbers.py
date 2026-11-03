@@ -159,7 +159,10 @@ def _scannable_files():
     for p in sorted(ROOT.rglob("*")):
         if not p.is_file() or p.suffix not in _M1049_SUFFIXES:
             continue
-        if any(part in (".git", "__pycache__", ".pytest_cache") for part in p.parts):
+        # skip VCS/cache dirs and local virtualenvs (a venv inside the clone
+        # holds third-party files whose digits are not this repo's claims)
+        if any(part in (".git", "__pycache__", ".pytest_cache", ".venv", "venv",
+                        "site-packages") for part in p.relative_to(ROOT).parts):
             continue
         if p == Path(__file__).resolve():
             continue  # the scanner itself quotes the digits it forbids

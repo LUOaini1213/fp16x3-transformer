@@ -8,6 +8,14 @@ hi/lo parts; one cuBLAS GEMM with K tripled accumulates the three cross terms.
 Memory-efficient attention and per-shape eager/compile/graph selection complete
 the forward pass.
 
+**Found:** a 2.875× median speedup over the unchanged competition FP32 reference
+(which materializes the S×S score matrix) across three Tesla T4 sessions, with
+117/117 FP32 accuracy checks passing at a maximum error of 9.83e-6. The
+compensated GEMM's own share comes from the September (Torch 2.10) ablation only:
+moving the GEMMs from FP32 SGEMM to fp16x3 raised the median from 2.30× to 2.83×.
+**Limits:** measured for inference on a T4 only; CI runs on CPU, so the GPU kernel
+paths are backed by the recorded Kaggle T4 runs, not by CI execution.
+
 Built for TikTok TechJam 2026 Track 3. **The entry did not place.** The competition
 submission is frozen on `submission` / `submitted-2026-09-01`; `main` is maintained.
 
@@ -22,17 +30,13 @@ submission is frozen on `submission` / `submitted-2026-09-01`; `main` is maintai
 |---|---|
 | **2.875× median speedup** | Three independent Tesla T4 sessions, 13 official FP32 shapes, same production-core hashes; paired original reference / optimized runs. Median paired ratio per shape over sessions, then unweighted median over shapes. Session medians are 3.546×, 2.801× and 2.875×. |
 | **117/117 FP32 accuracy checks pass** | Three input seeds per shape per session; maximum absolute error 9.83e-6. Official per-element gate: absolute error ≤ 0.002 **OR** relative error ≤ 0.02; non-finite outputs fail. |
-| **100,000-token shape runs within a 16 GB T4** | The original materialized-score reference would need about 20.5 TB. Extreme-shape timing uses native FP16, with separately stated equivalence and restricted FP32-prefix checks; it is not part of the FP32 speedup above. |
-| **Balanced reduces setup, with session-dependent steady gates** | Two independent full T4 sessions at `c8fe1cf` each pass 234/234 accuracy checks. The balanced-full session clears **12/13** startup/steady gates (shape 2: **+6.95% wall**); portfolio-full clears **13/13**. A separate shape-2 repeat clears **2/3** worker comparisons (one: **+3.63% event**). All measurements and misses remain published; balanced stays opt-in. |
+| **100,000-token shape runs within a 16 GB T4** | The original materialized-score reference would need about 20.5 TB. Extreme-shape timing uses native FP16, with separately stated equivalence and restricted FP32-prefix checks; it is not part of the FP32 speedup above. Shared two-model process steady peak: 13.601 GiB. |
 
 These tables measure Linux / T4 / Torch 2.11.0+cu128 and exact recorded revisions.
-The three-session speedup belongs to the pre-cache/recovery production revision.
-The [balanced-full report](results/next/improvements_summary.md) and separate
-[portfolio-full report](results/next/portfolio_runtime_summary.md) validate the
-maintained runtime; the latter does not erase the former's failed gate.
-Balanced/steady first public forwards span **3.7–6.4 / 10.6–34.5 s** and
-**4.0–8.0 / 11.2–37.7 s**, respectively. Imports, input/model setup and
-CUDA-context probes are excluded. Old throughput is not attributed to new code.
+The three-session speedup belongs to the pre-cache/recovery production revision;
+the maintained runtime profiles are validated separately (see
+[Runtime profile measurements](#runtime-profile-measurements)).
+Old throughput is not attributed to new code.
 The reference is the unchanged competition implementation, so the
 headline does not claim an advantage over every modern Transformer library.
 
@@ -56,18 +60,21 @@ copying. The official reference and grading harness are unchanged.
 
 ## Try it
 
-Use Python 3.11+ and an existing Torch environment. For a small CPU correctness
-check, install `requirements.txt` and run:
+Use Python 3.11+. For a small CPU correctness check, install the CPU Torch wheel
+as CI does (on Linux, `pip install -r requirements.txt` without an existing Torch
+pulls the multi-GB CUDA build), then run:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
 python -m scripts.run --check-only
 python -m scripts.run --mode quick --shape 2
 ```
 
-On a compatible CUDA runtime:
+On a compatible CUDA runtime (Colab/Kaggle images ship Torch; `requirements.txt`
+keeps it and adds matplotlib for the figure script):
 
 ```bash
+python -m pip install -r requirements.txt
 python -m scripts.run --mode balanced --device cuda --shape 2
 python -m scripts.run --mode steady --device cuda --shapes 1-13 --output results/local_run.json
 python -m scripts.run --mode balanced --device cuda --shape 2 --tune-cache results/local_dispatch.json
@@ -78,6 +85,22 @@ python -m scripts.run --mode balanced --device cuda --shape 2 --tune-cache resul
 | `quick` (CLI default) | First inspection or short-lived inference | Eager FP32 GEMMs + SDPA; no Inductor, manual graph or Triton launches |
 | `balanced` (explicit choice) | Compare compensated throughput with less planning | FP16x3 + SDPA, no Inductor; Triton JIT and optional manual graph selection remain |
 | `steady` | Repeated inference with the shipped policy | FP16x3 + eager/compile/manual-graph selection |
+
+### Runtime profile measurements
+
+Two independent full T4 sessions at `c8fe1cf` each pass 234/234 profile/input
+accuracy checks. Gate per shape: lower first-forward cost than `steady` and at
+most 2% event and wall regression.
+
+| Session | Gates cleared | Balanced / steady first public forward |
+|---|---|---|
+| [balanced-full](results/next/improvements_summary.md) | **12/13** (shape 2: **+6.95% wall**) | **3.7–6.4 / 10.6–34.5 s** |
+| [portfolio-full](results/next/portfolio_runtime_summary.md) | **13/13** | **4.0–8.0 / 11.2–37.7 s** |
+
+A separate shape-2 repeat clears **2/3** worker comparisons (one: **+3.63%
+event**). The portfolio-full session does not erase the balanced-full miss; all
+measurements and misses remain published and `balanced` stays opt-in. First
+public forward excludes imports, input/model setup and CUDA-context probes.
 
 Direct model imports keep the shipped defaults. `--device cuda` fails clearly
 when CUDA is unavailable; CPU output is labelled correctness-only. The command
@@ -110,7 +133,11 @@ python -m scripts.summarize_portfolio_runtime --check
 ```
 
 CPU CI checks the reference math, runtime contracts, evidence integrity and
-generated summaries. GPU evidence comes from private Kaggle T4 jobs that clone
+generated summaries. On a CPU runner the Triton kernels, the compensated cuBLAS
+GEMM and the Turing attention backend are unavailable, so the opt-in flags only
+show that they fall back cleanly; the compensated GEMM's arithmetic is covered on
+CPU by exact emulation tests. Its real-GPU behaviour is validated only by the
+recorded T4 artifacts, which CI audits by hash rather than by execution. GPU evidence comes from private Kaggle T4 jobs that clone
 an exact public Git commit and import normal repository modules. The
 [release protocol](docs/RELEASE_VERIFICATION.md) and
 [current runtime protocol](docs/QUICKSTART.md) provide the exact commands and
@@ -139,6 +166,7 @@ acceptance gates. Historical September Torch 2.10 results are kept separately.
 | [kernels/dispatch_cache.py](kernels/dispatch_cache.py) | Environment/source/layout-keyed JSON dispatch hints |
 | [scripts/run.py](scripts/run.py) | CLI profiles, correctness checks and timing JSON |
 | [results/next/](results/next/) | Source-stamped measurements and generated reports |
+| [results/](results/README.md) | Index of the older September CSVs/logs and early-October runtime JSONs kept beside `next/` |
 | [report/report.md](report/report.md) | Technical report; [report/report.html](report/report.html) is the September report as one self-contained page, rebuilt from `results/results_t4.csv` by `scripts/build_report_page.py` |
 | [docs/EXPERIMENT_HISTORY.md](docs/EXPERIMENT_HISTORY.md) | Detailed ablations, precision ladders, losing variants and history |
 

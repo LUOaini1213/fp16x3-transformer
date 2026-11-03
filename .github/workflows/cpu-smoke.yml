@@ -1,9 +1,13 @@
 name: cpu-smoke
 
 # Correctness of the optimized forward against the reference, on CPU, for
-# every graded shape plus the padded fallback and the chunked path. Speed
-# needs a GPU and lives in the Kaggle logs under results/; this only asks
-# whether the answer moved.
+# graded shapes 1-5 and 7-13 (shape 6 is B=10000 and shape 14 is infeasible on
+# CPU) plus the padded fallback and the chunked path. On CPU the Triton
+# kernels, the compensated cuBLAS GEMM and the Turing attention backend are
+# unavailable, so the opt-in flags below only show that they fall back
+# cleanly; the compensated arithmetic is covered by the exact CPU emulation
+# tests. Speed and real-GPU kernel behaviour need a GPU and live in the
+# recorded Kaggle T4 artifacts, which this job audits by hash.
 on:
   push:
     branches: [main]
@@ -22,9 +26,9 @@ jobs:
         run: |
           pip install --index-url https://download.pytorch.org/whl/cpu torch
           pip install pytest
-      - name: Shapes 1-13 + padded fallback (shipped defaults)
+      - name: Shapes 1-5, 7-13 + padded fallback on CPU (shipped defaults)
         run: python scripts/smoke_cpu.py
-      - name: Chunked output path and every opt-in flag still exact
+      - name: Chunked output path exact; opt-in GPU flags fall back cleanly on CPU
         run: |
           T3_CHUNK_BS=3 python scripts/smoke_cpu.py
           T3_FUSED_QKV=1 python scripts/smoke_cpu.py
@@ -33,7 +37,7 @@ jobs:
           T3_LINEAR=fp32 python scripts/smoke_cpu.py
           T3_ATTN=turing python scripts/smoke_cpu.py
           T3_X3_BLAS=lt python scripts/smoke_cpu.py
-      - name: fp16x3 unit tests (exact CPU emulation)
+      - name: Unit tests, fp16x3 CPU emulation and README/report number checks
         run: python -m pytest -q tests/
       - name: Complete GPU evidence receipts, current sources and runtime report
         run: python -m scripts.verify_next_evidence --maintained-runtime
