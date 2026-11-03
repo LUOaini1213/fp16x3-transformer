@@ -13,8 +13,11 @@
 A Transformer layer whose GEMMs run on fp16 tensor cores at fp32-class accuracy —
 each operand split into an fp16 hi + lo pair by fused Triton kernels, one cuBLAS
 GEMM with K tripled — plus memory-efficient attention and a per-shape autotune.
-Historical three-session result: 2.83x median over the fp32 reference on a free Tesla T4 at ~1e-6 error, and the
-100,000-token shape running in 14 GB where the reference would need 20.5 TB.
+September 2026 (Torch 2.10) three-run cohort, superseded as the headline by the October
+2.875x three-session result in the README: 2.83x median over the fp32 reference on a free
+Tesla T4, worst error 9.5e-06 (the K=1024 shape; 2.9e-06 elsewhere), and the
+100,000-token shape running in native fp16 at a 14.2 GB peak where the reference would
+need 20.5 TB.
 
 Built for **TikTok TechJam 2026, Track 3 — "Implement a GPU Kernel for a Transformer
 Layer"** (the competition has ended and this entry did not place; the
@@ -101,9 +104,10 @@ Five results, each traceable to a committed kernel log under `results/`:
 1. **13/13 graded shapes pass** at `max_abs` 2.9e-06 or better on twelve shapes and
    9.5e-06 on the one with K=1024 — 699x and 210x inside the `atol=0.002`
    gate — with a **median speedup of 2.83x on a free Tesla T4** (per-shape median
-   of three independent runs; 2.07x on a P100), from fused attention, **fp32-accurate
+   of three independent runs), from fused attention, **fp32-accurate
    GEMMs on the fp16 tensor cores** (hi/lo operand compensation, fed by our own Triton
    kernels), and a per-shape autotune over eager, `torch.compile` and CUDA-graph replay.
+   A P100 has no tensor cores: its 2.07x comes from fused attention alone (fp32 SGEMM).
 2. **Shape 14 runs.** Its reference needs ~20.5 TB of attention scores and cannot
    execute; ours completes the 100,000-token forward in 14.2 GB (184 s on the T4).
 3. **Three precision regimes were measured and two declined.** fp16 *storage* is 4.01x but
