@@ -145,3 +145,11 @@ def test_p100_figure_is_not_credited_to_tensor_cores():
         for para in _paragraphs(text):
             if re.search(r"2\.07x|2\.07×", para) and "P100" in para:
                 assert "no tensor cores" in para, f"{name}: P100 2.07x without 'no tensor cores'"
+            # sentence level: the clause quoting 2.07x must not also credit
+            # tensor cores (a correct caveat elsewhere in the paragraph does
+            # not excuse it)
+            for sentence in re.split(r"(?<=\.)\s+", para.replace("\n", " ")):
+                if re.search(r"2\.07x|2\.07×", sentence):
+                    credited = re.sub(r"no tensor cores", "", sentence)
+                    assert "tensor core" not in credited, \
+                        f"{name}: 2.07x credited to tensor cores in {sentence[:120]!r}"

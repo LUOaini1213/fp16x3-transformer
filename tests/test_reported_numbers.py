@@ -108,9 +108,13 @@ def _shape8(name):
 
 
 def test_readme_september_sentence_matches_csv():
-    """The one place the streamlined README still quotes the September sweep."""
-    assert (f"from {_fmt(T4_FP32['median'], 2)}× to {_fmt(T4['median'], 2)}×"
-            in README)                                                      # 2.30x -> 2.83x
+    """The README quotes the September ablation in the first-screen summary and
+    in the engineering section; both copies must match the CSVs."""
+    ablation = f"from {_fmt(T4_FP32['median'], 2)}× to {_fmt(T4['median'], 2)}×"   # 2.30x -> 2.83x
+    first_screen = README.split("\n## ", 1)[0]
+    engineering = README.split("## The engineering contribution", 1)[1].split("\n## ", 1)[0]
+    assert ablation in first_screen.replace("\n", " "), "first-screen summary lost the ablation"
+    assert ablation in engineering.replace("\n", " "), "engineering section lost the ablation"
     assert (f"from {_fmt(_shape8('results_t4_fp32.csv'), 2)}× to "
             f"{_fmt(_shape8('results_t4.csv'), 2)}×" in README)            # 1.09x -> 1.57x
 
