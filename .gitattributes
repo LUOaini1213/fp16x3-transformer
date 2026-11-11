@@ -1,3 +1,12 @@
+# Text files are stored and checked out with LF on every platform.
+* text=auto eol=lf
+# Binary media.
+*.png binary
+*.jpg binary
+*.mp4 binary
+*.pdf binary
+# September-era result tables are recorded with CRLF; their bytes are evidence.
+results/*.csv -text
 # Exact cloud scripts/log text are evidence artifacts: preserve original bytes
 # and hashes, including Windows CRLF and tool-generated end-of-line whitespace.
 results/next/**/cloud_script.py -text whitespace=-blank-at-eol,cr-at-eol linguist-generated=true

@@ -285,7 +285,7 @@ checks pass; **2/3** workers meet the steady gate, while one has **+3.63% event
 time**. This is one GPU session, not three independent GPU repeats or another
 cold-start audit. Original misses remain published, and no default is changed.
 The full sweep's single-session 3.402x balanced median is not pooled with the
-historical three-session 2.875x cohort.
+October pre-cache/recovery three-session 2.875x cohort.
 
 Both pilot and full jobs verify real graph capture, changed inputs, weight
 mutation followed by one re-selection, stable weights without a tuning loop,
